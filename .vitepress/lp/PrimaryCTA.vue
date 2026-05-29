@@ -58,7 +58,7 @@ function handleClick() {
   }
 
   redirectTimer = setTimeout(() => {
-    window.location.href = '/onboarding'
+    window.location.href = '/woodled-studio/onboarding'
   }, 700)
 }
 </script>

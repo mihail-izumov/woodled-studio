@@ -26,8 +26,8 @@ const reveal = computed(() => LEAF_REVEALS[Math.min(taps.value, LEAF_REVEALS.len
 // последующие применения маски мгновенные (нет сетевого роундтрипа).
 // Это критично для сердечек: они показываются только после 4 тапов,
 // и без префетча первый кадр scatter/heart-фазы виден с задержкой.
-const LEAF_URL  = '/customizer/leaf-icon.svg';
-const HEART_URL = '/customizer/heart-icon.svg';
+const LEAF_URL  = '/woodled-studio/customizer/leaf-icon.svg';
+const HEART_URL = '/woodled-studio/customizer/heart-icon.svg';
 
 const leafMaskUrl  = ref(`url("${LEAF_URL}")`);
 const heartMaskUrl = ref(`url("${HEART_URL}")`);

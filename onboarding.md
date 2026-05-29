@@ -74,7 +74,7 @@ onUnmounted(() => {
 })
 
 function goNext() {
-  window.location.href = '/customizer'
+  window.location.href = '/woodled-studio/customizer'
 }
 </script>
 

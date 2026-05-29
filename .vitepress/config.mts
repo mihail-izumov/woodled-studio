@@ -9,7 +9,7 @@ export default defineConfig({
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
   ],
 
-  base: '/',
+  base: '/woodled-studio/',
   cleanUrls: true,
   appearance: false,
   outDir: '.vitepress/dist',

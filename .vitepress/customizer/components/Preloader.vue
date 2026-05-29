@@ -22,7 +22,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits<{ done: [] }>()
 
-const ROTOR_URL = '/onboarding/rotor.png'
+const ROTOR_URL = '/woodled-studio/onboarding/rotor.png'
 
 const p = ref(-1)
 const rotorLoaded = ref(false)

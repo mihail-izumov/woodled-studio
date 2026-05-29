@@ -27,7 +27,7 @@ import ImportPanel from './ImportPanel.vue'
 // Не используем raw.githubusercontent.com потому что GitHub блокирует hotlinking
 // (отдаёт картинки с Content-Disposition: attachment и X-Content-Type-Options: nosniff,
 // браузер не показывает их в <img>).
-const DEFAULT_BASE_URL = '/gallery/'
+const DEFAULT_BASE_URL = '/woodled-studio/gallery/'
 
 // Старый дефолт — для миграции, если у юзера он уже в localStorage.
 const OLD_DEFAULT_BASE_URL = 'https://raw.githubusercontent.com/mihail-izumov/ModulRosta/main/public/gallery/'

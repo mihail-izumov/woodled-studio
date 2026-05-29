@@ -10,7 +10,7 @@
 import { T } from '../theme/tokens'
 import Icon from './ui/Icons.vue'
 
-const ONBOARDING_URL = '/onboarding'
+const ONBOARDING_URL = '/woodled-studio/onboarding'
 </script>
 
 <template>

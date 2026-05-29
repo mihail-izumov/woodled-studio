@@ -8,7 +8,7 @@
 
 import { T } from '../theme/tokens'
 
-const LOGO_URL = '/customizer/woodled-logo.svg'
+const LOGO_URL = '/woodled-studio/customizer/woodled-logo.svg'
 </script>
 
 <template>

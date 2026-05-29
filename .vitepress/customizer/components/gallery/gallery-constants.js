@@ -15,13 +15,13 @@ export const T = {
 // =============================================================================
 export const REAL_PHOTOS = [
   {
-    src: '/gallery/a_chandelier_1000_nut_01.jpg',
+    src: '/woodled-studio/gallery/a_chandelier_1000_nut_01.jpg',
     aspect: 1.52, zone: 'ceiling',
     label: 'Rotor 1000 nut · bedroom',
     wood: { name: 'орех', color: '#8B6242' }, model: 'Rotor 1000',
   },
   {
-    src: '/gallery/a_chandelier_l_black_01.jpg',
+    src: '/woodled-studio/gallery/a_chandelier_l_black_01.jpg',
     aspect: 0.67, zone: 'ceiling',
     label: 'Rotor L black · living',
     wood: { name: 'чёрный', color: '#5A4E42' }, model: 'Rotor L',

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>WOODLED Студия — открываем ссылку…</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0A0908">
+<meta name="description" content="Соберите свой лес света WOODLED — конфигуратор домашнего освещения">
+
+<!-- Favicon и apple-touch-icon. Apple использует именно apple-touch-icon.png
+     (PNG 180×180) для preview в iOS share sheet, иконки в iMessage,
+     добавления на главный экран. -->
+<link rel="icon" type="image/jpeg" href="https://runscale.ru/og-cover.jpg">
+<link rel="apple-touch-icon" sizes="180x180" href="https://runscale.ru/apple-touch-icon.png">
+
+<!-- Open Graph для preview в мессенджерах и iOS share sheet.
+     og:image:width/height помогают iOS принять решение показывать
+     preview без задержки на crawl. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="WOODLED Студия">
+<meta property="og:description" content="Соберите свой лес света WOODLED — конфигуратор домашнего освещения">
+<meta property="og:image" content="https://runscale.ru/og-cover.jpg">
+<meta property="og:image:secure_url" content="https://runscale.ru/og-cover.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1080">
+<meta property="og:image:height" content="1080">
+<meta property="og:url" content="https://runscale.ru/">
+<meta property="og:site_name" content="WOODLED Студия">
+<!-- twitter:card = summary даёт КВАДРАТНЫЙ preview, подходящий под наш
+     1080×1080. summary_large_image требует 1.91:1 (1200×630) и часто
+     игнорирует квадратные картинки. -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="WOODLED Студия">
+<meta name="twitter:description" content="Мой дизайн. Мой свет.">
+<meta name="twitter:image" content="https://runscale.ru/og-cover.jpg">
+
+<style>
+  :root {
+    --bg:      #0A0908;
+    --text:    #F0EAE0;
+    --textDim: #C0B8AE;
+    --warm:    #f5e6c8;
+    --oak:     #b4915a;
+    --oakL:    #d4b87a;
+    --oakD:    #8a6e3e;
+    --rose:    #c89e94; /* приглушённый rose-bronze для shake-эффекта */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+  }
+  body {
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Логотип "WOODLED Студия" — единым шрифтом, как в шапке лендинга
+     (см. .vitepress/lp/Header.vue). */
+  .logo {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+    font-size: clamp(22px, 4.4vw, 40px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 56px;
+    opacity: 0;
+    animation: fadeIn 0.7s ease-out 0.1s forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* Rotor — фирменная анимация ламелей */
+  .rotor {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    margin-bottom: 56px;
+  }
+  .rotor-asm {
+    position: absolute;
+    inset: 0;
+    animation: rotorSpin 48s linear infinite;
+  }
+  .lamella {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 72px;
+    margin-top: -36px;
+    margin-left: -3.5px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, var(--oakL), var(--oak), var(--oakD));
+    opacity: 0;
+    transform-origin: center center;
+    /* Зеркалит Preloader.vue: ламель «прилетает» с дальней позиции
+       (R+90) к финальной (R). Задержка по индексу даёт волну по часовой. */
+    transition: transform 1s, opacity 0.8s;
+  }
+  .lamella.in { opacity: 0.85; }
+
+  /* Внутреннее пульсирующее свечение — pl-rsg из Preloader.vue */
+  .rs-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 24px;
+    margin-top: -12px;
+    margin-left: -2px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--warm) 7%, transparent);
+    filter: blur(4px);
+    transform-origin: center center;
+    animation: rsGlow 2.5s ease-in-out infinite;
+    opacity: 0;
+    transition: opacity 0.8s;
+  }
+  .rs-glow.in { opacity: 1; }
+  @keyframes rsGlow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes rotorSpin { to { transform: rotate(360deg); } }
+  .rotor::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--warm) 8%, transparent),
+      color-mix(in srgb, var(--warm) 3%, transparent),
+      transparent
+    );
+    filter: blur(20px);
+    pointer-events: none;
+  }
+
+  /* Стек подсказок с crossfade */
+  .texts {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    min-height: 72px;
+  }
+  .line {
+    position: absolute;
+    inset: 0;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.45;
+    letter-spacing: 0.1px;
+  }
+  .line.on { opacity: 1; }
+
+  /* ─────────── Error UI ─────────── */
+  .hidden { display: none !important; }
+  .error {
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  /* Иконка lucide-link-2-off — крупная, без круга, в спокойном цвете */
+  .error-icon {
+    width: 88px;
+    height: 88px;
+    margin: 0 auto 28px;
+    color: var(--text);
+    opacity: 0.85;
+    display: block;
+  }
+  .error-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .error-msg {
+    font-size: 15px;
+    color: var(--textDim);
+    margin: 0 0 28px;
+    line-height: 1.55;
+  }
+
+  /* Input для повторной вставки ссылки */
+  .paste-row {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 52px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 2px solid transparent;
+    transition: border-color 0.18s;
+  }
+  .paste-row.shake {
+    animation: pasteShake 0.4s;
+    border-color: var(--rose);
+  }
+  @keyframes pasteShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .paste-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0 14px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1a1a1a;
+    height: 48px;
+  }
+  .paste-input::placeholder { color: #9a9a9a; }
+  .paste-btn {
+    background: #ececec;
+    border: none;
+    padding: 0 14px;
+    margin: 5px 5px 5px 0;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .paste-btn:hover { background: #e0e0e0; }
+  .paste-btn svg { width: 16px; height: 16px; }
+
+  .open-btn {
+    width: 100%;
+    height: 52px;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .open-btn:hover { opacity: 0.85; }
+
+  .home-link {
+    display: inline-block;
+    margin-top: 22px;
+    color: var(--textDim);
+    font-size: 14px;
+    font-weight: 400;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--textDim) 40%, transparent);
+    padding-bottom: 1px;
+    transition: color 0.15s;
+  }
+  .home-link:hover { color: var(--text); }
+
+  /* Responsive */
+  @media (max-width: 420px) {
+    .logo { margin-bottom: 40px; }
+    .rotor { width: 200px; height: 200px; margin-bottom: 40px; }
+    .lamella { height: 60px; margin-top: -30px; }
+    .line { font-size: 16px; }
+    .error-icon { width: 72px; height: 72px; margin-bottom: 24px; }
+    .error-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Загрузочный экран — пока fetch payload + анимация подсказок -->
+<div class="stage" id="stage">
+  <div class="logo">WOODLED&nbsp;Студия</div>
+
+  <div class="rotor">
+    <div class="rotor-asm" id="rotorAsm"></div>
+  </div>
+
+  <div class="texts">
+    <div class="line" id="line1"></div>
+    <div class="line" id="line2"></div>
+    <div class="line" id="line3"></div>
+  </div>
+</div>
+
+<!-- Экран ошибки — со встроенной формой повторной вставки ссылки -->
+<div class="stage hidden" id="errorBox">
+  <div class="logo">WOODLED&nbsp;Студия</div>
+
+  <div class="error">
+    <!-- Lucide unlink — две разорванные половинки цепи с искрами -->
+    <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/>
+      <path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/>
+      <line x1="8" x2="8" y1="2" y2="5"/>
+      <line x1="2" x2="5" y1="8" y2="8"/>
+      <line x1="16" x2="16" y1="19" y2="22"/>
+      <line x1="19" x2="22" y1="16" y2="16"/>
+    </svg>
+
+    <h1 class="error-title" id="errorTitle">Ссылка не работает</h1>
+    <p class="error-msg" id="errorMsg">Уточните ссылку и попробуйте снова</p>
+
+    <div class="paste-row" id="pasteRow">
+      <input
+        id="urlInput"
+        type="text"
+        class="paste-input"
+        placeholder="Место для вашей ссылки"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="pasteBtn" class="paste-btn" type="button">
+        <!-- Lucide clipboard-copy с обратной стрелкой → paste -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+          <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+          <path d="M16 4h2a2 2 0 0 1 2 2v4"/>
+          <path d="M21 14H11"/>
+          <path d="m15 10-4 4 4 4"/>
+        </svg>
+        Вставить
+      </button>
+    </div>
+
+    <button id="openBtn" class="open-btn" type="button">Открыть</button>
+
+    <a href="https://woodled-studio.ru" class="home-link">На главную</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* Apps Script Web App — тот же URL, что и в engine/shortener.ts */
+  var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxjtBMSKSPADp9YVE4GKhPIPW5XaP4rShzMnDCTgDMH6O6CX7_eOlSPLMPcuq_yVbj8/exec';
+  var TIMEOUT_MS = 15000;
+  var HOMEPAGE_URL = 'https://woodled-studio.ru';
+
+  /* База сайта определяется из текущего URL — файл портируется на любой
+     репо/base без правок. */
+  var BASE = location.pathname.replace(/share\/(index\.html)?$/, '');
+  var CUSTOMIZER_PATH = BASE + 'customizer';
+  var SHARE_PATH = BASE + 'share/';
+
+  /* Параметры rotor-анимации (зеркалят Preloader.vue) */
+  var LAMELLA_COUNT = 20;
+  var LAMELLA_RADIUS = 96;
+
+  /* Тайминги (мс) sequential текстов */
+  var MIN_PHASE_1 = 1500;
+  var PHASE_2_HOLD = 1500;
+  var PHASE_3_HOLD = 1500;
+  var TEXTS = {
+    phase1:    'Открываем ссылку',
+    phase2_s:  'Открываем параметры',
+    phase2_fx: 'Подбираем светильник',
+    phase3:    'Запускаем Студию',
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function createLamellae() {
+    var asm = $('rotorAsm');
+    /* Зеркалим Preloader.vue:
+       - Создаём 20 ламелей в начальной позиции translateY(-(R+90)) — далеко
+         за пределами круга, opacity 0.
+       - Каждая получает transition-delay = i*50ms — это создаёт «волну»
+         по часовой стрелке: ламели прилетают одна за другой.
+       - Через RAF + setTimeout триггерим переход к финальной позиции R. */
+    var elements = [];
+    for (var i = 0; i < LAMELLA_COUNT; i++) {
+      var angle = (i / LAMELLA_COUNT) * 360;
+      var el = document.createElement('div');
+      el.className = 'lamella';
+      el.style.transitionDelay = (i * 50) + 'ms';
+      /* Начальная позиция — за пределами круга. */
+      el.style.transform = 'rotate(' + angle + 'deg) translateY(-' + (LAMELLA_RADIUS + 90) + 'px)';
+      asm.appendChild(el);
+      elements.push({ el: el, angle: angle });
+    }
+    /* Двойной RAF + микро-задержка чтобы браузер успел зафиксировать
+       начальную позицию ДО transition. */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        elements.forEach(function (item) {
+          item.el.style.transform = 'rotate(' + item.angle + 'deg) translateY(-' + LAMELLA_RADIUS + 'px)';
+          item.el.classList.add('in');
+        });
+      });
+    });
+
+    /* Через ~2 сек (когда все ламели уже встали в круг) добавляем
+       внутреннее пульсирующее свечение — pl-rsg из Preloader.vue. */
+    setTimeout(function () {
+      for (var j = 0; j < LAMELLA_COUNT; j++) {
+        var ang = (j / LAMELLA_COUNT) * 360;
+        var g = document.createElement('div');
+        g.className = 'rs-glow';
+        g.style.transform = 'rotate(' + ang + 'deg) translateY(-' + (LAMELLA_RADIUS * 0.55) + 'px)';
+        g.style.animationDelay = (j * 0.15) + 's';
+        asm.appendChild(g);
+        /* Появление через RAF для transition. */
+        (function (elem) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { elem.classList.add('in'); });
+          });
+        })(g);
+      }
+    }, 2000);
+  }
+
+  function sleep(ms) {
+    return new Promise(function (r) { setTimeout(r, ms); });
+  }
+
+  function showError(title, msg) {
+    $('stage').classList.add('hidden');
+    $('errorBox').classList.remove('hidden');
+    if (title) $('errorTitle').textContent = title;
+    if (msg) $('errorMsg').textContent = msg;
+    /* Автофокус на input — юзер может сразу вставить новую ссылку. */
+    setTimeout(function () { $('urlInput').focus(); }, 100);
+  }
+
+  /* ───── Логика повторной вставки ссылки в error UI ───── */
+
+  /* Извлечь ID из произвольного текста. Принимаем:
+       - полную короткую ссылку: …/share/?id=XXX (или ?id=XXX&...)
+       - просто ID: алфанумерик 1-12 символов
+     Возвращаем null если ничего не подошло. */
+  function extractId(text) {
+    if (!text) return null;
+    var t = text.trim();
+    var m = t.match(/[?&]id=([A-Za-z0-9]{1,12})\b/);
+    if (m) return m[1];
+    if (/^[A-Za-z0-9]{1,12}$/.test(t)) return t;
+    return null;
+  }
+
+  /* Длинная ссылка с #s=2. или #fx=2. — открываем её напрямую,
+     минуя шортнер. Используется как fallback. */
+  function isDirectLongUrl(text) {
+    return /#(s|fx)=2\./.test(text);
+  }
+
+  function shake(el) {
+    el.classList.remove('shake');
+    /* force reflow для повторного запуска анимации */
+    void el.offsetWidth;
+    el.classList.add('shake');
+    setTimeout(function () { el.classList.remove('shake'); }, 600);
+  }
+
+  function tryOpen() {
+    var raw = $('urlInput').value;
+    if (!raw || !raw.trim()) {
+      $('urlInput').focus();
+      return;
+    }
+    var id = extractId(raw);
+    if (id) {
+      location.href = SHARE_PATH + '?id=' + encodeURIComponent(id);
+      return;
+    }
+    if (isDirectLongUrl(raw)) {
+      location.href = raw.trim();
+      return;
+    }
+    /* Не распознали — лёгкая встряска input. */
+    shake($('pasteRow'));
+    $('urlInput').focus();
+    $('urlInput').select();
+  }
+
+  function pasteFromClipboard() {
+    var input = $('urlInput');
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText()
+        .then(function (text) {
+          input.value = (text || '').trim();
+          input.focus();
+        })
+        .catch(function () {
+          /* Permission denied или не поддерживается — фокусируем input,
+             юзер может вставить руками через Cmd+V. */
+          input.focus();
+        });
+    } else {
+      input.focus();
+    }
+  }
+
+  function bindErrorUI() {
+    $('pasteBtn').addEventListener('click', pasteFromClipboard);
+    $('openBtn').addEventListener('click', tryOpen);
+    $('urlInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') tryOpen();
+    });
+  }
+
+  /* ───── Основной сценарий ───── */
+
+  function fetchPayload(id) {
+    var url = WEBAPP_URL + '?id=' + encodeURIComponent(id);
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS);
+    return fetch(url, { signal: ctrl.signal })
+      .then(function (r) {
+        clearTimeout(timer);
+        if (!r.ok) throw new Error('http_' + r.status);
+        return r.json();
+      });
+  }
+
+  function validId(id) { return id && /^[A-Za-z0-9]{1,12}$/.test(id); }
+
+  async function run() {
+    bindErrorUI();
+
+    var id = new URLSearchParams(location.search).get('id');
+    if (!validId(id)) {
+      showError('Ссылка не работает', 'Уточните ссылку и попробуйте снова');
+      return;
+    }
+
+    createLamellae();
+
+    var line1 = $('line1');
+    var line2 = $('line2');
+    var line3 = $('line3');
+
+    line1.textContent = TEXTS.phase1;
+    setTimeout(function () { line1.classList.add('on'); }, 600);
+
+    var startTime = Date.now();
+    var data;
+    try {
+      data = await fetchPayload(id);
+    } catch (e) {
+      showError('Ссылка не работает', 'Уточните ссылку и попробуйте снова');
+      return;
+    }
+
+    if (!data) {
+      showError('Ссылка не работает', 'Уточните ссылку и попробуйте снова');
+      return;
+    }
+    if (data.error === 'not_found') {
+      showError('Ссылка не работает', 'Уточните ссылку и попробуйте снова');
+      return;
+    }
+    if (data.error || !data.payload) {
+      showError('Ссылка не работает', 'Уточните ссылку и попробуйте снова');
+      return;
+    }
+
+    var type = data.type === 'fx' ? 'fx' : 's';
+
+    var elapsed = Date.now() - startTime;
+    if (elapsed < MIN_PHASE_1) await sleep(MIN_PHASE_1 - elapsed);
+
+    line1.classList.remove('on');
+    line2.textContent = (type === 'fx') ? TEXTS.phase2_fx : TEXTS.phase2_s;
+    line2.classList.add('on');
+    await sleep(PHASE_2_HOLD);
+
+    line2.classList.remove('on');
+    line3.textContent = TEXTS.phase3;
+    line3.classList.add('on');
+    await sleep(PHASE_3_HOLD);
+
+    /* Плавный переход к конфигуратору: fade-out стейджа + кратковременный
+       hold на полностью чёрном фоне (даём VitePress время инициализироваться
+       без вспышки). Общая длительность 800мс fade + 250мс hold = 1.05 сек. */
+    var stage = $('stage');
+    stage.style.transition = 'opacity 0.8s ease-out';
+    stage.style.opacity = '0';
+    /* Подстраховка: фиксируем чёрный body на случай если VitePress
+       при инициализации применит другой background. */
+    document.body.style.background = 'var(--bg)';
+    await sleep(800);
+    await sleep(250);
+
+    /* Редирект — replace, чтобы /share/ не оставался в истории. */
+    var target = CUSTOMIZER_PATH + '#' + type + '=2.' + data.payload;
+    location.replace(target);
+  }
+
+  run();
+})();
+</script>
+
+</body>
+</html>

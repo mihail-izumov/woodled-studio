@@ -21,11 +21,17 @@ const LOGO_URL = '/woodled-studio/customizer/woodled-logo.svg'
       opacity: 0.55,
     }"
   >
-    <div
+    <a
+      href="/woodled-studio/"
+      target="_blank"
+      rel="noopener"
+      aria-label="WOODLED — на главную"
       :style="{
         /* batch11 #8 v2 (#5): лого ×2 минус 30% = ×1.4 */
+        display: 'block',
         width: '182px',
         height: '31px',
+        cursor: 'pointer',
         background: T.neutral,
         maskImage: `url(${LOGO_URL})`,
         maskSize: 'contain',

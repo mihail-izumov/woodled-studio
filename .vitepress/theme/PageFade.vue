@@ -8,20 +8,29 @@
 import { ref } from 'vue'
 import { useRouter } from 'vitepress'
 
+// Гарантированное время показа чёрного оверлея (мс). Даже если новая
+// страница загрузилась мгновенно — затемнение держится не меньше этого,
+// чтобы переход было видно. Если страница грузится дольше — дождётся её.
+const MIN_BLACK_MS = 1200
+
 const active = ref(false)
 const router = useRouter()
 
 if (typeof window !== 'undefined') {
+  let shownAt = 0
+
   const prevBefore = router.onBeforeRouteChange
   router.onBeforeRouteChange = (to) => {
     active.value = true
+    shownAt = Date.now()
     return prevBefore ? prevBefore.call(router, to) : undefined
   }
 
   const prevAfter = router.onAfterRouteChanged
   router.onAfterRouteChanged = (to) => {
-    // подержать чёрный поверх момента подмены контента, затем плавно убрать
-    window.setTimeout(() => { active.value = false }, 260)
+    // держим чёрный минимум MIN_BLACK_MS от момента появления оверлея
+    const wait = Math.max(MIN_BLACK_MS - (Date.now() - shownAt), 0)
+    window.setTimeout(() => { active.value = false }, wait)
     return prevAfter ? prevAfter.call(router, to) : undefined
   }
 }
@@ -60,9 +69,9 @@ if (typeof window !== 'undefined') {
 /* ротор виден только когда оверлей активен */
 .wd-rotor {
   position: relative;
-  width: 60px;
-  height: 60px;
-  font-size: 28px;
+  width: 120px;
+  height: 120px;
+  font-size: 56px;
   opacity: 0;
   transition: opacity 0.2s ease 0.06s;
 }
@@ -74,15 +83,15 @@ if (typeof window !== 'undefined') {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 2.6px;
-  height: 15px;
-  margin-top: -7.5px;
-  margin-left: -1.3px;
-  border-radius: 1.3px;
+  width: 5.2px;
+  height: 30px;
+  margin-top: -15px;
+  margin-left: -2.6px;
+  border-radius: 2.6px;
   background: #E0C882;
   transform-origin: 50% 50%;
   transform: rotate(var(--rot)) translateY(-0.55em);
-  animation: wdRotorCycle 2400ms ease-in-out infinite;
+  animation: wdRotorCycle 1200ms ease-in-out infinite;
   opacity: 0;
 }
 

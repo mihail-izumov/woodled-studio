@@ -5,20 +5,27 @@
  * (та же механика, что и загрузчик иконки на лендинге), затем плавно
  * раскрывается новая страница.
  */
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vitepress'
 
-// Гарантированное время показа чёрного оверлея (мс). Даже если новая
-// страница загрузилась мгновенно — затемнение держится не меньше этого,
-// чтобы переход было видно. Если страница грузится дольше — дождётся её.
+// Сколько держим чёрный оверлей (мс) — гарантированное время показа перехода.
 const MIN_BLACK_MS = 1200
 
-const active = ref(false)
+// Старт со включённым оверлеем: страница ВСЕГДА проявляется из чёрного при
+// загрузке. Это работает и при SPA-переходах, и при полной перезагрузке
+// (например window.location.href на /customizer), где SPA-хуки не срабатывают.
+const active = ref(true)
 const router = useRouter()
+let shownAt = 0
+
+// Вход: после монтирования подержать чёрный и плавно раскрыть страницу.
+onMounted(() => {
+  shownAt = Date.now()
+  window.setTimeout(() => { active.value = false }, MIN_BLACK_MS)
+})
 
 if (typeof window !== 'undefined') {
-  let shownAt = 0
-
+  // Выход (для SPA-переходов): затемнить перед сменой маршрута.
   const prevBefore = router.onBeforeRouteChange
   router.onBeforeRouteChange = (to) => {
     active.value = true
@@ -28,7 +35,6 @@ if (typeof window !== 'undefined') {
 
   const prevAfter = router.onAfterRouteChanged
   router.onAfterRouteChanged = (to) => {
-    // держим чёрный минимум MIN_BLACK_MS от момента появления оверлея
     const wait = Math.max(MIN_BLACK_MS - (Date.now() - shownAt), 0)
     window.setTimeout(() => { active.value = false }, wait)
     return prevAfter ? prevAfter.call(router, to) : undefined
@@ -64,6 +70,7 @@ if (typeof window !== 'undefined') {
 }
 .wd-fade.is-on {
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* ротор виден только когда оверлей активен */

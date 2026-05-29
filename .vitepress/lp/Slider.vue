@@ -5,7 +5,7 @@ import { PAGE } from './tokens'
 const total = 9
 const duration = 5000
 
-// Real images live in /public/lp/wdld-lp-slider-{1..9}.jpg
+// Real images live in /public/woodled-studio/lp/wdld-lp-slider-{1..9}.jpg
 // Per-slide loaded flag — drives shimmer-to-image crossfade.
 const loaded = ref<boolean[]>(new Array(total).fill(false))
 function handleImgLoad(i: number) { loaded.value[i] = true }
@@ -226,7 +226,7 @@ function togglePlay() {
 
             <!-- Real image — fades in on @load -->
             <img
-              :src="`/lp/wdld-lp-slider-${i + 1}.jpg`"
+              :src="`/woodled-studio/lp/wdld-lp-slider-${i + 1}.jpg`"
               :alt="`Слайд ${i + 1}`"
               loading="lazy"
               decoding="async"

@@ -17,7 +17,7 @@
 import { ref } from 'vue'
 import { PAGE } from './tokens'
 
-const COVER_URL = '/og-cover.png'
+const COVER_URL = '/woodled-studio/og-cover.png'
 const loaded = ref(false)
 </script>
 

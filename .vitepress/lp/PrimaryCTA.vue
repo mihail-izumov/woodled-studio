@@ -48,18 +48,11 @@ onBeforeUnmount(() => {
 })
 
 function handleClick() {
-  if (isTransitioning.value) return
   if (typeof window === 'undefined') return
-
-  isTransitioning.value = true
-  if (typeof document !== 'undefined') {
-    // Lock scroll so the overlay stays put while the redirect is in flight.
-    document.body.style.overflow = 'hidden'
-  }
-
-  redirectTimer = setTimeout(() => {
-    window.location.href = '/woodled-studio/onboarding'
-  }, 700)
+  // Переход сразу: затемнение обеспечивает глобальный PageFade на самой
+  // странице онбординга (+ её листовой splash). Собственный персиковый
+  // оверлей больше не нужен — убираем дубль.
+  window.location.href = '/woodled-studio/onboarding'
 }
 </script>
 

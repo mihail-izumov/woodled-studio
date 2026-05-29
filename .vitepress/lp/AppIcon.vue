@@ -38,7 +38,7 @@ const loaded = ref(false)
       keyframe to the right pixel radius for this size.
     -->
     <div
-      v-show="!loaded"
+      v-show="false"
       :style="{
         position: 'absolute',
         top: '50%',

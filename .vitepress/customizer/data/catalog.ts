@@ -262,7 +262,7 @@ export const ALL_ZONES: readonly Zone[] = [
   { id: 'ceiling', name: 'Потолок', models: ['rotor_s', 'rotor_m', 'rotor_l', 'rotor_1000', 'rotor_x_m', 'rotor_x_l', 'elliptical_s', 'elliptical_l', 'spot_s', 'spot_l'], ghost: 'ceiling' },
   { id: 'wall', name: 'Стены', models: ['unit', 'bra_h', 'bra_v_s', 'bra_v_l'], ghost: 'bra' },
   { id: 'floor', name: 'Пол', models: ['floor_lamp', 'floor_lamp_s'], ghost: 'floor' },
-  { id: 'table', name: 'Стол', models: ['table_lamp'], ghost: 'table' },
+  { id: 'table', name: 'Мебель', models: ['table_lamp'], ghost: 'table' },
 ] as const
 
 /* ──────────────── Fixture ──────────────── */

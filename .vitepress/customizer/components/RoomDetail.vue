@@ -41,6 +41,7 @@ import FurnitureBlock from './FurnitureBlock.vue'
 import Footer from './Footer.vue'
 import RoomSettings from './RoomSettings.vue'
 import AddFxModal from './AddFxModal.vue'
+import ZoneFixturesModal from './ZoneFixturesModal.vue'
 
 /* Фотогалерея «Ваш свет в интерьере» / «С похожим набором» */
 import GallerySection from './gallery/GallerySection.vue'
@@ -129,9 +130,24 @@ function handleSettingsSave(updated: Room, toast?: string) {
 }
 
 const addZone = ref<ZoneId | null>(null)
+const openZoneId = ref<ZoneId | null>(null)
 const showSettings = ref(false)
 const confirmDel = ref(false)
 const showSmartHelp = ref(false)
+
+/* Зона, открытая в ZoneFixturesModal (объект для модалки). */
+const openZone = computed(() => zones.value.find((z) => z.id === openZoneId.value) ?? null)
+function zoneLimit(zId: ZoneId): number {
+  return (props.room.limits ?? rt.value.limits)?.[zId] ?? 99
+}
+
+/* Счётчик точек по комнате: подключено / всего. */
+const ptsUsed = computed(() =>
+  zones.value.reduce((s, z) => s + zoneFxCount(props.room.fixtures, z.id), 0),
+)
+const ptsLimit = computed(() =>
+  zones.value.reduce((s, z) => s + zoneLimit(z.id), 0),
+)
 
 const smartLine = computed(() => {
   const r = ratio.value
@@ -148,7 +164,7 @@ function onLimitHit(zId: ZoneId) {
   const zName = ALL_ZONES.find((z) => z.id === zId)?.name ?? zId
   emit(
     'feedback',
-    `${zName}: все ${limit} ${pw(limit)} заняты. Добавьте точки в настройках комнаты →`,
+    `${zName}: все ${limit} ${pw(limit)} заняты. Удалите светильник или увеличьте лимит в параметрах комнаты →`,
   )
 }
 
@@ -352,6 +368,15 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
         </div>
       </div>
 
+      <!-- Заголовок «Светильники» + счётчик точек комнаты -->
+      <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 4px 12px' }">
+        <span :style="{ fontSize: '17px', fontWeight: 700, color: T.text }">Светильники</span>
+        <span :style="{ padding: '6px 12px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', fontSize: '15px' }">
+          <span :style="{ fontWeight: 700, color: T.text }">{{ ptsUsed }}</span>
+          <span :style="{ fontWeight: 400, color: T.textSec }"> из {{ ptsLimit }}</span>
+        </span>
+      </div>
+
       <!-- Glow wrapper + 2×2 зоны -->
       <div
         :style="{
@@ -397,6 +422,7 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
             @add="addZone = zone.id"
             @edit="(idx) => emit('openFx', props.room.id, idx)"
             @limit-hit="onLimitHit(zone.id)"
+            @open="openZoneId = zone.id"
           />
         </div>
       </div>
@@ -494,6 +520,17 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
       :room-name="props.room.customName || rt.name"
       @add="(fx) => { addFx(fx); addZone = null }"
       @close="addZone = null"
+    />
+
+    <ZoneFixturesModal
+      v-if="openZone"
+      :zone="openZone"
+      :fixtures="props.room.fixtures"
+      :limit="zoneLimit(openZone.id)"
+      :total-lm="actual"
+      @edit="(idx) => { openZoneId = null; emit('openFx', props.room.id, idx) }"
+      @open-params="() => { openZoneId = null; showSettings = true }"
+      @close="openZoneId = null"
     />
 
     <Modal v-if="confirmDel" @close="confirmDel = false">

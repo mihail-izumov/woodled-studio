@@ -58,7 +58,7 @@ const glowZones: [string, string, string][] = [
   ['ceiling', 'Потолок', '30% 25%'],
   ['wall', 'Стены', '70% 25%'],
   ['floor', 'Пол', '30% 75%'],
-  ['table', 'Стол', '70% 75%'],
+  ['table', 'Мебель', '70% 75%'],
 ]
 
 function zoneGlowAlpha(zoneId: string): string {

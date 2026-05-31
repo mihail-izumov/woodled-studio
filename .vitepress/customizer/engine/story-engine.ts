@@ -267,7 +267,7 @@ function zoneSubtitle(zoneShareFn: (zid: 'ceiling' | 'wall' | 'floor' | 'table')
   }
 
   const zones: [string, number][] = [
-    ['Потолок', c], ['Стены', w], ['Пол', f], ['Стол', t],
+    ['Потолок', c], ['Стены', w], ['Пол', f], ['Мебель', t],
   ]
   const top = zones.sort((a, b) => b[1] - a[1])[0]
   return `${top[0]} — основной источник`

@@ -123,8 +123,8 @@ function orbStyle(wood: Wood, size = 15) {
       background: `radial-gradient(ellipse 90% 70% at 20% 0%, rgba(255,255,255,0.09), transparent 62%), radial-gradient(ellipse 70% 60% at 100% 100%, ${accent}1f, transparent 70%), rgba(255,255,255,0.022)`,
       backdropFilter: 'blur(14px)',
       WebkitBackdropFilter: 'blur(14px)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 20px rgba(0,0,0,0.28)',
+      border: '1px solid rgba(255,255,255,0.14)',
+      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.09), 0 4px 20px rgba(0,0,0,0.28)',
     }"
   >
     <!-- Шапка -->

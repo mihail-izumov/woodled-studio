@@ -89,10 +89,10 @@ function onAdd() {
   if (full.value) emit('limitHit')
   else emit('add')
 }
-function onRow(_g: FxGroup) {
-  // Любой тап по строке открывает модалку зоны
-  // (исправляет ложные тапы при скролле списка на мобильных).
-  emit('open')
+function onRow(g: FxGroup) {
+  // Клик по модели открывает страницу светильника (первого в группе).
+  // Список всех — через нижнюю плашку (emit('open')).
+  emit('edit', g.entries[0]._idx)
 }
 function orbStyle(wood: Wood, size = 15) {
   const color = WCOL[wood]
@@ -145,11 +145,11 @@ function orbStyle(wood: Wood, size = 15) {
       <button
         :aria-label="full ? 'Лимит точек достигнут' : 'Добавить свет'"
         :style="full
-          ? { width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
-          : { width: '34px', height: '34px', borderRadius: '50%', background: `radial-gradient(circle at 32% 26%, rgba(255,255,255,0.45), transparent 55%), ${accent}29`, border: `1px solid ${accent}66`, boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -2px 4px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }"
+          ? { width: '34px', height: '34px', borderRadius: '50%', background: accent + '14', border: `1px solid ${accent}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
+          : { width: '34px', height: '34px', borderRadius: '50%', background: `${accent}29`, border: `1px solid ${accent}66`, boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.18), inset 0 -1px 2px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.22)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }"
         @click.stop="onAdd"
       >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="full ? T.textSec : accent" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="full ? accent + '80' : accent" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block' }"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
       </button>
     </div>
 

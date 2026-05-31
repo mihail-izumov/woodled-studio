@@ -144,7 +144,7 @@ function onResetConfirm() { cfg.resetAll(); showResetConfirm.value = false }
 function onResetCancel() { showResetConfirm.value = false }
 function onSaveShareLink() { cfg.showShare.value = true }
 
-const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value)
+const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value)
 
 watch(() => [cfg.active.value, cfg.activeFx.value, cfg.welcomeSeen.value, cfg.showBuy.value], () => { nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' })) })
 

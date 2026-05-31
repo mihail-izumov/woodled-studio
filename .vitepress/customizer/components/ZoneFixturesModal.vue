@@ -202,10 +202,10 @@ function orbStyle(wood: Wood, size = 13) {
           }"
           @click="emit('add')"
         >
-          <span :style="{ width: '40px', height: '40px', borderRadius: '50%', background: '#A8895A', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
-          </span>
-          <span :style="{ fontSize: '13px', fontWeight: 600, color: '#A8895A' }">Добавить</span>
+          <div :style="{ width: '40px', height: '40px', borderRadius: '50%', background: '#A8895A', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block' }"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+          </div>
+          <div :style="{ fontSize: '13px', fontWeight: 600, color: '#A8895A' }">Добавить</div>
         </button>
         <div
           v-else

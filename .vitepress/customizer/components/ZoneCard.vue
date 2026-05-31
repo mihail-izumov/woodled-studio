@@ -145,7 +145,7 @@ function orbStyle(wood: Wood, size = 15) {
       <button
         :aria-label="full ? 'Лимит точек достигнут' : 'Добавить свет'"
         :style="full
-          ? { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(rgba(19,17,14,0.5), rgba(19,17,14,0.5)), ${accent}`, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
+          ? { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(rgba(19,17,14,0.72), rgba(19,17,14,0.72)), ${accent}`, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
           : { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}38, ${accent}38), ${T.card}`, border: `1px solid ${accent}66`, boxShadow: `inset 0 0 10px ${accent}66, inset 0 1px 1px rgba(255,255,255,0.25), 0 2px 7px rgba(0,0,0,0.32)`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }"
         @click.stop="onAdd"
       >

@@ -108,6 +108,8 @@ const showShare = ref(false)
  * не трогая видимость на самом RoomDetail.
  */
 const showRoomSettings = ref(false)
+/** Открыта модалка деталей зоны (ZoneFixturesModal) — скрывает StickyBar. */
+const showZoneModal = ref(false)
 
 const fb = ref<string | null>(null)
 
@@ -330,6 +332,7 @@ function resetAll(): void {
   showName.value = false
   showMoodDetail.value = null
   showRoomSettings.value = false
+  showZoneModal.value = false
   picker.value = false
   if (typeof window !== 'undefined') {
     try {
@@ -353,6 +356,7 @@ export function useConfigurator() {
     showBuy,
     showShare,
     showRoomSettings,
+    showZoneModal,
     fb,
     discountFx,
     activeFx,

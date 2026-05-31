@@ -14,12 +14,13 @@
  * Это отдельный компонент — дизайн правится здесь, не трогая ZoneCard.
  */
 
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { Z } from '../theme/tokens'
 import { MD, type Fixture, type Zone } from '../data/catalog'
 import { MATS, WCOL, type Wood } from '../data/materials'
 import { zoneLm, zoneFxCount } from '../engine/zone-engine'
 import { pw } from '../engine/i18n'
+import { useConfigurator } from '../store/configurator'
 import Icon, { fxIcName } from './ui/Icons.vue'
 
 interface Props {
@@ -32,8 +33,26 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
   edit: [fxIdx: number]
+  add: []
   openParams: []
 }>()
+
+/* Скрываем StickyBar + лочим скролл фона (как RoomSettings/Modal). */
+const cfg = useConfigurator()
+let prevBodyOverflow = ''
+let prevHtmlOverflow = ''
+onMounted(() => {
+  prevBodyOverflow = document.body.style.overflow
+  prevHtmlOverflow = document.documentElement.style.overflow
+  document.body.style.overflow = 'hidden'
+  document.documentElement.style.overflow = 'hidden'
+  cfg.showZoneModal.value = true
+})
+onUnmounted(() => {
+  document.body.style.overflow = prevBodyOverflow
+  document.documentElement.style.overflow = prevHtmlOverflow
+  cfg.showZoneModal.value = false
+})
 
 /* Светлая палитра модалки (намеренно белая — контраст к тёмному приложению). */
 const L = {
@@ -146,11 +165,8 @@ function orbStyle(wood: Wood, size = 13) {
         </div>
       </div>
 
-      <!-- Светильники поштучно, 2 колонки -->
-      <div
-        v-if="zFx.length > 0"
-        :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '18px 20px 8px' }"
-      >
+      <!-- Светильники поштучно, 2 колонки + карточка «Добавить» -->
+      <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '18px 20px 8px' }">
         <div
           v-for="it in zFx"
           :key="it._idx"
@@ -175,9 +191,32 @@ function orbStyle(wood: Wood, size = 13) {
             </div>
           </div>
         </div>
-      </div>
-      <div v-else :style="{ padding: '24px 20px 8px', textAlign: 'center', color: L.textSec, fontSize: '13px' }">
-        Пока нет светильников — нажмите «+», чтобы добавить.
+
+        <!-- Карточка добавления / лимит -->
+        <button
+          v-if="!full"
+          :style="{
+            border: '1.5px dashed #A8895A', borderRadius: '16px', padding: '16px', minHeight: '118px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            background: '#A8895A0c', cursor: 'pointer', fontFamily: 'inherit',
+          }"
+          @click="emit('add')"
+        >
+          <span :style="{ width: '40px', height: '40px', borderRadius: '50%', background: '#A8895A', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+          </span>
+          <span :style="{ fontSize: '13px', fontWeight: 600, color: '#A8895A' }">Добавить</span>
+        </button>
+        <div
+          v-else
+          :style="{
+            border: `1.5px solid ${L.border}`, borderRadius: '16px', padding: '16px', minHeight: '118px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: L.muted,
+          }"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" :stroke="L.textSec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+          <span :style="{ fontSize: '12px', color: L.textSec, textAlign: 'center' }">Лимит {{ limit }}/{{ limit }}</span>
+        </div>
       </div>
 
       <!-- Точки подключения -->

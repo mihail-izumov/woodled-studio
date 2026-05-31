@@ -159,13 +159,15 @@ const smartLine = computed(() => {
   return `${rx} — уберите лишнее или диммер`
 })
 
+/* Подсказка о лимите точек — по центру экрана (а не нижним тостом). */
+const limitTip = ref<string | null>(null)
+let limitTimer: ReturnType<typeof setTimeout> | undefined
 function onLimitHit(zId: ZoneId) {
   const limit = (props.room.limits ?? rt.value.limits)?.[zId] ?? 99
   const zName = ALL_ZONES.find((z) => z.id === zId)?.name ?? zId
-  emit(
-    'feedback',
-    `${zName}: все ${limit} ${pw(limit)} заняты. Удалите светильник или увеличьте лимит в параметрах комнаты →`,
-  )
+  limitTip.value = `${zName}: все ${limit} ${pw(limit)} заняты. Удалите светильник или увеличьте лимит в параметрах комнаты.`
+  if (limitTimer) clearTimeout(limitTimer)
+  limitTimer = setTimeout(() => { limitTip.value = null }, 3500)
 }
 
 function onFurnToggle(next: string[], toast: string) {
@@ -384,7 +386,7 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
           marginBottom: '16px',
           background: tintedMood.color + '06',
           borderRadius: '16px',
-          border: `1px solid ${tintedMood.color}15`,
+          border: `1px solid ${tintedMood.color}33`,
           padding: '8px',
         }"
       >
@@ -529,9 +531,24 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
       :limit="zoneLimit(openZone.id)"
       :total-lm="actual"
       @edit="(idx) => { openZoneId = null; emit('openFx', props.room.id, idx) }"
+      @add="() => { const zid = openZoneId; openZoneId = null; addZone = zid }"
       @open-params="() => { openZoneId = null; showSettings = true }"
       @close="openZoneId = null"
     />
+
+    <!-- Подсказка о лимите точек — по центру экрана -->
+    <div
+      v-if="limitTip"
+      :style="{ position: 'fixed', inset: 0, zIndex: Z.toast, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', padding: '24px' }"
+    >
+      <div
+        :style="{ pointerEvents: 'auto', maxWidth: '300px', background: '#231E17', border: `1px solid ${tintedMood.color}44`, borderRadius: '14px', padding: '16px 18px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'flex-start' }"
+        @click="limitTip = null"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="tintedMood.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0, marginTop: '1px' }"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+        <span :style="{ fontSize: '13px', color: T.text, lineHeight: 1.45 }">{{ limitTip }}</span>
+      </div>
+    </div>
 
     <Modal v-if="confirmDel" @close="confirmDel = false">
       <div :style="{ padding: '20px', textAlign: 'center' }">

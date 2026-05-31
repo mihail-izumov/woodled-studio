@@ -120,7 +120,8 @@ const stickyVisible = computed(() =>
   && !cfg.showBuy.value
   && !cfg.activeFx.value
   && !cfg.showMoodDetail.value
-  && !cfg.showRoomSettings.value,
+  && !cfg.showRoomSettings.value
+  && !cfg.showZoneModal.value,
 )
 
 function onPromoClick() { cfg.showBuy.value = true }

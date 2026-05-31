@@ -145,11 +145,11 @@ function orbStyle(wood: Wood, size = 15) {
       <button
         :aria-label="full ? 'Лимит точек достигнут' : 'Добавить свет'"
         :style="full
-          ? { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}1f, ${accent}1f), #322C24`, border: `1px solid ${accent}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
+          ? { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}2b, ${accent}2b), linear-gradient(180deg, #3A332A, #241E18)`, border: `1px solid ${accent}66`, boxShadow: `inset 0 1px 1px rgba(255,255,255,0.13), inset 0 -2px 5px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.4)`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
           : { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}38, ${accent}38), ${T.card}`, border: `1px solid ${accent}66`, boxShadow: `inset 0 0 10px ${accent}66, inset 0 1px 1px rgba(255,255,255,0.25), 0 2px 7px rgba(0,0,0,0.32)`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }"
         @click.stop="onAdd"
       >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="full ? T.textSec : '#F4ECDD'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block', filter: full ? 'none' : 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.5))' }"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="full ? '#B0A698' : '#F4ECDD'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block', filter: full ? 'none' : 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.5))' }"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
       </button>
     </div>
 

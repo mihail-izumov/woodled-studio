@@ -145,11 +145,12 @@ function orbStyle(wood: Wood, size = 15) {
       <button
         :aria-label="full ? 'Лимит точек достигнут' : 'Добавить свет'"
         :style="full
-          ? { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}12, ${accent}12), linear-gradient(180deg, #3E372D, #1E1813)`, border: `1px solid ${accent}40`, boxShadow: `inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -2px 5px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4)`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
+          ? { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}2b, ${accent}2b), ${T.card}`, border: `1px solid ${accent}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }
           : { width: '34px', height: '34px', borderRadius: '50%', background: `linear-gradient(${accent}38, ${accent}38), ${T.card}`, border: `1px solid ${accent}66`, boxShadow: `inset 0 0 10px ${accent}66, inset 0 1px 1px rgba(255,255,255,0.25), 0 2px 7px rgba(0,0,0,0.32)`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }"
         @click.stop="onAdd"
       >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="full ? '#1A150F' : '#F4ECDD'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block', filter: full ? 'none' : 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.5))' }"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        <svg v-if="full" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9C9286" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block' }"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+        <svg v-else width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#F4ECDD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="{ display: 'block', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.5))' }"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
       </button>
     </div>
 

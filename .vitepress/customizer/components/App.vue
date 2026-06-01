@@ -130,9 +130,13 @@ function onDeleteRoom() { if (activeRoom.value) cfg.removeRoom(activeRoom.value.
 function onCloseRoom() { cfg.active.value = null }
 function onBuyEditFx(roomId: string, fxIdx: number, next: Fixture | null) { if (next === null) cfg.removeFixture(roomId, fxIdx); else cfg.updateFixture(roomId, fxIdx, next) }
 function onBuyClose() { cfg.showBuy.value = false; cfg.active.value = null }
-function onFxSave(next: Fixture) { const af = cfg.activeFx.value; if (!af) return; cfg.updateFixture(af.roomId, af.fxIdx, next); cfg.showFB('Светильник сохранён'); cfg.closeFx() }
-function onFxDelete() { const af = cfg.activeFx.value; if (!af) return; cfg.removeFixture(af.roomId, af.fxIdx); cfg.closeFx(); cfg.showFB('Светильник удалён') }
-function onFxClose() { cfg.closeFx() }
+/* Провизорный светильник: свежедобавленный через быстрое добавление. Пока
+   не нажата «Сохранить» — он условный. Стрелка назад (close) удаляет его. */
+const fxIsProvisional = ref(false)
+function onOpenFx(roomId: string, fxIdx: number, isNew = false) { fxIsProvisional.value = !!isNew; cfg.openFx(roomId, fxIdx) }
+function onFxSave(next: Fixture) { const af = cfg.activeFx.value; if (!af) return; cfg.updateFixture(af.roomId, af.fxIdx, next); fxIsProvisional.value = false; cfg.showFB('Светильник сохранён'); cfg.closeFx() }
+function onFxDelete() { const af = cfg.activeFx.value; if (!af) return; cfg.removeFixture(af.roomId, af.fxIdx); fxIsProvisional.value = false; cfg.closeFx(); cfg.showFB('Светильник удалён') }
+function onFxClose() { const af = cfg.activeFx.value; if (fxIsProvisional.value && af) cfg.removeFixture(af.roomId, af.fxIdx); fxIsProvisional.value = false; cfg.closeFx() }
 
 const colorPickRoom = ref<Room | null>(null)
 function onPickColor(room: Room) { colorPickRoom.value = room }
@@ -182,7 +186,7 @@ function onGalleryGiftClick() {
   </template>
 
   <template v-else-if="activeRoom">
-    <RoomDetail :room="activeRoom" @update="onEditRoom" @delete="onDeleteRoom" @close="onCloseRoom" @feedback="cfg.showFB" @open-fx="(roomId, fxIdx) => cfg.openFx(roomId, fxIdx)" />
+    <RoomDetail :room="activeRoom" @update="onEditRoom" @delete="onDeleteRoom" @close="onCloseRoom" @feedback="cfg.showFB" @open-fx="(roomId, fxIdx, isNew) => onOpenFx(roomId, fxIdx, isNew)" />
   </template>
 
   <template v-else-if="!cfg.welcomeSeen.value">

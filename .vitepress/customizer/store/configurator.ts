@@ -236,6 +236,10 @@ function loadFromHash(): boolean {
 
 const WELCOME_KEY = 'woodled.welcomeSeen'
 const DASHBOARD_TOUR_KEY = 'woodled.dashboardTourSeen'
+/** Прошёл ли пользователь пошаговый «Гид по сборке» хотя бы раз
+ *  (или сохранил/закрыл первый светильник). Пока false — на первом
+ *  новом светильнике показываем заметную плашку-CTA гида; потом — тихую ссылку. */
+const ONBOARDED_KEY = 'woodled.onboardedOnce'
 
 function shouldForceWelcome(): boolean {
   if (typeof window === 'undefined') return false
@@ -258,6 +262,20 @@ function markDashboardTourSeen(): void {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(DASHBOARD_TOUR_KEY, 'true')
+    } catch {}
+  }
+}
+
+const onboardedOnce = ref<boolean>(
+  typeof window !== 'undefined'
+    && localStorage.getItem(ONBOARDED_KEY) === 'true',
+)
+
+function markOnboardedOnce(): void {
+  onboardedOnce.value = true
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(ONBOARDED_KEY, 'true')
     } catch {}
   }
 }
@@ -323,6 +341,7 @@ function resetAll(): void {
   rooms.splice(0, rooms.length)
   welcomeSeen.value = false
   dashboardTourSeen.value = false
+  onboardedOnce.value = false
   active.value = null
   activeFx.value = null
   showBuy.value = false
@@ -338,6 +357,7 @@ function resetAll(): void {
     try {
       localStorage.removeItem(WELCOME_KEY)
       localStorage.removeItem(DASHBOARD_TOUR_KEY)
+      localStorage.removeItem(ONBOARDED_KEY)
       localStorage.removeItem(STATE_KEY)
     } catch {}
   }
@@ -383,6 +403,8 @@ export function useConfigurator() {
     resetAll,
     dashboardTourSeen,
     markDashboardTourSeen,
+    onboardedOnce,
+    markOnboardedOnce,
     persistState,
     restorePersistedState,
     clearPersistedState,

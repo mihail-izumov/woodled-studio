@@ -56,7 +56,7 @@ const emit = defineEmits<{
   delete: []
   close: []
   feedback: [msg: string]
-  openFx: [roomId: string, fxIdx: number]
+  openFx: [roomId: string, fxIdx: number, isNew?: boolean]
 }>()
 
 const cfg = useConfigurator()
@@ -116,7 +116,8 @@ function addFx(fx: Fixture) {
   const newIdx = newFixtures.length - 1
   emit('update', { ...props.room, fixtures: newFixtures })
   emit('feedback', `${MD[fx.m]?.name} добавлен`)
-  emit('openFx', props.room.id, newIdx)
+  /* isNew=true → светильник провизорный: «Сохранить» оставит, стрелка назад удалит. */
+  emit('openFx', props.room.id, newIdx, true)
 }
 
 /**

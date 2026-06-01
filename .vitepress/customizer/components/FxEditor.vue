@@ -73,8 +73,11 @@ const hasExistingOpts = !!(props.item.opts && Object.keys(props.item.opts).lengt
 const existingDone = props.item.done ?? []
 const legacyAllDone = hasExistingOpts && existingDone.length === 0
 const isNewFixture = !hasExistingOpts && existingDone.length === 0
-const inOnboarding = ref(isNewFixture)
-const view = ref<'steps'|'summary'>(isNewFixture ? 'steps' : 'summary')
+/* Быстрое добавление: новый светильник открывается СРАЗУ на сводке (дефолты
+   уже применены), а не в принудительном пошаговом онбординге. Пошаговый «Гид
+   по сборке» доступен по кнопке внутри блока «Комплектация» (launchGuided). */
+const inOnboarding = ref(false)
+const view = ref<'steps'|'summary'>('summary')
 const showHelp = ref(false)
 const showDeleteConfirm = ref(false)
 const touched = ref(new Set<StepId>())
@@ -180,11 +183,15 @@ function selectBestForMe(){const best=recommendedMid.value;if(!best)return;mid.v
 function upBuild(patch:Partial<Build>){const cur=build.value;const isNoChange=Object.entries(patch).every(([k,v])=>cur[k as keyof Build]===v);build.value={...cur,...patch};const cs=curStep.value;if(isNoChange&&touched.value.has(cs)){const next=new Set(touched.value);next.delete(cs);touched.value=next}else{touched.value=new Set([...touched.value,cs])}}
 function doCommit(isChoice:boolean){build.value={...build.value,steps:{...build.value.steps,[curStep.value]:isChoice?'chosen':'default'}};touched.value=new Set([...touched.value].filter(x=>x!==curStep.value));if(canAdvance.value){stepIdx.value++}else{view.value='summary';inOnboarding.value=false}}
 function goToStep(i:number){stepIdx.value=i;view.value='steps'}
+/* Запуск пошагового гида с самого начала (последовательный walk-through). */
+function launchGuided(){cfg.markOnboardedOnce();stepIdx.value=0;inOnboarding.value=true;view.value='steps'}
+/* Заметная плашка-CTA гида — только на самом первом новом светильнике. */
+const showGuidedCTA=computed(()=>!cfg.onboardedOnce.value&&isNewFixture)
 function backFromStep(){if(inOnboarding.value&&stepIdx.value>0){stepIdx.value--}else{view.value='summary';inOnboarding.value=false}}
 function lampOpts():number[]{const r:number[]=[];for(let i=model.value.minL;i<=model.value.maxL;i++)r.push(i);return r}
 function diffMult():number{return build.value.diffuser&&model.value.diffLoss?1-model.value.diffLoss:1}
 function buildFixture():Fixture{const b=build.value;const done=(Object.entries(b.steps) as [StepId,StepStatus][]).filter(([,st])=>st==='chosen').map(([s])=>s as string);return{m:b.m,q:props.item.q??1,wood:b.wood,zone:props.item.zone,l:b.lamps,opts:{bowl:b.bowl,mount:b.mount,wire:b.wire,btemp:b.btemp,diffuser:b.diffuser,moisture:b.moisture,bulbs:b.bulbs,bulbOpt:b.bulbOpt,baseColor:b.baseColor},done}}
-function doSave(){emit('save',buildFixture())}
+function doSave(){cfg.markOnboardedOnce();emit('save',buildFixture())}
 
 /* ─────────── stage3-shortener: единая модалка ShareModal ───────────
    Кнопка «Поделиться» открывает модалку — там встроены prefetch, ClipboardItem,
@@ -248,13 +255,30 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
             </div>
           </div>
         </div>
-        <div :style="{background:T.card,border:`1px solid ${T.border}`,borderRadius:'10px',padding:'14px',marginBottom:'16px'}">
-          <div :style="{display:'flex',justifyContent:'space-between',marginBottom:'8px'}"><span :style="{fontSize:'13px',fontWeight:700}">Комплектация</span><span :style="{fontSize:'12px',fontWeight:700,color:sc}">{{ isDone?'Готово':`${progress.done} из ${progress.total}` }}</span></div>
-          <div :style="{height:'6px',background:T.border,borderRadius:'4px',overflow:'hidden',marginBottom:'12px'}"><div :style="{height:'100%',width:progress.pct+'%',background:sc,borderRadius:'4px',transition:'width .3s'}"/></div>
-          <button v-for="(s,i) in steps" :key="s" :style="{display:'flex',alignItems:'center',gap:'10px',width:'100%',padding:'10px 0',background:'none',border:'none',cursor:'pointer',borderBottom:i<steps.length-1?`1px solid ${T.border}`:'none',textAlign:'left'}" @click="goToStep(i)">
-            <Icon :name="SM[s]?.icon??'sun'" :size="18" :color="build.steps[s]==='chosen'?T.green:T.textDim"/>
-            <span :style="{flex:1,fontSize:'13px',color:T.text}">{{ SM[s]?.name }}</span>
-            <span :style="{fontSize:'10px',padding:'4px 10px',borderRadius:'5px',fontWeight:600,background:build.steps[s]==='chosen'?T.green+'22':T.neutral+'15',color:build.steps[s]==='chosen'?T.green:T.neutral}">{{ build.steps[s]==='chosen'?'Готово':'Выбрать' }}</span>
+        <div :style="{background:T.card,border:`1px solid ${T.border}`,borderRadius:'16px',padding:'16px',marginBottom:'16px'}">
+          <div :style="{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}"><span :style="{fontSize:'16px',fontWeight:700,color:T.text}">Комплектация</span><span :style="{fontSize:'13px',fontWeight:600,color:isDone?T.green:T.textSec}">{{ isDone?'Готово':`${progress.done} из ${progress.total}` }}</span></div>
+          <div :style="{height:'5px',background:T.border,borderRadius:'4px',overflow:'hidden',marginBottom:'14px'}"><div :style="{height:'100%',width:progress.pct+'%',background:isDone?T.green:T.text,borderRadius:'4px',transition:'width .3s'}"/></div>
+
+          <!-- Гид по сборке: заметная плашка на первом новом светильнике -->
+          <button v-if="showGuidedCTA" :style="{display:'flex',alignItems:'center',gap:'12px',width:'100%',padding:'13px 14px',marginBottom:'14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.18)',borderRadius:'12px',cursor:'pointer',textAlign:'left',fontFamily:'inherit'}" @click="launchGuided">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.text,flexShrink:0}"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a2.5 2.5 0 0 0 0-5h-8a2.5 2.5 0 0 1 0-5H12"/></svg>
+            <span :style="{flex:1,minWidth:0}">
+              <span :style="{display:'block',fontSize:'15px',fontWeight:700,color:T.text}">Гид по сборке</span>
+              <span :style="{display:'block',fontSize:'12px',color:T.textSec,lineHeight:1.35,marginTop:'2px'}">Проведём по каждому параметру и подскажем</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textDim,flexShrink:0}"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <button v-for="(s,i) in steps" :key="s" :style="{display:'flex',alignItems:'center',gap:'12px',width:'100%',padding:'12px 0',background:'none',border:'none',cursor:'pointer',borderBottom:i<steps.length-1?`1px solid ${T.border}`:'none',textAlign:'left',fontFamily:'inherit'}" @click="goToStep(i)">
+            <Icon :name="SM[s]?.icon??'sun'" :size="20" :color="build.steps[s]==='chosen'?T.green:T.textDim"/>
+            <span :style="{flex:1,fontSize:'15px',color:T.text}">{{ SM[s]?.name }}</span>
+            <span :style="{fontSize:'12px',padding:'6px 12px',borderRadius:'8px',fontWeight:600,background:build.steps[s]==='chosen'?T.green+'22':'transparent',border:build.steps[s]==='chosen'?'1px solid transparent':`1px solid ${T.border}`,color:build.steps[s]==='chosen'?T.green:T.textSec}">{{ build.steps[s]==='chosen'?'Готово':'Выбрать' }}</span>
+          </button>
+
+          <!-- Тихая ссылка на гид — когда плашки нет и сборка не завершена -->
+          <button v-if="!showGuidedCTA&&!isDone" :style="{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',width:'100%',marginTop:'4px',paddingTop:'14px',background:'none',border:'none',borderTop:`1px solid ${T.border}`,cursor:'pointer',fontFamily:'inherit'}" @click="launchGuided">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textSec,flexShrink:0}"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a2.5 2.5 0 0 0 0-5h-8a2.5 2.5 0 0 1 0-5H12"/></svg>
+            <span :style="{fontSize:'13px',color:T.textSec}">Собрать с гидом по шагам</span>
           </button>
         </div>
 

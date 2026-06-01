@@ -205,7 +205,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
   <div :style="{position:'fixed',inset:0,background:T.bg,overflow:'auto'}">
     <NavHeader
       :title="model.name"
-      back="Назад"
+      :back="view==='summary' ? (props.roomName || 'Назад') : 'Назад'"
       @back="view==='summary'?emit('close'):backFromStep()"
     />
 

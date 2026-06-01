@@ -180,7 +180,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
       overflow: 'auto',
     }"
   >
-    <NavHeader :title="displayName" back="Назад" @back="emit('close')" />
+    <NavHeader title="Параметры комнаты" back="Назад" @back="emit('close')" />
 
     <div
       v-if="isDirty"
@@ -238,6 +238,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
         <input
           v-model="draftName"
           type="text"
+          class="name-input"
           :placeholder="props.rt.name"
           :maxlength="20"
           :style="{
@@ -644,5 +645,9 @@ const displayName = computed(() => props.room.customName || props.rt.name)
 }
 .area-input {
   -moz-appearance: textfield;
+}
+.name-input::placeholder {
+  color: #C0B8AE;
+  opacity: 1;
 }
 </style>

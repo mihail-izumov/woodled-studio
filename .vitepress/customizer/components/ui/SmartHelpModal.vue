@@ -150,7 +150,7 @@ const helpStatuses = [
               </div>
               <div :style="{ padding: '12px 14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '10px', display: 'flex', gap: '10px', alignItems: 'flex-start' }">
                 <span :style="{ width: '22px', height: '22px', borderRadius: '6px', background: T.neutral + '22', color: T.neutral, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, flexShrink: 0 }">4</span>
-                <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }"><b :style="{ color: T.text }">Можно менять позже</b> — зайдите в чек-лист и пересмотрите размер когда добавите другие светильники.</div>
+                <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }"><b :style="{ color: T.text }">Можно менять позже</b> — чек-лист помогает обновлять параметры когда светильников становится больше.</div>
               </div>
             </div>
           </div>

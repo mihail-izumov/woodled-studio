@@ -42,20 +42,20 @@ defineEmits<{ back: [] }>()
       :style="{
         background: 'none',
         border: 'none',
-        color: T.textSec,
-        fontSize: '14px',
-        fontWeight: 500,
+        color: T.text,
+        fontSize: '17px',
+        fontWeight: 400,
         cursor: 'pointer',
-        padding: '4px 8px 4px 4px',
+        padding: '4px 8px 4px 2px',
         display: 'flex',
         alignItems: 'center',
-        gap: '2px',
+        gap: '1px',
         fontFamily: 'inherit',
         lineHeight: 1,
       }"
       @click="$emit('back')"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" :style="{ marginLeft: '-4px' }">
         <path d="M13.83 19a1 1 0 0 1-.78-.37l-4.83-6a1 1 0 0 1 0-1.27l5-6a1 1 0 0 1 1.54 1.28L10.29 12l4.32 5.36a1 1 0 0 1-.78 1.64z"/>
       </svg>
       {{ back }}

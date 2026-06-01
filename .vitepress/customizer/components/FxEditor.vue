@@ -230,7 +230,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
             <!-- batch11 #1: fxIcName(model.type) вместо захардкоженного "ceiling" -->
             <div :style="{width:'52px',height:'52px',borderRadius:'12px',background:WCOL[build.wood]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}"><Icon :name="fxIcName(model.type)" :color="WCOL[build.wood]" :size="26"/></div>
             <div :style="{flex:1,minWidth:0}">
-              <div :style="{fontSize:'15px',fontWeight:700,color:T.text,marginBottom:'4px'}">{{ model.name }}</div>
+              <div :style="{fontSize:'17px',fontWeight:600,color:T.text,marginBottom:'4px'}">{{ model.name }}</div>
               <div :style="{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}">
                 <span :style="{display:'inline-flex',alignItems:'center',gap:'5px',padding:'2px 10px 2px 4px',borderRadius:'12px',background:WCOL[build.wood]+'22',fontSize:'11px',fontWeight:600,color:T.text}"><span :style="{width:'14px',height:'14px',borderRadius:'50%',background:WCOL[build.wood],flexShrink:0}"/>{{ simMats.find(x=>x.id===build.wood)?.name }}</span>
                 <span :style="{display:'inline-block',padding:'2px 10px',borderRadius:'12px',border:`1px solid ${sc}55`,background:'transparent',fontSize:'11px',fontWeight:600,color:sc}">{{ status }}</span>
@@ -261,12 +261,12 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           </div>
         </div>
         <div :style="{background:T.card,border:`1px solid ${T.border}`,borderRadius:'16px',padding:'16px',marginBottom:'16px'}">
-          <div :style="{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}"><span :style="{fontSize:'16px',fontWeight:700,color:T.text}">Комплектация</span><span :style="{fontSize:'13px',fontWeight:600,color:isDone?T.green:T.textSec}">{{ isDone?'Готово':`${progress.done} из ${progress.total}` }}</span></div>
+          <div :style="{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}"><span :style="{fontSize:'17px',fontWeight:600,color:T.text}">Комплектация</span><span :style="{fontSize:'13px',fontWeight:600,color:isDone?T.green:T.textSec}">{{ isDone?'Готово':`${progress.done} из ${progress.total}` }}</span></div>
           <div :style="{height:'5px',background:T.border,borderRadius:'4px',overflow:'hidden',marginBottom:'14px'}"><div :style="{height:'100%',width:progress.pct+'%',background:isDone?T.green:T.text,borderRadius:'4px',transition:'width .3s'}"/></div>
 
           <!-- Гид по сборке: заметная плашка на первом новом светильнике -->
           <button v-if="showGuidedCTA" :style="{display:'flex',alignItems:'center',gap:'12px',width:'100%',padding:'13px 14px',marginBottom:'14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.18)',borderRadius:'12px',cursor:'pointer',textAlign:'left',fontFamily:'inherit'}" @click="launchGuided">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.text,flexShrink:0}"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a2.5 2.5 0 0 0 0-5h-8a2.5 2.5 0 0 1 0-5H12"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.text,flexShrink:0}"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h6a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h6"/></svg>
             <span :style="{flex:1,minWidth:0}">
               <span :style="{display:'block',fontSize:'15px',fontWeight:700,color:T.text}">Гид по сборке</span>
               <span :style="{display:'block',fontSize:'12px',color:T.textSec,lineHeight:1.35,marginTop:'2px'}">Проведём по каждому параметру и подскажем</span>
@@ -281,14 +281,14 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           </button>
 
           <!-- Тихая ссылка на гид — когда плашки нет и сборка не завершена -->
-          <button v-if="!showGuidedCTA&&!isDone" :style="{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',width:'100%',marginTop:'4px',paddingTop:'14px',background:'none',border:'none',borderTop:`1px solid ${T.border}`,cursor:'pointer',fontFamily:'inherit'}" @click="launchGuided">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textSec,flexShrink:0}"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a2.5 2.5 0 0 0 0-5h-8a2.5 2.5 0 0 1 0-5H12"/></svg>
-            <span :style="{fontSize:'13px',color:T.textSec}">Собрать с гидом по шагам</span>
+          <button v-if="!showGuidedCTA&&!isDone" :style="{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',width:'100%',marginTop:'4px',paddingTop:'14px',background:'none',border:'none',borderTop:`1px solid ${T.border}`,cursor:'pointer',fontFamily:'inherit'}" @click="launchGuided">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textSec,flexShrink:0}"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h6a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h6"/></svg>
+            <span :style="{fontSize:'15px',color:T.textSec}">Собрать с гидом по шагам</span>
           </button>
         </div>
 
-        <button :style="{width:'100%',padding:'14px',background:T.text,color:T.bg,border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'14px',fontWeight:700,marginBottom:'8px'}" @click="doSave">Сохранить</button>
-        <button :style="{width:'100%',padding:'14px',background:'none',border:`2px solid ${T.text}`,borderRadius:'10px',color:T.text,cursor:'pointer',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'20px'}" @click="showShare=true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Поделиться ссылкой на светильник</button>
+        <button :style="{width:'100%',padding:'14px',background:T.text,color:T.bg,border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'17px',fontWeight:600,marginBottom:'8px'}" @click="doSave">Сохранить</button>
+        <button :style="{width:'100%',padding:'14px',background:'none',border:`2px solid ${T.text}`,borderRadius:'10px',color:T.text,cursor:'pointer',fontSize:'17px',fontWeight:600,display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'20px'}" @click="showShare=true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Поделиться</button>
 
         <!-- Фотогалерея «{Model} в интерьере» — после Сохранить и Поделиться, с воздухом -->
         <div :style="{marginTop:'24px'}">
@@ -304,7 +304,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 
         <div :style="{background:T.red+'14',border:`1px solid ${T.red}33`,borderRadius:'10px',padding:'14px',marginTop:'12px'}">
           <div :style="{fontSize:'12px',color:T.textSec,marginBottom:'10px',lineHeight:1.5}">Светильник будет удалён из комнаты. Настройки не сохранятся — при повторном добавлении нужно будет собрать заново.</div>
-          <button :style="{width:'100%',padding:'10px',background:'none',border:`1px solid ${T.red}44`,borderRadius:'8px',color:T.red,cursor:'pointer',fontSize:'12px',fontWeight:600}" @click="showDeleteConfirm=true">Удалить светильник</button>
+          <button :style="{width:'100%',padding:'10px',background:'none',border:`1px solid ${T.red}44`,borderRadius:'8px',color:T.red,cursor:'pointer',fontSize:'17px',fontWeight:600}" @click="showDeleteConfirm=true">Удалить светильник</button>
         </div>
       </template>
 

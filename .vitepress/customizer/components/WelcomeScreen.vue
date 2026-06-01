@@ -64,7 +64,7 @@ function orbStyle(wood: Wood, delay: number): Record<string, string> {
   return { width: '56px', height: '56px', borderRadius: '50%', background: `radial-gradient(circle at 32% 26%, rgba(255,255,255,0.55), transparent 42%), radial-gradient(circle at 70% 78%, rgba(0,0,0,0.22), transparent 60%), ${color}`, flexShrink: '0', display: 'inline-block', border: wood === 'black' ? '1px solid rgba(19,17,14,0.55)' : 'none', boxShadow: `inset 0 -2px 4px rgba(0,0,0,0.22), inset 0 2px 2px rgba(255,255,255,0.18), 0 0 22px rgba(${r},${g},${b},0.45), 0 0 44px rgba(${r},${g},${b},0.18), 0 6px 18px rgba(0,0,0,0.45)`, animation: `orbPulse 4.5s ease-in-out ${delay}s infinite`, '--orb-glow': `rgba(${r},${g},${b},0.45)`, '--orb-glow-soft': `rgba(${r},${g},${b},0.18)`, '--orb-glow-peak': `rgba(${r},${g},${b},0.55)`, '--orb-glow-peak-soft': `rgba(${r},${g},${b},0.22)` }
 }
 const ORB_DELAYS: Record<Wood, number> = { oak: 0, walnut: 1.5, black: 3 }
-const SECTION_LABEL = 'Какой размер ближе?'
+const SECTION_LABEL = 'Живой дом WOODLED'
 </script>
 
 <template>
@@ -73,8 +73,8 @@ const SECTION_LABEL = 'Какой размер ближе?'
       <div :style="{ width: '130px', height: '22px', background: T.neutral, maskImage: `url(${LOGO_URL})`, maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center', WebkitMaskImage: `url(${LOGO_URL})`, WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center' }" />
     </div>
 
-    <div :style="{ textAlign: 'center', fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '10px', lineHeight: 1.25 }">{{ formatNum(WOOD_TOTAL) }} деревьев<br />продолжают светить<br />в&nbsp;ваших домах</div>
-    <div :style="{ textAlign: 'center', fontSize: '13px', color: T.textSec, lineHeight: 1.55, marginBottom: '20px', maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' }">Каждое дерево здесь уже светит в чьём-то доме. <span :style="{ color: '#fff', fontWeight: 700 }">Делитесь с друзьями. Возвращайтесь когда удобно.</span></div>
+    <div :style="{ textAlign: 'center', fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '10px', lineHeight: 1.25 }">{{ formatNum(WOOD_TOTAL) }} светильников WOODLED<br />уже наполняют дома<br />живым светом</div>
+    <div :style="{ textAlign: 'center', fontSize: '13px', color: T.textSec, lineHeight: 1.55, marginBottom: '20px', maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' }">Поделитесь дизайном светильника или проектом всего дома. Близкие смогут оценить концепцию и предложить свои идеи. Создавайте вместе.</div>
 
     <!-- Блок с тремя шарами + иконки листьев -->
     <div :style="honorBoardStyle()">
@@ -101,7 +101,7 @@ const SECTION_LABEL = 'Какой размер ближе?'
     </a>
 
     <div :style="{ textAlign: 'center', fontSize: '20px', fontWeight: 700, color: T.text, marginTop: '32px', marginBottom: '8px', lineHeight: 1.25 }">Пространство для света</div>
-    <div :style="{ textAlign: 'center', fontSize: '13px', color: T.textSec, lineHeight: 1.55, marginBottom: '16px', maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' }">Подобрали для вас самые частые сочетания параметров светильников и их расположение в доме. Начните с выбора площади – остальное настроете под себя дальше.</div>
+    <div :style="{ textAlign: 'center', fontSize: '13px', color: T.textSec, lineHeight: 1.55, marginBottom: '16px', maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' }">Настраивайте светильники, расставляйте мебель, перекрасьте стены — наполните каждый уголок дома. Начните – остальное настройте под себя дальше.</div>
     <div :style="{ fontSize: '10px', fontWeight: 700, color: T.textDim, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '12px', textAlign: 'center' }">{{ SECTION_LABEL }}</div>
 
     <div :style="{ display: 'flex', flexDirection: 'column' }">

@@ -134,7 +134,26 @@ function onBuyClose() { cfg.showBuy.value = false; cfg.active.value = null }
    не нажата «Сохранить» — он условный. Стрелка назад (close) удаляет его. */
 const fxIsProvisional = ref(false)
 function onOpenFx(roomId: string, fxIdx: number, isNew = false) { fxIsProvisional.value = !!isNew; cfg.openFx(roomId, fxIdx) }
-function onFxSave(next: Fixture) { const af = cfg.activeFx.value; if (!af) return; cfg.updateFixture(af.roomId, af.fxIdx, next); fxIsProvisional.value = false; cfg.showFB('Светильник сохранён'); cfg.closeFx() }
+/* Предложный падеж названия комнаты: «Гостиная» → «в Гостиной». */
+function roomPrepName(name: string): string {
+  if (!name) return ''
+  if (name.endsWith('ая')) return name.slice(0, -2) + 'ой'
+  if (name.endsWith('яя')) return name.slice(0, -2) + 'ей'
+  if (name.endsWith('ня')) return name.slice(0, -2) + 'не'
+  if (name.endsWith('я')) return name.slice(0, -1) + 'е'
+  if (name.endsWith('а')) return name.slice(0, -1) + 'е'
+  return name + 'е'
+}
+function onFxSave(next: Fixture) {
+  const af = cfg.activeFx.value; if (!af) return
+  cfg.updateFixture(af.roomId, af.fxIdx, next)
+  fxIsProvisional.value = false
+  const room = cfg.rooms.find((r: Room) => r.id === af.roomId) as Room | undefined
+  const model = MD[next.m]?.name ?? 'Светильник'
+  const where = room ? roomPrepName(room.customName || getRT(room.typeId).name) : ''
+  cfg.showFB(`${model}${where ? ` в ${where}` : ''}`, 'check')
+  cfg.closeFx()
+}
 function onFxDelete() { const af = cfg.activeFx.value; if (!af) return; cfg.removeFixture(af.roomId, af.fxIdx); fxIsProvisional.value = false; cfg.closeFx(); cfg.showFB('Светильник удалён') }
 function onFxClose() { const af = cfg.activeFx.value; if (fxIsProvisional.value && af) cfg.removeFixture(af.roomId, af.fxIdx); fxIsProvisional.value = false; cfg.closeFx() }
 
@@ -309,7 +328,7 @@ function onGalleryGiftClick() {
   <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'block' }">
     <SoundButton />
   </div>
-  <Toast :msg="cfg.fb.value" @done="cfg.clearFB" />
+  <Toast :msg="cfg.fb.value" :icon="cfg.fbIcon.value" @done="cfg.clearFB" />
 </template>
 
 <style>

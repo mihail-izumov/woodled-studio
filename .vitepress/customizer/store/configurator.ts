@@ -112,6 +112,8 @@ const showRoomSettings = ref(false)
 const showZoneModal = ref(false)
 
 const fb = ref<string | null>(null)
+/** Иконка тоста: 'check' → зелёный чекмарк «сделано». null → без иконки. */
+const fbIcon = ref<'check' | null>(null)
 
 const showMoodDetail = ref<Mood | null>(null)
 
@@ -215,12 +217,14 @@ function updateFixture(roomId: string, idx: number, next: Fixture) {
   persistState()
 }
 
-function showFB(msg: string | null) {
+function showFB(msg: string | null, icon: 'check' | null = null) {
   fb.value = msg
+  fbIcon.value = icon
 }
 
 function clearFB() {
   fb.value = null
+  fbIcon.value = null
 }
 
 function loadFromHash(): boolean {
@@ -378,6 +382,7 @@ export function useConfigurator() {
     showRoomSettings,
     showZoneModal,
     fb,
+    fbIcon,
     discountFx,
     activeFx,
     showMoodDetail,

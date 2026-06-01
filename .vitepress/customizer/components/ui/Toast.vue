@@ -11,6 +11,7 @@ import { T, Z } from '../../theme/tokens'
 
 interface Props {
   msg: string | null
+  icon?: 'check' | null
 }
 const props = defineProps<Props>()
 const emit = defineEmits<{ done: [] }>()
@@ -59,8 +60,13 @@ onUnmounted(clearTimer)
       maxWidth: '85%',
       textAlign: 'center',
       boxShadow: '0 4px 20px rgba(0,0,0,.4)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
     }"
   >
-    {{ props.msg }}
+    <svg v-if="props.icon === 'check'" width="17" height="17" viewBox="0 0 24 24" fill="none" :stroke="T.green" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0 }"><circle cx="12" cy="12" r="10" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
+    <span>{{ props.msg }}</span>
   </div>
 </template>

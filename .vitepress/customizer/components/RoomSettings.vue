@@ -194,7 +194,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
       class="dirty-banner"
       :style="{
         position: 'sticky',
-        top: '48px',
+        top: '44px',
         zIndex: 9,
         background: tint,
         color: T.bg,
@@ -588,7 +588,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
     </div>
 
     <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
-    <div :style="{ position: 'fixed', inset: 0, zIndex: 48, background: 'rgba(0,0,0,0.55)', pointerEvents: 'none', opacity: highlightSave ? 1 : 0, visibility: highlightSave ? 'visible' : 'hidden', transition: 'opacity .4s ease' }" />
+    <div :style="{ position: 'fixed', inset: 0, zIndex: 48, background: 'rgba(0,0,0,0.55)', pointerEvents: 'none', opacity: highlightSave ? 1 : 0, transition: 'opacity .45s ease' }" />
   </div>
 </template>
 

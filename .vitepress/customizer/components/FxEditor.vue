@@ -237,7 +237,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 </script>
 
 <template>
-  <div :style="{position:'fixed',inset:0,background:T.bg,overflow:'auto'}">
+  <div :style="{position:'fixed',inset:0,background:T.bg,overflow:showLeaveConfirm?'hidden':'auto'}">
     <NavHeader
       :title="model.name"
       :back="view==='summary' ? (props.roomName || 'Назад') : 'Назад'"
@@ -254,7 +254,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{flexShrink:0}"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span :style="{fontSize:'13px',fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}">Есть несохранённые изменения</span>
       </span>
-      <span :style="{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,background:T.text,color:T.bg,padding:'6px 12px',borderRadius:'8px',fontSize:'13px',fontWeight:700}">Сохранить<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
+      <span :style="{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,background:T.text,color:T.bg,padding:'6px 12px',borderRadius:'8px',fontSize:'13px',fontWeight:700}">{{ props.isProvisional?'Добавить':'Сохранить' }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
     </div>
 
     <div :style="{maxWidth:'480px',margin:'0 auto',padding:'16px 20px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
@@ -323,7 +323,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           </button>
         </div>
 
-        <button ref="saveBtnEl" :class="{'fx-save-glow':highlightSave}" :style="{position:'relative',zIndex:highlightSave?49:'auto',width:'100%',padding:'14px',background:T.text,color:T.bg,border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'17px',fontWeight:600,marginBottom:'8px'}" @click="doSave">Сохранить</button>
+        <button ref="saveBtnEl" :class="{'fx-save-glow':highlightSave}" :style="{position:'relative',zIndex:highlightSave?49:'auto',width:'100%',padding:'14px',background:T.text,color:T.bg,border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'17px',fontWeight:600,marginBottom:'8px'}" @click="doSave">{{ props.isProvisional?'Добавить':'Сохранить' }}</button>
         <button :style="{width:'100%',padding:'14px',background:'none',border:`2px solid ${T.text}`,borderRadius:'10px',color:T.text,cursor:'pointer',fontSize:'17px',fontWeight:600,display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'20px'}" @click="showShare=true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Поделиться</button>
 
         <!-- Фотогалерея «{Model} в интерьере» — после Сохранить и Поделиться, с воздухом -->
@@ -410,16 +410,13 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     </div>
 
     <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
-    <div :style="{position:'fixed',inset:0,zIndex:48,background:'rgba(0,0,0,0.55)',pointerEvents:'none',opacity:highlightSave?1:0,visibility:highlightSave?'visible':'hidden',transition:'opacity .4s ease'}" />
+    <div :style="{position:'fixed',inset:0,zIndex:48,background:'rgba(0,0,0,0.55)',pointerEvents:'none',opacity:highlightSave?1:0,transition:'opacity .45s ease'}" />
 
-    <div v-if="showLeaveConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}" @click.self="showLeaveConfirm=false">
-      <div :style="{width:'100%',maxWidth:'340px',background:T.bg,borderRadius:'16px',border:`1px solid ${T.border}`,padding:'24px 20px',textAlign:'center'}">
-        <div :style="{fontSize:'16px',fontWeight:700,color:T.text,marginBottom:'8px'}">Выйти без сохранения?</div>
-        <div :style="{fontSize:'13px',color:T.textSec,lineHeight:1.5,marginBottom:'20px'}">{{ props.isProvisional?'Светильник не будет добавлен в комнату.':'Изменения не сохранятся.' }}</div>
-        <div :style="{display:'flex',gap:'8px'}">
-          <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:'pointer',fontSize:'13px',fontWeight:600}" @click="showLeaveConfirm=false">Отмена</button>
-          <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:'none',background:T.text,color:T.bg,cursor:'pointer',fontSize:'13px',fontWeight:700}" @click="confirmLeave">Выйти</button>
-        </div>
+    <div v-if="showLeaveConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,0.82)',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}" @click.self="showLeaveConfirm=false">
+      <div :style="{width:'100%',maxWidth:'320px',background:T.bg,borderRadius:'18px',border:`1px solid ${T.border}`,padding:'24px 20px'}">
+        <div :style="{fontSize:'17px',fontWeight:600,color:T.text,textAlign:'center',lineHeight:1.3,marginBottom:'20px'}">Изменения не сохранятся</div>
+        <button :style="{width:'100%',padding:'15px',background:'#FFFFFF',color:T.bg,border:'none',borderRadius:'12px',cursor:'pointer',fontSize:'17px',fontWeight:600,marginBottom:'10px',fontFamily:'inherit'}" @click="confirmLeave">Выйти</button>
+        <button :style="{width:'100%',padding:'15px',background:'none',border:'none',color:T.textSec,cursor:'pointer',fontSize:'17px',fontWeight:600,fontFamily:'inherit'}" @click="showLeaveConfirm=false">Отмена</button>
       </div>
     </div>
 

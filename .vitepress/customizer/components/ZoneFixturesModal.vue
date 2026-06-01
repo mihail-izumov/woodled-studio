@@ -19,7 +19,7 @@ import { Z } from '../theme/tokens'
 import { MD, type Fixture, type Zone } from '../data/catalog'
 import { MATS, WCOL, type Wood } from '../data/materials'
 import { zoneLm, zoneFxCount } from '../engine/zone-engine'
-import { pw } from '../engine/i18n'
+import { occupiedPhrase } from '../engine/i18n'
 import { useConfigurator } from '../store/configurator'
 import Icon, { fxIcName } from './ui/Icons.vue'
 
@@ -239,7 +239,7 @@ function orbStyle(wood: Wood, size = 13) {
             </span>
           </div>
           <div :style="{ fontSize: '12px', color: L.textSec, marginTop: '8px', lineHeight: 1.45 }">
-            <template v-if="full">Все {{ limit }} {{ pw(limit) }} заняты. Измените лимиты — добавьте больше света.</template>
+            <template v-if="full">{{ occupiedPhrase(limit) }}. Измените лимиты — добавьте больше света.</template>
             <template v-else>Свободно {{ free }} из {{ limit }}. Измените лимиты — добавьте больше света.</template>
           </div>
           <button

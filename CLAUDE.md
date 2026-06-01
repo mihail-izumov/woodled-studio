@@ -1,0 +1,81 @@
+# CLAUDE.md — WOODLED Studio (конфигуратор света)
+
+Контекст для AI-ассистента. Читается в начале сессии. Цель — стартовать с полным
+пониманием проекта без ручной «разведки».
+
+## Что это
+Конфигуратор освещения дома: пользователь собирает комнаты, расставляет светильники
+по зонам, видит яркость (люмены), настроения и распределение света. Тёплая тёмная тема.
+
+## Стек и команды
+- **VitePress + Vue 3** (Composition API, `<script setup lang="ts">`). `"type": "commonjs"`.
+- Весь продукт — в `.vitepress/customizer/`.
+- Запуск/сборка:
+  - `npm run docs:dev` — дев-сервер (так проверяй правки визуально).
+  - `npm run docs:build` — прод-сборка. `npm run deploy` — gh-pages.
+- ⚠️ В песочнице ассистента **нет `node_modules`** — я не собираю и не типчекаю проект.
+  После правок прогоняй `npm run docs:dev` локально.
+
+## Карта папок (`.vitepress/customizer/`)
+- `components/` — все Vue-компоненты (экраны, карточки, модалки). UI-примитивы в `components/ui/`.
+- `data/` — статические данные:
+  - `catalog.ts` — модели светильников `MD`, типы, **`ALL_ZONES`** (зоны), `Fixture`, `ZoneId`.
+  - `rooms.ts` — типы комнат, их `zones`, **`limits`** (лимит точек по зоне), мебель.
+  - `materials.ts` — дерево (`MATS`, `WCOL`, тип `Wood`: oak/walnut/black), цвета, температуры.
+  - `templates.ts`, `furniture.ts`, `gallery.ts`, `moods.ts`.
+- `engine/` — логика:
+  - `zone-engine.ts` — `zoneLm` (люмены зоны), `zoneFxCount` (точки = сумма `q`), `roomZones`,
+    `GLOW_POS` (позиции glow по зонам), `glowOpacity`, `opacityToHex`.
+  - `brightness.ts` (`baseLm`, `fxLm`, `fxLamps`, `getArea`), `i18n.ts` (`pw` — склонение «точка/точки/точек», `woodNames`), `autosize.ts`, `gallery-engine.ts`, `story-engine.ts`.
+- `store/configurator.ts` — глобальное состояние (Vue refs): комнаты, активная комната/светильник,
+  и **флаги модалок** (`showBuy`, `showStory`, `showShare`, `showRoomSettings`, `showZoneModal`, …).
+- `theme/tokens.ts` — дизайн-токены: `T` (фоны/текст/состояния), `WCOL` (дерево), `OPACITY`,
+  `RGBA`, `Z` (z-index), `ROOM_TINTS`.
+
+## Ключевые экраны/компоненты
+- `App.vue` — корень. Здесь `stickyVisible` (видимость нижнего `StickyBar`) и `anyModalOpen`
+  (по нему прячется `SoundButton`). Чтобы скрыть стики/звук под новой модалкой — добавляй её флаг сюда.
+- `RoomDetail.vue` — экран комнаты: параметры, дашборд люменов, **блок «Светильники»**
+  (сетка 2×2 из `ZoneCard`), мебель, настроение, галерея, удаление. Хранит локальные `addZone`,
+  `openZoneId`, `showSettings` и центр-тултип лимита (`limitTip`).
+- `ZoneCard.vue` — карточка-виджет зоны (новый дизайн): заголовок + бейдж % + кнопка «+»,
+  скроллируемый список моделей (имя + глянцевый шар дерева, схлопывание одинаковых в «×N»),
+  затухание снизу при переполнении, нижняя плашка с пипсами точек + стрелкой.
+- `ZoneFixturesModal.vue` — белая модалка деталей зоны (отдельный компонент, дизайн правится тут).
+- `AddFxModal.vue` — выбор коллекции/модели для добавления. `RoomSettings.vue` — параметры комнаты
+  (эталон паттерна «скрыть StickyBar + lock scroll», см. ниже). `FxEditor`/`BuyModal`/`StoryModal` и т.д.
+
+## Поведение блока зон (важно при правках)
+- Кнопка «+» активна → `emit('add')` → `AddFxModal`; при лимите → замок + `emit('limitHit')`
+  → центр-тултип в `RoomDetail`.
+- Клик по модели в списке → `emit('edit', idx)` → страница светильника (`openFx`).
+- Нижняя плашка/стрелка → `emit('open')` → `ZoneFixturesModal`.
+- Счётчик «X из Y» сверху = Σ `zoneFxCount` / Σ лимитов по зонам комнаты.
+
+## Конвенции
+- **Стили — инлайном** через `:style="{}"` (объекты), почти без CSS-классов. Скоуп-стили — только
+  для псевдо (`::-webkit-scrollbar`, `:hover`).
+- **Иконки — из `components/ui/Icons.vue`** (`<Icon name="…">` + `fxIcName(type)`). В наборе НЕТ
+  `plus`/`chevron`/`x` — их рисуй инлайн-`<svg>` (как в `RoomDetail`/`ZoneCard`/модалках).
+- **Акцент = цвет комнаты** = `mood.color` / `tintedMood.color` (из `room.cardColor`). Всё, что должно
+  перекрашиваться вместе с комнатой, завязывай на него.
+- **Прозрачность hex-суффиксами**: `${color}33` (≈20%), `${color}66` и т.п. (`OPACITY` в tokens).
+- Модалка, которая должна скрывать `StickyBar` и лочить фон: в `onMounted` —
+  `document.body/html.style.overflow='hidden'` + `cfg.showFlag.value=true`; в `onUnmounted` — вернуть;
+  флаг добавить в `App.stickyVisible` (и при необходимости в `anyModalOpen` для звука).
+
+## Подводные камни
+- **Зоны завязаны на `id`** (`ceiling/wall/floor/table`), а не на `name`. `name` — только отображение.
+  Пример: «Стол» переименован в «Мебель» правкой одного `name` в `ALL_ZONES` (+ 2 story-лейбла),
+  id `table` нетронут — иначе ломаются `rooms.ts` limits, `templates`, `gallery`, `autosize`, `GLOW_POS`.
+- **glow-распределение света** (`RoomDetail.glowLayers` + `GLOW_POS` + `zoneLm` + `glowOpacity`) — сложный
+  алгоритм по id зон; при редизайне UI его не трогать.
+- `RoomDetail` — фикс-оверлей `z-index: Z.roomDetail (40)` = стекинг-контекст. `StickyBar` снаружи
+  имеет `z 41` → перекрывает содержимое RoomDetail. Поэтому модалки внутри RoomDetail нужно ещё и
+  гасить `StickyBar` флагом (а не только z-index).
+- «точка» = `zoneFxCount` = сумма `q` (не число записей). «светильник» = запись `Fixture`.
+  «лампа» = `lamps × q` (яркость).
+
+## Как давать задачи (для скорости)
+Называй конкретный экран/компонент, прикладывай скриншот, формулируй цель (а не только пиксели).
+Прототипы дизайна удобно крутить отдельным `.jsx`-артефактом, и только потом переносить в `.vue`.

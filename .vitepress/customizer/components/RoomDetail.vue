@@ -26,7 +26,7 @@ import {
   zoneFxCount, zoneLm,
   roomWood, roomZones, glowOpacity, opacityToHex, GLOW_POS,
 } from '../engine/zone-engine'
-import { pw, woodNames } from '../engine/i18n'
+import { woodNames, occupiedPhrase } from '../engine/i18n'
 import { MD } from '../data/catalog'
 import { getBright } from '../data/moods'
 import { useConfigurator } from '../store/configurator'
@@ -165,7 +165,8 @@ let limitTimer: ReturnType<typeof setTimeout> | undefined
 function onLimitHit(zId: ZoneId) {
   const limit = (props.room.limits ?? rt.value.limits)?.[zId] ?? 99
   const zName = ALL_ZONES.find((z) => z.id === zId)?.name ?? zId
-  limitTip.value = `${zName}: все ${limit} ${pw(limit)} заняты. Удалите светильник или увеличьте лимит в параметрах комнаты.`
+  const occ = occupiedPhrase(limit)
+  limitTip.value = `${zName}: ${occ.charAt(0).toLowerCase()}${occ.slice(1)}. Удалите светильник или увеличьте лимит в параметрах комнаты.`
   if (limitTimer) clearTimeout(limitTimer)
   limitTimer = setTimeout(() => { limitTip.value = null }, 3500)
 }

@@ -29,6 +29,17 @@ export function pw(n: number): string {
   return 'точек'
 }
 
+/**
+ * Фраза «все N точек заняты» с верным согласованием (включая 1).
+ *  1   → «Единственная точка занята»
+ *  2-4 → «Все N точки заняты»
+ *  5+  → «Все N точек заняты»
+ */
+export function occupiedPhrase(n: number): string {
+  if (n === 1) return 'Единственная точка занята'
+  return `Все ${n} ${pw(n)} заняты`
+}
+
 /** Плюрализация «комнат». */
 export function rw(n: number): string {
   const a = Math.abs(n)

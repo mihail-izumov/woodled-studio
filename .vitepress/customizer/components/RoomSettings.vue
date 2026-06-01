@@ -55,6 +55,7 @@ onUnmounted(() => {
   document.body.style.overflow = prevBodyOverflow
   document.documentElement.style.overflow = prevHtmlOverflow
   cfg.showRoomSettings.value = false
+  if (highlightTimer) clearTimeout(highlightTimer)
 })
 
 /* ──────────── Draft state ──────────── */
@@ -131,8 +132,14 @@ const isDirty = computed<boolean>(() => {
 
 const saveBtnEl = ref<HTMLButtonElement | null>(null)
 
+/* Спотлайт: при тапе по плашке затемняем экран и подсвечиваем нижнюю кнопку ~2с. */
+const highlightSave = ref(false)
+let highlightTimer: ReturnType<typeof setTimeout> | null = null
 function scrollToSave() {
   saveBtnEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  highlightSave.value = true
+  if (highlightTimer) clearTimeout(highlightTimer)
+  highlightTimer = setTimeout(() => { highlightSave.value = false }, 2000)
 }
 
 function onSave() {
@@ -211,7 +218,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
           Есть несохранённые изменения
         </span>
       </div>
-      <span :style="{ fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }">
+      <span :style="{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0, background: T.text, color: T.bg, padding: '6px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700 }">
         Сохранить
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19" />
@@ -557,7 +564,10 @@ const displayName = computed(() => props.room.customName || props.rt.name)
 
       <button
         ref="saveBtnEl"
+        :class="{ 'save-glow': highlightSave }"
         :style="{
+          position: 'relative',
+          zIndex: highlightSave ? 49 : 'auto',
           width: '100%',
           padding: '20px 0',
           background: '#FFFFFF',
@@ -576,6 +586,9 @@ const displayName = computed(() => props.room.customName || props.rt.name)
         Сохранить
       </button>
     </div>
+
+    <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
+    <div :style="{ position: 'fixed', inset: 0, zIndex: 48, background: 'rgba(0,0,0,0.55)', pointerEvents: 'none', opacity: highlightSave ? 1 : 0, visibility: highlightSave ? 'visible' : 'hidden', transition: 'opacity .4s ease' }" />
   </div>
 </template>
 
@@ -583,6 +596,13 @@ const displayName = computed(() => props.room.customName || props.rt.name)
 .rs-root {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Спотлайт-подсветка нижней кнопки «Сохранить» (пульс поверх затемнения) */
+.save-glow { animation: rsSavePulse 0.9s ease-in-out infinite; }
+@keyframes rsSavePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255,255,255,0.18), 0 0 22px rgba(255,255,255,0.25); }
+  50%      { box-shadow: 0 0 0 5px rgba(255,255,255,0.30), 0 0 34px rgba(255,255,255,0.45); }
 }
 
 .ceiling-range {

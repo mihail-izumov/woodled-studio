@@ -62,10 +62,10 @@ function toggleExpand() {
       :style="{
         width: '100%',
         padding: '12px clamp(14px, 3vw, 18px)',
-        /* кредиты, не продукт: «утопленная» плашка — темнее фона,
-           без тени, тонкая рамка → не спорит с баннерами (T.card, raised)
-           и со стики-CTA (белая кнопка) */
-        background: 'rgba(0, 0, 0, 0.28)',
+        /* кредиты, не продукт: лёгкая тёплая плашка в тон логотипов
+           (T.neutral ~10%) — чуть светлее фона, без рамки и тени →
+           не спорит с баннерами (T.card) и со стики-CTA (белая кнопка) */
+        background: T.neutral + '1A',
         borderRadius: '999px',
         border: 'none',
         boxShadow: 'none',

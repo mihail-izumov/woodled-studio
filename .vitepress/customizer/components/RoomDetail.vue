@@ -152,26 +152,6 @@ const ptsLimit = computed(() =>
   zones.value.reduce((s, z) => s + zoneLimit(z.id), 0),
 )
 
-/* Сегменты прогрессбара по зонам: видно, какая зона даёт свет и где «пробел» до нормы. */
-const ZONE_BAR_COLORS: Record<ZoneId, string> = {
-  ceiling: '#EF9F27', wall: '#1D9E75', floor: '#7F77DD', table: '#378ADD',
-}
-const lmSegments = computed(() => {
-  const b = base.value
-  let acc = 0
-  const out: { id: ZoneId; name: string; color: string; w: number }[] = []
-  for (const z of zones.value) {
-    const lm = zoneLm(props.room.fixtures, z.id)
-    if (lm <= 0) continue
-    const pct = b > 0 ? (lm / b) * 100 : 0
-    const w = Math.max(0, Math.min(pct, 100 - acc))
-    if (w <= 0) continue
-    acc += w
-    out.push({ id: z.id, name: z.name, color: ZONE_BAR_COLORS[z.id], w })
-  }
-  return out
-})
-
 /* Подсказка на дашборде — собирается движком copy.ts (комната × состояние × вариант).
    seed = число светильников: вариант меняется при изменении сборки, без дёрганья. */
 const smartLine = computed(() =>
@@ -360,22 +340,16 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
             <div :style="{ fontSize: '15px', fontWeight: 700, color: T.text, marginBottom: '4px' }">
               {{ actual.toLocaleString('ru-RU') }}<span :style="{ fontWeight: 400, color: T.textSec }"> из {{ base.toLocaleString('ru-RU') }} лм</span>
             </div>
-            <div :style="{ height: '7px', background: T.border, borderRadius: '4px', overflow: 'hidden', display: 'flex' }">
+            <div :style="{ height: '5px', background: T.border, borderRadius: '3px', overflow: 'hidden' }">
               <div
-                v-for="s in lmSegments"
-                :key="s.id"
-                :style="{ height: '100%', width: s.w + '%', background: s.color, transition: 'width .3s' }"
+                :style="{
+                  height: '100%',
+                  width: Math.min((actual / base) * 100, 100) + '%',
+                  background: tintedMood.color,
+                  borderRadius: '3px',
+                  transition: 'width .3s',
+                }"
               />
-            </div>
-            <div v-if="lmSegments.length > 0" :style="{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '6px' }">
-              <span
-                v-for="s in lmSegments"
-                :key="s.id"
-                :style="{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: T.textSec }"
-              >
-                <span :style="{ width: '8px', height: '8px', borderRadius: '2px', background: s.color }" />
-                {{ s.name }}
-              </span>
             </div>
           </div>
 

@@ -70,9 +70,14 @@ const BASE_COLORS = {white:{name:'Белое',color:'#E8E0D4'},black:{name:'Чё
 const mid = ref<ModelId>(props.item.m)
 const stepIdx = ref(0)
 const hasExistingOpts = !!(props.item.opts && Object.keys(props.item.opts).length > 0)
+/* Есть ли массив done (новый формат). buildFixture всегда пишет done — даже
+   пустой [] для несобранного светильника. Поэтому легаси (старые данные без
+   done) определяем именно по ОТСУТСТВИЮ поля, а не по пустому массиву —
+   иначе сохранённый несобранный светильник ошибочно помечался как «всё Готово». */
+const hasDoneField = Array.isArray(props.item.done)
 const existingDone = props.item.done ?? []
-const legacyAllDone = hasExistingOpts && existingDone.length === 0
-const isNewFixture = !hasExistingOpts && existingDone.length === 0
+const legacyAllDone = hasExistingOpts && !hasDoneField
+const isNewFixture = !hasExistingOpts && !hasDoneField
 /* Быстрое добавление: новый светильник открывается СРАЗУ на сводке (дефолты
    уже применены), а не в принудительном пошаговом онбординге. Пошаговый «Гид
    по сборке» доступен по кнопке внутри блока «Комплектация» (launchGuided). */

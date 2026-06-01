@@ -213,8 +213,23 @@ const tap = {
       </button>
     </div>
 
-    <!-- распорка: имя сверху, тэлли+свет — внизу -->
-    <div v-if="!isEmpty" :style="{ flex: 1 }" />
+    <!-- ═══ СЕРЕДИНА: солнце-на-линии ═══ -->
+    <div v-if="!isEmpty" :style="{ flex: 1, display: 'flex', alignItems: 'center', position: 'relative', zIndex: 2 }">
+      <div :style="{ position: 'relative', height: '22px', flex: 1, margin: '0 2px 0 0' }">
+        <!-- активная (левая): свет от солнца — ярче у солнца, гаснет влево -->
+        <div :style="{ position: 'absolute', left: 0, width: `calc(${sunPos} - ${GAP}px)`, top: '50%', height: '2px', borderRadius: '2px', background: `linear-gradient(90deg, ${cc}55 0%, ${cc} 70%, ${lightCc} 100%)`, transform: 'translateY(-50%)' }" />
+        <!-- пассивная (правая): лёгкий отсвет у солнца, быстро гаснет -->
+        <div :style="{ position: 'absolute', left: `calc(${sunPos} + ${GAP}px)`, right: 0, top: '50%', height: '2px', borderRadius: '2px', background: `linear-gradient(90deg, ${cc}4D 0%, ${cc}12 45%, ${cc}0D 100%)`, transform: 'translateY(-50%)' }" />
+        <!-- солнце-источник: рассеянное свечение + иконка -->
+        <div :style="{ position: 'absolute', left: sunPos, top: '50%', transform: 'translate(-50%,-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+          <div :style="{ position: 'absolute', width: '42px', height: '42px', borderRadius: '50%', background: `radial-gradient(circle, ${cc}33 0%, ${cc}0F 42%, transparent 80%)`, filter: 'blur(6px)', pointerEvents: 'none' }" />
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="lightCc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ filter: `drop-shadow(0 0 2px ${cc}99)`, position: 'relative' }">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+          </svg>
+        </div>
+      </div>
+    </div>
 
     <!-- ═══ НИЗ: тэлли + бейдж яркости (на узкой — бейдж переносится) ═══ -->
     <div v-if="!isEmpty" :style="{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', position: 'relative', zIndex: 2 }">
@@ -244,24 +259,6 @@ const tap = {
           background: cc + '1F', border: `1.5px solid ${cc}3D`, color: cc, fontSize: '12px', fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap',
         }"
       >{{ bright }}</span>
-    </div>
-
-    <!-- ═══ СВЕТ (солнце-на-линии) — внизу как «фундамент», подальше от стрелки ═══ -->
-    <div v-if="!isEmpty" :style="{ display: 'flex', alignItems: 'center', position: 'relative', zIndex: 2, marginTop: '14px' }">
-      <div :style="{ position: 'relative', height: '22px', flex: 1, margin: '0 2px 0 0' }">
-        <!-- активная (левая): свет от солнца — ярче у солнца, гаснет влево -->
-        <div :style="{ position: 'absolute', left: 0, width: `calc(${sunPos} - ${GAP}px)`, top: '50%', height: '2px', borderRadius: '2px', background: `linear-gradient(90deg, ${cc}55 0%, ${cc} 70%, ${lightCc} 100%)`, transform: 'translateY(-50%)' }" />
-        <!-- пассивная (правая): лёгкий отсвет у солнца, быстро гаснет -->
-        <div :style="{ position: 'absolute', left: `calc(${sunPos} + ${GAP}px)`, right: 0, top: '50%', height: '2px', borderRadius: '2px', background: `linear-gradient(90deg, ${cc}4D 0%, ${cc}12 45%, ${cc}0D 100%)`, transform: 'translateY(-50%)' }" />
-        <!-- солнце-источник: рассеянное свечение + иконка -->
-        <div :style="{ position: 'absolute', left: sunPos, top: '50%', transform: 'translate(-50%,-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-          <div :style="{ position: 'absolute', width: '42px', height: '42px', borderRadius: '50%', background: `radial-gradient(circle, ${cc}33 0%, ${cc}0F 42%, transparent 80%)`, filter: 'blur(6px)', pointerEvents: 'none' }" />
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" :stroke="lightCc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ filter: `drop-shadow(0 0 2px ${cc}99)`, position: 'relative' }">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-          </svg>
-        </div>
-      </div>
     </div>
   </div>
 </template>

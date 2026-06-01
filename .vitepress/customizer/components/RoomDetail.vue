@@ -14,7 +14,7 @@
  *   на пути в HouseStats и движок яркости.
  */
 
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { T, Z } from '../theme/tokens'
 import { ALL_ZONES, type Fixture, type ZoneId } from '../data/catalog'
 import { autoMood, type Mood } from '../data/moods'
@@ -27,6 +27,7 @@ import {
   roomWood, roomZones, glowOpacity, opacityToHex, GLOW_POS,
 } from '../engine/zone-engine'
 import { woodNames, occupiedPhrase } from '../engine/i18n'
+import { lightHint, actionReaction, type LightAction } from '../engine/copy'
 import { MD } from '../data/catalog'
 import { getBright } from '../data/moods'
 import { useConfigurator } from '../store/configurator'
@@ -151,15 +152,71 @@ const ptsLimit = computed(() =>
   zones.value.reduce((s, z) => s + zoneLimit(z.id), 0),
 )
 
-const smartLine = computed(() => {
-  const r = ratio.value
-  const rx = r.toFixed(2).replace(/\.?0+$/, '')
-  if (r <= 0.5) return `${rx} — добавьте светильники`
-  if (r <= 0.8) return `${rx} — добавьте бра или торшер`
-  if (r <= 2.0) return `${rx} — ничего менять не нужно`
-  if (r <= 4.0) return `${rx} — поставьте диммер`
-  return `${rx} — уберите лишнее или диммер`
+/* Сегменты прогрессбара по зонам: видно, какая зона даёт свет и где «пробел» до нормы. */
+const ZONE_BAR_COLORS: Record<ZoneId, string> = {
+  ceiling: '#EF9F27', wall: '#1D9E75', floor: '#7F77DD', table: '#378ADD',
+}
+const lmSegments = computed(() => {
+  const b = base.value
+  let acc = 0
+  const out: { id: ZoneId; name: string; color: string; w: number }[] = []
+  for (const z of zones.value) {
+    const lm = zoneLm(props.room.fixtures, z.id)
+    if (lm <= 0) continue
+    const pct = b > 0 ? (lm / b) * 100 : 0
+    const w = Math.max(0, Math.min(pct, 100 - acc))
+    if (w <= 0) continue
+    acc += w
+    out.push({ id: z.id, name: z.name, color: ZONE_BAR_COLORS[z.id], w })
+  }
+  return out
 })
+
+/* Подсказка на дашборде — собирается движком copy.ts (комната × состояние × вариант).
+   seed = число светильников: вариант меняется при изменении сборки, без дёрганья. */
+const smartLine = computed(() =>
+  lightHint(props.room.typeId, ratio.value, props.room.fixtures.length),
+)
+
+/* ─── Реакция на последнее действие (copy.ts C6): короткая подпись на ~1.8с ─── */
+const reactionText = ref('')
+let reactionTimer: ReturnType<typeof setTimeout> | undefined
+function flashReaction(a: LightAction) {
+  reactionText.value = actionReaction(a, props.room.fixtures.length)
+  if (reactionTimer) clearTimeout(reactionTimer)
+  reactionTimer = setTimeout(() => { reactionText.value = '' }, 1800)
+}
+const WALL_ORD = { light: 0, medium: 1, dark: 2 } as const
+function roomSnap() {
+  return {
+    id: props.room.id,
+    fx: props.room.fixtures.length,
+    lamps: lamps.value,
+    lm: actual.value,
+    h: props.room.ceilingH,
+    wall: props.room.wallFinish ?? 'medium',
+  }
+}
+let snap = roomSnap()
+watch(
+  () => [props.room.id, props.room.fixtures.length, lamps.value, actual.value, props.room.ceilingH, props.room.wallFinish],
+  () => {
+    const cur = roomSnap()
+    if (cur.id !== snap.id) { snap = cur; return } // смена комнаты — без реакции
+    let a: LightAction | null = null
+    if (cur.fx > snap.fx) a = 'addFx'
+    else if (cur.fx < snap.fx) a = 'removeFx'
+    else if (cur.h > snap.h) a = 'raiseCeiling'
+    else if (cur.h < snap.h) a = 'lowerCeiling'
+    else if (cur.wall !== snap.wall) a = WALL_ORD[cur.wall] > WALL_ORD[snap.wall] ? 'darkerWalls' : 'lighterWalls'
+    else if (cur.lamps > snap.lamps) a = 'morePatrons'
+    else if (cur.lm > snap.lm) a = 'brighterModel'
+    else if (cur.lm < snap.lm) a = 'softerModel'
+    snap = cur
+    if (a) flashReaction(a)
+  },
+)
+onUnmounted(() => { if (reactionTimer) clearTimeout(reactionTimer) })
 
 /* Подсказка о лимите точек — по центру экрана (а не нижним тостом). */
 const limitTip = ref<string | null>(null)
@@ -303,16 +360,22 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
             <div :style="{ fontSize: '15px', fontWeight: 700, color: T.text, marginBottom: '4px' }">
               {{ actual.toLocaleString('ru-RU') }}<span :style="{ fontWeight: 400, color: T.textSec }"> из {{ base.toLocaleString('ru-RU') }} лм</span>
             </div>
-            <div :style="{ height: '5px', background: T.border, borderRadius: '3px', overflow: 'hidden' }">
+            <div :style="{ height: '7px', background: T.border, borderRadius: '4px', overflow: 'hidden', display: 'flex' }">
               <div
-                :style="{
-                  height: '100%',
-                  width: Math.min((actual / base) * 100, 100) + '%',
-                  background: tintedMood.color,
-                  borderRadius: '3px',
-                  transition: 'width .3s',
-                }"
+                v-for="s in lmSegments"
+                :key="s.id"
+                :style="{ height: '100%', width: s.w + '%', background: s.color, transition: 'width .3s' }"
               />
+            </div>
+            <div v-if="lmSegments.length > 0" :style="{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '6px' }">
+              <span
+                v-for="s in lmSegments"
+                :key="s.id"
+                :style="{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: T.textSec }"
+              >
+                <span :style="{ width: '8px', height: '8px', borderRadius: '2px', background: s.color }" />
+                {{ s.name }}
+              </span>
             </div>
           </div>
 
@@ -370,6 +433,15 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
           <div :style="{ fontSize: '12px', color: tintedMood.color + 'cc', flex: 1, fontWeight: 500, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }">
             {{ smartLine }}
           </div>
+        </div>
+
+        <!-- Реакция на последнее действие (transient ~1.8с) -->
+        <div
+          v-if="reactionText"
+          class="action-reaction"
+          :style="{ marginTop: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 600, color: tintedMood.color }"
+        >
+          {{ reactionText }}
         </div>
       </div>
 
@@ -600,6 +672,11 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
 
 <style scoped>
 /* FIX-2026-05-09-deploy — если этой строки нет в репо после загрузки, значит залился старый файл */
+.action-reaction { animation: reactionIn 0.25s ease-out; }
+@keyframes reactionIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .rotor-dash { width: 20px; height: 20px; position: relative; flex-shrink: 0; }
 .rotor-dash-l {
   position: absolute; top: 50%; left: 50%;

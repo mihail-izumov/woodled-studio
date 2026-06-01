@@ -8,14 +8,15 @@ import { MD, ALL_ZONES, type Fixture, type ZoneId, type Zone } from '../data/cat
 import type { RoomType } from '../data/rooms'
 import type { Wood } from '../data/materials'
 
-/** Фактические люмены от светильников конкретной зоны. */
+/** Фактические люмены от светильников конкретной зоны (с учётом рассеивателя). */
 export function zoneLm(fixtures: Fixture[], zoneId: ZoneId): number {
   return fixtures
     .filter((f) => (f.zone ?? 'ceiling') === zoneId)
     .reduce((s, f) => {
       const m = MD[f.m]
       if (!m) return s
-      return s + m.lmPer * (f.l ?? m.lamps) * (f.q ?? 1)
+      const diff = f.opts?.diffuser && m.diffLoss ? 1 - m.diffLoss : 1
+      return s + Math.round(m.lmPer * (f.l ?? m.lamps) * (f.q ?? 1) * diff)
     }, 0)
 }
 

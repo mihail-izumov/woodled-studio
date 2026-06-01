@@ -18,7 +18,7 @@ import {
   compressToEncodedURIComponent,
   decompressFromEncodedURIComponent,
 } from './lz-string'
-import type { Room } from '../data/rooms'
+import type { Room, WallFinish } from '../data/rooms'
 import type { Fixture } from '../data/catalog'
 
 const V2_PREFIX = '2.'
@@ -49,6 +49,7 @@ interface PackedRoom {
   si?: number          // sizeIndex (если !==1)
   ca?: number          // customArea
   h?: number           // ceilingH (если !==2.7)
+  wf?: string          // wallFinish (если !=='medium')
   fx?: PackedFixture[] // fixtures
   fu?: string[]        // furniture ids
   lim?: Record<string, number> // limits
@@ -88,6 +89,7 @@ function packRoom(r: Room): PackedRoom {
   if (r.sizeIndex !== 1) out.si = r.sizeIndex
   if (r.customArea != null) out.ca = r.customArea
   if (r.ceilingH !== 2.7) out.h = r.ceilingH
+  if (r.wallFinish && r.wallFinish !== 'medium') out.wf = r.wallFinish
   if (r.fixtures.length > 0) out.fx = r.fixtures.map(packFixture)
   if (r.furniture.length > 0) out.fu = [...r.furniture]
   if (r.limits && Object.keys(r.limits).length > 0) {
@@ -104,6 +106,7 @@ function unpackRoom(p: PackedRoom, id: string): Room {
     sizeIndex: ((p.si ?? 1) as 0 | 1 | 2 | 3),
     customArea: p.ca ?? null,
     ceilingH: p.h ?? 2.7,
+    wallFinish: (p.wf ?? 'medium') as WallFinish,
     fixtures: (p.fx ?? []).map(unpackFixture),
     furniture: (p.fu ?? []) as Room['furniture'],
     limits: (p.lim ?? {}) as Room['limits'],

@@ -105,15 +105,21 @@ export const TEMPLATES: readonly HomeTemplate[] = [
     areaLabel: '~45 м²',
     rooms: [
       {
+        /* Кухня (200 лк — самая «светлоёмкая»): потолочная + 2 настенных Unit
+           над рабочей зоной → ~0.97, «Ясный полдень». Без рабочего света кухня
+           по честной норме открывалась бы «Не хватает». */
         typeId: 'kitchen',
         sizeIndex: 0,
         ceilingH: 2.7,
         fixtures: [
           { m: 'rotor_s', q: 1, wood: 'oak', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'unit', q: 2, wood: 'oak', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['dtable', 'fridge', 'kitchen_set', 'stove'],
       },
       {
+        /* Спальня — намеренно мягкий свет (~0.88): бра у изголовья + настольная,
+           потолок и пол пусты → «уютно, но есть что добавить». */
         typeId: 'bedroom',
         sizeIndex: 0,
         ceilingH: 2.7,
@@ -124,11 +130,11 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         furniture: ['bed', 'wardrobe', 'dresser', 'nightstand'],
       },
       {
+        /* Коридор — транзит, мягкий свет: один спот (~0.86). */
         typeId: 'hallway',
         sizeIndex: 0,
         ceilingH: 2.7,
         fixtures: [
-          { m: 'spot_s', q: 1, wood: 'oak', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
           { m: 'spot_s', q: 1, wood: 'oak', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['wardrobe', 'dresser', 'shoe_rack', 'coat_rack', 'mirror'],
@@ -146,8 +152,8 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         sizeIndex: 1,
         ceilingH: 2.7,
         fixtures: [
-          /* Rotor M в гостиной 25 м² + мебель +17%: с 4 патронами «Рассвет»,
-             с 5 «Ясный день». Апгрейд решает задачу яркости и +2450₽ к чеку. */
+          /* Гостиная 25 м² + мебель: Rotor M (5 патронов) + 2 бра + торшер →
+             ~1.27, «Ясный полдень». Многослойный свет = и норма, и +чек. */
           { m: 'rotor_m', q: 1, wood: 'oak', zone: 'ceiling', l: 5, opts: TPL_OPTS_WOOD_BOWL },
           { m: 'bra_h', q: 2, wood: 'oak', zone: 'wall' },
           { m: 'floor_lamp_s', q: 1, wood: 'oak', zone: 'floor' },
@@ -165,15 +171,18 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         furniture: ['bed', 'wardrobe', 'dresser', 'nightstand'],
       },
       {
+        /* Кухня 15 м²: Elliptical L + 3 рабочих Unit на стене → ~0.99, «Полдень». */
         typeId: 'kitchen',
         sizeIndex: 1,
         ceilingH: 2.7,
         fixtures: [
-          { m: 'elliptical_s', q: 1, wood: 'black', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'elliptical_l', q: 1, wood: 'black', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'unit', q: 3, wood: 'black', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['dtable', 'fridge', 'kitchen_set', 'stove'],
       },
       {
+        /* Коридор — транзит, мягкий свет: один спот. */
         typeId: 'hallway',
         sizeIndex: 0,
         ceilingH: 2.7,
@@ -195,8 +204,8 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         sizeIndex: 2,
         ceilingH: 3.0,
         fixtures: [
-          /* Rotor L в гостиной 35 м² + мебель +22% + потолок 3.0 м (+11%):
-             6 патронов вместо 4 решают задачу яркости и +4500₽ к чеку. */
+          /* Гостиная 35 м², потолок 3.0 м: Rotor L (6 патронов) + 2 бра + торшер →
+             ~0.98, «Ясный полдень». */
           { m: 'rotor_l', q: 1, wood: 'walnut', zone: 'ceiling', l: 6, opts: TPL_OPTS_WOOD_BOWL },
           { m: 'bra_v_l', q: 2, wood: 'walnut', zone: 'wall' },
           { m: 'floor_lamp', q: 1, wood: 'oak', zone: 'floor' },
@@ -218,23 +227,26 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         sizeIndex: 1,
         ceilingH: 3.0,
         fixtures: [
-          /* Детская самая «голодная» по свету (+25% мебель). Rotor M с 5 патронами
-             даёт 7500 лм → «Поляна» с запасом для уроков. */
+          /* Детская «голодная» по свету (200 лк + мебель): Rotor M (5 патронов)
+             + Unit на стене → ~0.91, «Ясный полдень» для уроков. */
           { m: 'rotor_m', q: 1, wood: 'oak', zone: 'ceiling', l: 5, opts: TPL_OPTS_WOOD_BOWL },
           { m: 'unit', q: 1, wood: 'oak', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['bed', 'desk', 'wardrobe', 'bookshelf'],
       },
       {
+        /* Кухня 15 м², потолок 3.0 м: Elliptical L + 3 рабочих Unit → ~0.93, «Полдень». */
         typeId: 'kitchen',
         sizeIndex: 1,
         ceilingH: 3.0,
         fixtures: [
-          { m: 'elliptical_s', q: 1, wood: 'black', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'elliptical_l', q: 1, wood: 'black', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'unit', q: 3, wood: 'black', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['dtable', 'fridge', 'kitchen_set', 'stove'],
       },
       {
+        /* Коридор 8 м² — транзит: 2 спота (~0.88), мягко и ровно. */
         typeId: 'hallway',
         sizeIndex: 1,
         ceilingH: 3.0,

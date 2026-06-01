@@ -14,7 +14,7 @@
 
 import { computed } from 'vue'
 import { T } from '../theme/tokens'
-import { FURN, furnText } from '../data/furniture'
+import { FURN, furnText, gword } from '../data/furniture'
 import type { FurnId, Room, RoomType } from '../data/rooms'
 import Chip from './ui/Chip.vue'
 
@@ -39,11 +39,19 @@ function handleToggle(id: FurnId) {
     ? props.room.furniture.filter((x) => x !== id)
     : [...props.room.furniture, id]
 
+  const pct = Math.round(Math.abs(f.ab) * 100)
+  const absorbs = f.ab > 0 // обычная мебель забирает свет; зеркало (ab<0) отражает
   let toast = ''
   if (isIn) {
-    toast = `${f.name} убрана — вернулось ${Math.round(f.ab * 100)}% света`
+    const verb = gword(f.g, 'убран', 'убрана', 'убрано')
+    toast = absorbs
+      ? `${f.name} ${verb} — вернулось ${pct}% света`
+      : `${f.name} ${verb} — минус ${pct}% света`
   } else {
-    toast = `${f.name}: −${Math.round(f.ab * 100)}% света`
+    const verb = gword(f.g, 'добавлен', 'добавлена', 'добавлено')
+    toast = absorbs
+      ? `${f.name} ${verb} — съедает ${pct}% света`
+      : `${f.name} ${verb} — плюс ${pct}% света`
   }
   emit('toggle', next, toast)
 }

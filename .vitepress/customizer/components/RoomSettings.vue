@@ -17,7 +17,7 @@
 
 import { computed, ref, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { T, Z } from '../theme/tokens'
-import { SZ, type Room, type RoomType, type ZoneLimits } from '../data/rooms'
+import { SZ, type Room, type RoomType, type ZoneLimits, type WallFinish } from '../data/rooms'
 import type { ZoneId } from '../data/catalog'
 import { roomZones } from '../engine/zone-engine'
 import { useConfigurator } from '../store/configurator'
@@ -67,15 +67,24 @@ const draftCustomArea = ref<number>(
   props.room.customArea ?? props.rt.sizes[2],
 )
 const draftCeilingH = ref<number>(props.room.ceilingH)
+const draftWallFinish = ref<WallFinish>(props.room.wallFinish ?? 'medium')
 const draftLimits = ref<ZoneLimits>({
   ...(props.room.limits ?? props.rt.limits),
 })
+
+/** Опции отделки стен: влияют на КПД (отражение света). */
+const WALL_OPTS: readonly { id: WallFinish; label: string; tip: string }[] = [
+  { id: 'light', label: 'Светлая', tip: 'белые, светлые стены' },
+  { id: 'medium', label: 'Средняя', tip: 'обычная отделка' },
+  { id: 'dark', label: 'Тёмная', tip: 'тёмные стены, дерево' },
+]
 
 watch(() => props.room.id, () => {
   draftName.value = props.room.customName ?? ''
   draftSizeIdx.value = props.room.sizeIndex
   draftCustomArea.value = props.room.customArea ?? props.rt.sizes[2]
   draftCeilingH.value = props.room.ceilingH
+  draftWallFinish.value = props.room.wallFinish ?? 'medium'
   draftLimits.value = { ...(props.room.limits ?? props.rt.limits) }
 })
 
@@ -124,6 +133,7 @@ const isDirty = computed<boolean>(() => {
     if (draftCustomArea.value !== original) return true
   }
   if (draftCeilingH.value !== props.room.ceilingH) return true
+  if (draftWallFinish.value !== (props.room.wallFinish ?? 'medium')) return true
   const origLimits = props.room.limits ?? props.rt.limits
   if (JSON.stringify(draftLimits.value) !== JSON.stringify(origLimits)) return true
   return false
@@ -163,6 +173,7 @@ function onSave() {
     sizeIndex: draftSizeIdx.value,
     customArea: draftSizeIdx.value === 3 ? draftCustomArea.value : props.room.customArea,
     ceilingH: draftCeilingH.value,
+    wallFinish: draftWallFinish.value,
     limits: { ...draftLimits.value },
   }
 
@@ -476,6 +487,53 @@ function hexToRgba(hex: string, a: number): string {
           class="ceiling-range"
           :style="{ width: '100%', '--tint': tint }"
         />
+      </div>
+
+      <!-- Отделка стён -->
+      <div
+        :style="{
+          background: hexToRgba(tint, 0.10),
+          border: `1px solid ${hexToRgba(tint, 0.20)}`,
+          borderRadius: '14px',
+          padding: '18px 16px 20px',
+          marginBottom: '14px',
+        }"
+      >
+        <div :style="{ fontSize: '20px', fontWeight: 700, color: T.text, marginBottom: '6px', textAlign: 'center', letterSpacing: '0.3px' }">
+          Стены
+        </div>
+        <div :style="{ fontSize: '13px', color: T.textSec, marginBottom: '14px', textAlign: 'center', lineHeight: 1.4 }">
+          Светлые стены отражают больше света — нужно меньше светильников
+        </div>
+        <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }">
+          <div
+            v-for="w in WALL_OPTS"
+            :key="w.id"
+            :style="{
+              borderRadius: '12px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              border: draftWallFinish === w.id ? `2px solid ${tint}` : `1px solid ${T.border}`,
+              background: draftWallFinish === w.id ? hexToRgba(tint, 0.20) : T.bg,
+              color: draftWallFinish === w.id ? T.text : T.textSec,
+              padding: '14px 8px',
+              transition: 'all .2s',
+              boxSizing: 'border-box',
+            }"
+            @click="draftWallFinish = w.id"
+          >
+            <div :style="{ fontSize: '16px', fontWeight: 700, textAlign: 'center' }">
+              {{ w.label }}
+            </div>
+            <div :style="{ fontSize: '11px', opacity: 0.75, textAlign: 'center', lineHeight: 1.3 }">
+              {{ w.tip }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Точки света -->

@@ -49,6 +49,9 @@ export type FurnId =
 
 export type MoodId = 'empty' | 'dusk' | 'morning' | 'zenith'
 
+/** Отделка стен — влияет на отражение света и через него на КПД помещения (UF). */
+export type WallFinish = 'light' | 'medium' | 'dark'
+
 export type ZoneLimits = Partial<Record<ZoneId, number>>
 
 export interface RoomType {
@@ -74,6 +77,8 @@ export interface Room {
   furniture: FurnId[]
   limits: ZoneLimits
   cardColor?: string
+  /** Отделка стен (дефолт 'medium'). Влияет на UF в baseLm. Задаётся в RoomSettings (Фаза 2). */
+  wallFinish?: WallFinish
 }
 
 /* ──────────────── Размеры ──────────────── */

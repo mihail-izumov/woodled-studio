@@ -20,7 +20,7 @@
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { T } from '../theme/tokens'
 import type { Mood } from '../data/moods'
-import { moodDesc } from '../data/moods'
+import { moodDesc, moodPhase } from '../data/moods'
 import { ratioToAngle } from '../engine/brightness'
 import Icon, { type IconName } from './ui/Icons.vue'
 
@@ -36,6 +36,25 @@ const emit = defineEmits<{ showDetail: [] }>()
 const desc = computed(() =>
   props.mood.id === 'empty' ? props.mood.desc : moodDesc(props.ratio),
 )
+/* Короткая подпись фазы (раскрывает 9 градаций под дугой). */
+const phase = computed(() =>
+  props.mood.id === 'empty' ? '' : moodPhase(props.ratio),
+)
+
+/* ──────────── Живая стрелка направления последнего действия ──────────── */
+/* ↑ светлеет (ratio вырос), ↓ темнеет, гаснет через ~1.3с. */
+const dir = ref<0 | 1 | -1>(0)
+let prevRatio = props.ratio
+let dirTimer: ReturnType<typeof setTimeout> | null = null
+watch(() => props.ratio, (n) => {
+  if (n > prevRatio + 0.001) dir.value = 1
+  else if (n < prevRatio - 0.001) dir.value = -1
+  prevRatio = n
+  if (dir.value !== 0) {
+    if (dirTimer) clearTimeout(dirTimer)
+    dirTimer = setTimeout(() => { dir.value = 0 }, 1300)
+  }
+})
 
 /* ──────────── Геометрия (логические координаты) ──────────── */
 const LW = 280
@@ -55,6 +74,9 @@ const PB_PCT = ((LH / LW) * 100).toFixed(2) + '%'
 const iconTopPct = ((ICON_CY - 14) / LH * 100).toFixed(1) + '%'
 const iconLeftPct = ((CX - 14) / LW * 100).toFixed(1) + '%'
 const iconSizePct = (28 / LW * 100).toFixed(1) + '%'
+
+/** Позиция стрелки направления под иконкой (% от контейнера). */
+const arrowTopPct = ((ICON_CY + 20) / LH * 100).toFixed(1) + '%'
 
 /* ──────────── Canvas refs ──────────── */
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -196,6 +218,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   resizeObserver?.disconnect()
+  if (dirTimer) clearTimeout(dirTimer)
 })
 
 watch(() => [props.ratio, props.mood.color], () => {
@@ -253,9 +276,27 @@ watch(() => [props.ratio, props.mood.color], () => {
         >
           <Icon :name="(mood.iconKey ?? 'sun') as IconName" :color="mood.color" :size="28" />
         </div>
+        <!-- Живая стрелка направления последнего действия -->
+        <div
+          :style="{
+            position: 'absolute',
+            top: arrowTopPct,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            pointerEvents: 'none',
+            opacity: dir === 0 ? 0 : 1,
+            transition: 'opacity .35s ease',
+          }"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" :stroke="mood.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline v-if="dir === 1" points="6 14 12 8 18 14" />
+            <polyline v-else points="6 10 12 16 18 10" />
+          </svg>
+        </div>
       </div>
     </div>
 
+    <div v-if="phase" class="mood-phase" :style="{ color: mood.color + 'bb' }">{{ phase }}</div>
     <div class="mood-name">{{ mood.name }}</div>
     <div class="mood-desc">{{ desc }}</div>
 
@@ -282,11 +323,18 @@ watch(() => [props.ratio, props.mood.color], () => {
   letter-spacing: 2.5px;
   margin-bottom: 4px;
 }
+.mood-phase {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 6px;
+}
 .mood-name {
   font-size: 18px;
   font-weight: 700;
   color: v-bind('T.text');
-  margin-top: 8px;
+  margin-top: 2px;
 }
 .mood-desc {
   font-size: 12px;

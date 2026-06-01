@@ -302,7 +302,7 @@ function onGalleryGiftClick() {
     <StickyBar v-if="stickyVisible" @share="cfg.showShare.value = true" @buy="cfg.showBuy.value = true" />
   </template>
 
-  <div :style="{ position: 'fixed', top: '8px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'block' }">
+  <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'block' }">
     <SoundButton />
   </div>
   <Toast :msg="cfg.fb.value" @done="cfg.clearFB" />

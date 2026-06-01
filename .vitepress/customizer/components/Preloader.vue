@@ -2,18 +2,14 @@
 /**
  * Preloader.vue — Брендовая интро-анимация перед WelcomeScreen.
  *
- * Источник: WoodledOnboarding/ChLight.vue (Глава 2). Урезанная версия:
- *   - Без названия главы и заголовка
- *   - Без свитча и теней с животными
- *   - Только 2 фазы: фото Rotor → ламели в круг
+ * Один экран: фирменная анимация ламелей (Rotor) + заголовок «WOODLED Студия»
+ * и подзаголовок. Типографика повторяет share-страницу (public/share/index.html):
+ * крупный логотип единым шрифтом.
  *
- * Тайминг (~9 сек):
- *   200ms  → p=0 (фото проявляется)
- *   1200ms → p=1 (текст 1 проявляется)
- *   5500ms → p=2 (фото исчезает, ламели разлетаются на свои места,
- *                 текст меняется на "Ламели встают в круг")
- *   7500ms → p=3 (ламели начинают вращение)
- *   9000ms → emit('done')
+ * Тайминг (~5.5 сек):
+ *   50ms   → p=1 (заголовок/подзаголовок проявляются, ламели влетают в круг)
+ *   2500ms → p=2 (ламели начинают вращение + внутреннее свечение)
+ *   5500ms → emit('done')
  *
  * После 'done' App.vue показывает WelcomeScreen.
  */
@@ -22,10 +18,13 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits<{ done: [] }>()
 
-const ROTOR_URL = '/woodled-studio/onboarding/rotor.png'
+/* Версия сборки. Бампать здесь — единственный источник.
+ * Схема 0.x: продукт ещё не запущен публично (нет публичной 1.0),
+ * 0.3 = третья крупная итерация. Третий разряд не ведём —
+ * мелкие правки не считаем. */
+const VERSION = 'v0.3'
 
-const p = ref(-1)
-const rotorLoaded = ref(false)
+const p = ref(0)
 let timers: ReturnType<typeof setTimeout>[] = []
 
 function clearTimers() {
@@ -33,40 +32,22 @@ function clearTimers() {
   timers = []
 }
 
-function preloadImg(src: string) {
-  return new Promise<void>((resolve) => {
-    const img = new Image()
-    img.onload = () => resolve()
-    img.onerror = () => resolve() // fallback — продолжаем даже при ошибке
-    img.src = src
-  })
-}
-
 function startTimeline() {
   clearTimers()
-  p.value = -1
+  p.value = 0
   const schedule: [number, number][] = [
-    [50, 0],     // фото проявляется почти сразу
-    [1000, 1],   // текст проявляется
-    [5500, 2],   // фото уходит, ламели разлетаются, текст 2
-    [7500, 3],   // ламели начинают spin
+    [50, 1],     // тексты проявляются, ламели влетают в круг
+    [2500, 2],   // ламели начинают spin + свечение
   ]
   schedule.forEach(([ms, val]) => {
     timers.push(setTimeout(() => { p.value = val }, ms))
   })
-  /* Финал: пауза +1s после spin чтобы текст успел прочитаться,
-   * затем эмитим done — App.vue запускает crossfade в WelcomeScreen. */
-  timers.push(setTimeout(() => emit('done'), 11000))
+  /* Финал: пауза после spin чтобы анимация прочиталась, затем done —
+   * App.vue запускает crossfade в WelcomeScreen. */
+  timers.push(setTimeout(() => emit('done'), 5500))
 }
 
-onMounted(() => {
-  /* Таймлайн стартует сразу — фото проявится через v-if когда загрузится.
-   * Ждать preloadImg синхронно нельзя: это создаёт visible задержку перед
-   * запуском анимации. */
-  preloadImg(ROTOR_URL).then(() => { rotorLoaded.value = true })
-  startTimeline()
-})
-
+onMounted(startTimeline)
 onUnmounted(clearTimers)
 
 const N = 20  // ламелей в круге
@@ -75,31 +56,26 @@ const R = 80  // радиус
 
 <template>
   <div class="pl">
-    <!-- Stage: фото rotor + ламели вращающиеся -->
-    <div class="pl-stage">
-      <!-- Фото rotor — видимо на p=0..1, исчезает на p>=2 -->
-      <div :class="['pl-photo', { v: p >= 0 && rotorLoaded, fade: p >= 2 }]">
-        <div class="pl-glow" />
-        <img v-if="rotorLoaded" :src="ROTOR_URL" alt="WOODLED Rotor" class="pl-img" />
-        <div class="pl-fade-top" />
-      </div>
+    <!-- Заголовок — крупно, как логотип на share-странице -->
+    <div :class="['pl-logo', { v: p >= 1 }]">WOODLED&nbsp;Студия</div>
 
-      <!-- Ламели — появляются на p>=2, спин на p>=3 -->
-      <div :class="['pl-rotor', { v: p >= 2 }]">
-        <div :class="['pl-asm', { spin: p >= 3 }]">
+    <!-- Stage: ламели вращающиеся -->
+    <div class="pl-stage">
+      <div :class="['pl-rotor', { v: p >= 1 }]">
+        <div :class="['pl-asm', { spin: p >= 2 }]">
           <div
             v-for="i in N"
             :key="`pl-rs-${i}`"
             class="pl-rs"
-            :class="{ in: p >= 2 }"
+            :class="{ in: p >= 1 }"
             :style="{
-              transform: p >= 2
+              transform: p >= 1
                 ? `rotate(${((i-1)/N)*360}deg) translateY(-${R}px)`
                 : `rotate(${((i-1)/N)*360}deg) translateY(-${R+90}px)`,
               transitionDelay: `${(i-1)*50}ms`,
             }"
           />
-          <template v-if="p >= 3">
+          <template v-if="p >= 2">
             <div
               v-for="i in N"
               :key="`pl-rsg-${i}`"
@@ -114,22 +90,13 @@ const R = 80  // радиус
       </div>
     </div>
 
-    <!-- Тексты — двойной layer с crossfade -->
-    <div :class="['pl-txt', { v: p >= 1 }]">
-      <div class="pl-stack">
-        <div :class="['pl-layer', { v: p < 2 }]">
-          <div class="pl-h">Дом с WOODLED Rotor</div>
-          <div class="pl-p">Настоящее дерево становится<br />живым светом в доме.</div>
-        </div>
-        <div :class="['pl-layer', { v: p >= 2 }]">
-          <div class="pl-h">Ламели встают в круг</div>
-          <div class="pl-p">
-            Простота. Природа. Ничего лишнего.<br />
-            Только дерево, свет и воздух между ними.
-          </div>
-        </div>
-      </div>
+    <!-- Подзаголовок — крупно, как тэглайн на share-странице -->
+    <div :class="['pl-sub', { v: p >= 1 }]">
+      Настоящее дерево становится живым светом в доме
     </div>
+
+    <!-- Версия сборки — полупрозрачно, внизу (как в мобильных приложениях) -->
+    <div class="pl-ver">{{ VERSION }}</div>
   </div>
 </template>
 
@@ -150,7 +117,7 @@ const R = 80  // радиус
   z-index: 9000;
   background: var(--pl-bg);
   color: var(--pl-text);
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -160,74 +127,34 @@ const R = 80  // радиус
   -webkit-font-smoothing: antialiased;
 }
 
-/* Stage с rotor/ламелями */
+/* Заголовок — единым шрифтом, как логотип на share-странице */
+.pl-logo {
+  font-size: clamp(26px, 6vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--pl-text);
+  text-align: center;
+  margin-bottom: 44px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.pl-logo.v {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stage с ламелями */
 .pl-stage {
   position: relative;
   width: 100%;
   max-width: 340px;
-  height: 300px;
+  height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 30px;
-}
-
-/* Rotor фото */
-.pl-photo {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transform: translateY(-80px);
-  transition: all 1.5s ease;
-}
-.pl-photo.v {
-  opacity: 1;
-  transform: translateY(0);
-}
-.pl-photo.fade {
-  opacity: 0;
-  transform: translateY(-30px) scale(.92);
-  transition: all 1.5s ease;
-}
-
-.pl-glow {
-  position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--pl-warm) 19%, transparent),
-    color-mix(in srgb, var(--pl-warm) 6%, transparent),
-    transparent
-  );
-  filter: blur(30px);
-}
-.pl-img {
-  position: relative;
-  z-index: 2;
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 40px color-mix(in srgb, var(--pl-warm) 13%, transparent)) brightness(1.05);
-  -webkit-mask-image: radial-gradient(ellipse 55% 50% at 50% 50%, #000 40%, rgba(0, 0, 0, .7) 65%, transparent 90%);
-  mask-image: radial-gradient(ellipse 55% 50% at 50% 50%, #000 40%, rgba(0, 0, 0, .7) 65%, transparent 90%);
-}
-.pl-fade-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-  background: linear-gradient(to bottom, var(--pl-bg), transparent);
-  z-index: 3;
-  pointer-events: none;
+  margin-bottom: 44px;
 }
 
 /* Rotor ламели в круге */
@@ -278,54 +205,46 @@ const R = 80  // радиус
   animation: plGlow 2.5s ease-in-out infinite;
 }
 
-/* Текст */
-.pl-txt {
+/* Подзаголовок — крупно, как тэглайн на share-странице */
+.pl-sub {
   text-align: center;
-  margin-top: 0;
-  width: 100%;
-  max-width: 380px;
+  max-width: 360px;
+  font-size: clamp(15px, 4vw, 18px);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.1px;
+  color: var(--pl-text);
   opacity: 0;
   transform: translateY(14px);
   transition: all 1s;
 }
-.pl-txt.v {
+.pl-sub.v {
   opacity: 1;
   transform: translateY(0);
 }
-.pl-stack {
-  position: relative;
-  width: 100%;
-  min-height: 110px;
-}
-.pl-layer {
+
+/* Версия сборки — полупрозрачно, прижата к низу */
+.pl-ver {
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-  pointer-events: none;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
   text-align: center;
-}
-.pl-layer.v { opacity: 1; }
-.pl-h {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--pl-text);
-  line-height: 1.35;
-  margin-bottom: 8px;
-}
-.pl-p {
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   color: var(--pl-text2);
-  max-width: 320px;
-  margin: 0 auto;
+  opacity: 0.35;
 }
 
 @keyframes plSpin { to { transform: rotate(360deg); } }
 @keyframes plGlow {
   0%, 100% { opacity: .5; }
   50% { opacity: 1; }
+}
+
+@media (max-width: 420px) {
+  .pl-logo { margin-bottom: 32px; }
+  .pl-stage { height: 200px; margin-bottom: 32px; }
 }
 </style>

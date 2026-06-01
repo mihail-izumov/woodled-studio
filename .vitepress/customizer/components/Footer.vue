@@ -67,7 +67,7 @@ function toggleExpand() {
            и со стики-CTA (белая кнопка) */
         background: 'rgba(0, 0, 0, 0.28)',
         borderRadius: '999px',
-        border: `1px solid ${T.border}`,
+        border: 'none',
         boxShadow: 'none',
         display: 'grid',
         gridTemplateColumns: 'clamp(36px, 8vw, 40px) 1fr clamp(36px, 8vw, 40px)',
@@ -203,7 +203,7 @@ function toggleExpand() {
           background: 'rgba(26, 23, 20, 0.72)',
           backdropFilter: 'blur(24px) saturate(140%)',
           WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          border: `1px solid ${T.border}`,
+          border: 'none',
           boxShadow: `0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04)`,
           textAlign: 'center',
         }"

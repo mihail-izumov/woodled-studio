@@ -256,7 +256,7 @@ function toggleExpand() {
             color: T.textSec,
           }"
         >
-          WOODLED и&nbsp;МОДУЛЬ&nbsp;РОСТА объединили <br class="m-br" />дизайн и&nbsp;технологии, чтобы сделать <br class="m-br" />простые вещи ещё лучше и&nbsp;удобнее. <br class="m-br" />Вместе мы создали новое <br class="m-br" />пространство для света.
+          WOODLED и&nbsp;МОДУЛЬ&nbsp;РОСТА объединили <br class="m-br" />дизайн и&nbsp;технологии, чтобы сделать <br class="m-br" />простые вещи ещё лучше и&nbsp;удобнее. <br class="m-br" />Вместе мы создали идеальное <br class="m-br" />пространство для света.
         </p>
 
         <p

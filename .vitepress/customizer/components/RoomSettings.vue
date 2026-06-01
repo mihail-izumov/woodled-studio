@@ -647,7 +647,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
   -moz-appearance: textfield;
 }
 .name-input::placeholder {
-  color: #C0B8AE;
+  color: #E2DACE;
   opacity: 1;
 }
 </style>

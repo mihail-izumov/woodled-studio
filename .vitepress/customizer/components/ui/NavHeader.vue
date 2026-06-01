@@ -27,59 +27,68 @@ defineEmits<{ back: [] }>()
     :style="{
       position: 'sticky',
       top: 0,
-      height: '48px',
+      height: '44px',
       background: T.bg,
       borderBottom: `1px solid ${T.border}`,
       zIndex: Z.stickyHeader,
       display: 'flex',
       alignItems: 'center',
-      paddingLeft: '12px',
-      paddingRight: '12px',
+      paddingLeft: '8px',
+      paddingRight: '8px',
       flexShrink: 0,
     }"
   >
-    <button
-      :style="{
-        background: 'none',
-        border: 'none',
-        color: T.text,
-        fontSize: '17px',
-        fontWeight: 400,
-        cursor: 'pointer',
-        padding: '4px 8px 4px 2px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1px',
-        fontFamily: 'inherit',
-        lineHeight: 1,
-      }"
-      @click="$emit('back')"
-    >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" :style="{ marginLeft: '-4px' }">
-        <path d="M13.83 19a1 1 0 0 1-.78-.37l-4.83-6a1 1 0 0 1 0-1.27l5-6a1 1 0 0 1 1.54 1.28L10.29 12l4.32 5.36a1 1 0 0 1-.78 1.64z"/>
-      </svg>
-      {{ back }}
-    </button>
+    <!-- Левая зона: кнопка назад. flex:1 + min-width:0 — симметрична правой,
+         за счёт чего заголовок центрируется по бару; при длинном лейбле
+         текст кнопки усекается, а не толкает заголовок. -->
+    <div :style="{ flex: '1 1 0', minWidth: 0, display: 'flex', justifyContent: 'flex-start' }">
+      <button
+        :style="{
+          background: 'none',
+          border: 'none',
+          color: T.text,
+          fontSize: '17px',
+          fontWeight: 400,
+          cursor: 'pointer',
+          padding: '4px 6px 4px 2px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1px',
+          fontFamily: 'inherit',
+          lineHeight: 1,
+          minWidth: 0,
+          maxWidth: '100%',
+        }"
+        @click="$emit('back')"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" :style="{ marginLeft: '-4px', flexShrink: 0 }">
+          <path d="M13.83 19a1 1 0 0 1-.78-.37l-4.83-6a1 1 0 0 1 0-1.27l5-6a1 1 0 0 1 1.54 1.28L10.29 12l4.32 5.36a1 1 0 0 1-.78 1.64z"/>
+        </svg>
+        <span :style="{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }">{{ back }}</span>
+      </button>
+    </div>
 
-    <div
-      :style="{
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
-        fontSize: '16px',
-        fontWeight: 700,
-        color: T.text,
-        whiteSpace: 'nowrap',
-        maxWidth: '60%',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-      }"
-    >
-      <slot name="title">{{ title }}</slot>
+    <!-- Заголовок: центральная зона, усекается многоточием.
+         Внутренний блок — для корректного text-overflow на тексте. -->
+    <div :style="{ flex: '0 1 auto', minWidth: 0, padding: '0 6px' }">
+      <div
+        :style="{
+          fontSize: '17px',
+          fontWeight: 600,
+          color: T.text,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          textAlign: 'center',
+        }"
+      >
+        <slot name="title">{{ title }}</slot>
+      </div>
+    </div>
+
+    <!-- Правая зона: симметрична левой для центрирования заголовка -->
+    <div :style="{ flex: '1 1 0', minWidth: 0, display: 'flex', justifyContent: 'flex-end' }">
+      <slot name="right" />
     </div>
   </div>
 </template>

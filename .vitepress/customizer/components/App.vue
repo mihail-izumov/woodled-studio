@@ -146,12 +146,17 @@ function roomPrepName(name: string): string {
 }
 function onFxSave(next: Fixture) {
   const af = cfg.activeFx.value; if (!af) return
+  const wasProvisional = fxIsProvisional.value
   cfg.updateFixture(af.roomId, af.fxIdx, next)
   fxIsProvisional.value = false
   const room = cfg.rooms.find((r: Room) => r.id === af.roomId) as Room | undefined
   const model = MD[next.m]?.name ?? 'Светильник'
   const where = room ? roomPrepName(room.customName || getRT(room.typeId).name) : ''
-  cfg.showFB(`${model}${where ? ` в ${where}` : ''}`, 'check')
+  /* Новый светильник → «{Модель} в {Комнате}» (добавлен). Правки существующего
+     → «Изменения сохранены» (ничего не добавляли). */
+  cfg.showFB(wasProvisional
+    ? `${model}${where ? ` в ${where}` : ''}`
+    : 'Изменения сохранены', 'check')
   cfg.closeFx()
 }
 function onFxDelete() { const af = cfg.activeFx.value; if (!af) return; cfg.removeFixture(af.roomId, af.fxIdx); fxIsProvisional.value = false; cfg.closeFx(); cfg.showFB('Светильник удалён') }

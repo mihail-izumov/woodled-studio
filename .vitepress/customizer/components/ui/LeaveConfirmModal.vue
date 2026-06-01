@@ -6,11 +6,14 @@
  * Затемняет фон почти в ноль, блокирует скролл/жесты (touch-action:none +
  * overscroll-behavior:contain). Заголовок в 2 строки, крупнее текста кнопок.
  *
- * Кнопки: «Выйти» — белая плашка без обводки (primary); «Отмена» — с обводкой.
+ * Две развязки (пользователь уже уходит — нажал «назад»):
+ *   - «Сохранить» (белая плашка, primary) → сохранить правки и уйти.
+ *   - «Выйти» (с обводкой) → уйти без сохранения.
+ *   - Тап по затемнённому фону → остаться (cancel).
  */
 import { T } from '../../theme/tokens'
 
-defineEmits<{ confirm: []; cancel: [] }>()
+defineEmits<{ save: []; discard: []; cancel: [] }>()
 </script>
 
 <template>
@@ -28,12 +31,12 @@ defineEmits<{ confirm: []; cancel: [] }>()
       <div :style="{ fontSize: '24px', fontWeight: 600, color: T.text, textAlign: 'center', lineHeight: 1.25, marginBottom: '24px' }">Изменения<br>не сохранятся</div>
       <button
         :style="{ width: '100%', padding: '15px', background: '#FFFFFF', color: T.bg, border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '17px', fontWeight: 600, marginBottom: '10px', fontFamily: 'inherit' }"
-        @click="$emit('confirm')"
-      >Выйти</button>
+        @click="$emit('save')"
+      >Сохранить</button>
       <button
         :style="{ width: '100%', padding: '15px', background: 'none', border: `1.5px solid ${T.textSec}`, borderRadius: '12px', color: T.text, cursor: 'pointer', fontSize: '17px', fontWeight: 600, fontFamily: 'inherit' }"
-        @click="$emit('cancel')"
-      >Отмена</button>
+        @click="$emit('discard')"
+      >Выйти</button>
     </div>
   </div>
 </template>

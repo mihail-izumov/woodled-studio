@@ -414,7 +414,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
     <div :style="{position:'fixed',inset:0,zIndex:48,background:'rgba(0,0,0,0.55)',pointerEvents:'none',opacity:highlightSave?1:0,transition:'opacity .45s ease'}" />
 
-    <LeaveConfirmModal v-if="showLeaveConfirm" @confirm="confirmLeave" @cancel="showLeaveConfirm=false" />
+    <LeaveConfirmModal v-if="showLeaveConfirm" @save="doSave" @discard="confirmLeave" @cancel="showLeaveConfirm=false" />
 
     <SmartHelpModal v-if="showHelp" @close="showHelp=false" />
 

@@ -182,7 +182,7 @@ function onGalleryGiftClick() {
 
 <template>
   <template v-if="activeFxData">
-    <FxEditor :key="activeFxData.roomId + ':' + activeFxData.fxIdx" :item="activeFxData.fx" :def-wood="activeFxData.fx.wood ?? 'oak'" :back-label="fxBackLabel" :room-area="fxEditorRoomContext?.roomArea" :room-base-lm="fxEditorRoomContext?.roomBaseLm" :room-current-lm-without-this="fxEditorRoomContext?.roomCurrentLmWithoutThis" :room-name="fxEditorRoomContext?.roomName" :room-tint="fxEditorRoomContext?.roomTint" @save="onFxSave" @delete="onFxDelete" @close="onFxClose" @feedback="cfg.showFB" />
+    <FxEditor :key="activeFxData.roomId + ':' + activeFxData.fxIdx" :item="activeFxData.fx" :def-wood="activeFxData.fx.wood ?? 'oak'" :back-label="fxBackLabel" :room-area="fxEditorRoomContext?.roomArea" :room-base-lm="fxEditorRoomContext?.roomBaseLm" :room-current-lm-without-this="fxEditorRoomContext?.roomCurrentLmWithoutThis" :room-name="fxEditorRoomContext?.roomName" :room-tint="fxEditorRoomContext?.roomTint" :is-provisional="fxIsProvisional" @save="onFxSave" @delete="onFxDelete" @close="onFxClose" @feedback="cfg.showFB" />
   </template>
 
   <template v-else-if="activeRoom">

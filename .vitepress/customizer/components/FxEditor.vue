@@ -34,9 +34,9 @@ import { useConfigurator } from '../store/configurator'
 interface Props {
   item: Fixture; defWood?: Wood; skipSize?: boolean; backLabel?: string
   roomArea?: number; roomBaseLm?: number; roomCurrentLmWithoutThis?: number
-  roomName?: string; roomTint?: string
+  roomName?: string; roomTint?: string; isProvisional?: boolean
 }
-const props = withDefaults(defineProps<Props>(), { skipSize: false, backLabel: '← Назад' })
+const props = withDefaults(defineProps<Props>(), { skipSize: false, backLabel: '← Назад', isProvisional: false })
 const emit = defineEmits<{ (e: 'save', fx: Fixture): void; (e: 'delete'): void; (e: 'close'): void; (e: 'feedback', msg: string): void }>()
 
 const cfg = useConfigurator()
@@ -110,6 +110,16 @@ const build = ref<Build>((()=>{
       else if(legacyAllDone)isDone=true; else isDone=false
       return[s,isDone?'chosen' as StepStatus:'default' as StepStatus]}))}
 })())
+
+/* Снимок начального состояния — для определения «есть несохранённые изменения».
+   build инициализируется синхронно выше, поэтому snapshot валиден сразу. */
+const initialBuildSnapshot = JSON.stringify(build.value)
+const isDirty = computed(() => JSON.stringify(build.value) !== initialBuildSnapshot)
+const showLeaveConfirm = ref(false)
+/* Выход со сводки: если есть изменения — спросить подтверждение, иначе закрыть.
+   Для провизорного нового светильника close в App.vue его удалит. */
+function requestClose(){ if(isDirty.value){ showLeaveConfirm.value=true } else { emit('close') } }
+function confirmLeave(){ showLeaveConfirm.value=false; emit('close') }
 
 const model=computed(()=>MD[mid.value]); const steps=computed(()=>getSteps(mid.value))
 const curStep=computed(()=>steps.value[stepIdx.value]); const meta=computed(()=>SM[curStep.value]||{name:'',desc:''})
@@ -218,8 +228,21 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <NavHeader
       :title="model.name"
       :back="view==='summary' ? (props.roomName || 'Назад') : 'Назад'"
-      @back="view==='summary'?emit('close'):backFromStep()"
+      @back="view==='summary'?requestClose():backFromStep()"
     />
+
+    <!-- Плашка «несохранённые изменения» — только на сводке -->
+    <div
+      v-if="isDirty&&view==='summary'"
+      :style="{position:'sticky',top:'44px',zIndex:9,background:props.roomTint??T.neutral,color:T.bg,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',cursor:'pointer',boxShadow:'0 2px 12px rgba(0,0,0,0.4)'}"
+      @click="doSave"
+    >
+      <span :style="{display:'flex',alignItems:'center',gap:'8px',flex:1,minWidth:0}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{flexShrink:0}"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span :style="{fontSize:'13px',fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}">Есть несохранённые изменения</span>
+      </span>
+      <span :style="{fontSize:'13px',fontWeight:700,display:'flex',alignItems:'center',gap:'4px',flexShrink:0}">Сохранить<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </div>
 
     <div :style="{maxWidth:'480px',margin:'0 auto',padding:'16px 20px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
 
@@ -369,6 +392,17 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         <div :style="{display:'flex',gap:'8px'}">
           <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:'pointer',fontSize:'13px',fontWeight:600}" @click="showDeleteConfirm=false">Отмена</button>
           <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:'none',background:T.red,color:'#fff',cursor:'pointer',fontSize:'13px',fontWeight:700}" @click="showDeleteConfirm=false;emit('delete')">Удалить</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showLeaveConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}" @click.self="showLeaveConfirm=false">
+      <div :style="{width:'100%',maxWidth:'340px',background:T.bg,borderRadius:'16px',border:`1px solid ${T.border}`,padding:'24px 20px',textAlign:'center'}">
+        <div :style="{fontSize:'16px',fontWeight:700,color:T.text,marginBottom:'8px'}">Выйти без сохранения?</div>
+        <div :style="{fontSize:'13px',color:T.textSec,lineHeight:1.5,marginBottom:'20px'}">{{ props.isProvisional?'Светильник не будет добавлен в комнату.':'Изменения не сохранятся.' }}</div>
+        <div :style="{display:'flex',gap:'8px'}">
+          <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:'pointer',fontSize:'13px',fontWeight:600}" @click="showLeaveConfirm=false">Отмена</button>
+          <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:'none',background:T.text,color:T.bg,cursor:'pointer',fontSize:'13px',fontWeight:700}" @click="confirmLeave">Выйти</button>
         </div>
       </div>
     </div>

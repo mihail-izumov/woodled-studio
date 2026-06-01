@@ -115,8 +115,9 @@ function addFx(fx: Fixture) {
   const newFixtures = [...props.room.fixtures, fx]
   const newIdx = newFixtures.length - 1
   emit('update', { ...props.room, fixtures: newFixtures })
-  emit('feedback', `${MD[fx.m]?.name} добавлен`)
-  /* isNew=true → светильник провизорный: «Сохранить» оставит, стрелка назад удалит. */
+  /* Тост «добавлен» НЕ показываем здесь: светильник пока провизорный.
+     Подтверждение появится на «Сохранить» (App.onFxSave → «Светильник сохранён»).
+     isNew=true → стрелка назад удалит несохранённый светильник. */
   emit('openFx', props.room.id, newIdx, true)
 }
 

@@ -237,11 +237,26 @@ function onGalleryGiftClick() {
         {{ subtitle }}
       </div>
 
-      <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }">
+      <div :style="{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }">
         <RoomCard v-for="r in sortedRooms" :key="r.id" :room="r" @click="cfg.active.value = r.id" @pick-color="onPickColor(r)" />
-        <div :style="{ border: `1px dashed ${T.border}`, borderRadius: '12px', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: T.textDim }" @click="cfg.picker.value = true">
-          <div :style="{ fontSize: '15px', fontWeight: 500, lineHeight: 1.3, textAlign: 'center' }">Добавить<br/>комнату</div>
-        </div>
+        <!-- Добавить комнату — белая CTA -->
+        <button
+          :style="{
+            width: '100%', height: '60px', borderRadius: '16px', border: 'none', cursor: 'pointer',
+            background: '#EAE0CA', color: T.bg, fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 12px rgba(0,0,0,0.25)',
+          }"
+          @click="cfg.picker.value = true"
+        >
+          <span :style="{ width: '26px', height: '26px', borderRadius: '50%', background: 'rgba(19,17,14,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+            <svg width="16" height="16" viewBox="0 0 22 22" :style="{ display: 'block' }">
+              <line x1="11" y1="4" x2="11" y2="18" :stroke="T.bg" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="4" y1="11" x2="18" y2="11" :stroke="T.bg" stroke-width="2.5" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span :style="{ fontSize: '16px', fontWeight: 700 }">Добавить комнату</span>
+        </button>
       </div>
 
       <!-- Фотогалерея «Лес шепчет» — вдохновляющая подборка случайных фото.

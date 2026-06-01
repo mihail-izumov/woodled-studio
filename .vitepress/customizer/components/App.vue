@@ -229,6 +229,15 @@ function onGalleryGiftClick() {
       }"
     >
       <div :style="{ textAlign: 'center', marginBottom: '20px', paddingTop: '8px' }">
+        <div
+          :style="{
+            display: 'inline-block', marginBottom: '10px', padding: '5px 18px',
+            borderRadius: '999px', background: T.neutral + '18',
+            fontSize: '15px', fontWeight: 700, color: T.neutral, letterSpacing: '0.75px',
+          }"
+        >
+          WOODLED Студия
+        </div>
         <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center' }">
           <div
             :style="{
@@ -247,15 +256,6 @@ function onGalleryGiftClick() {
           >
             {{ cfg.name.value }}
           </div>
-        </div>
-        <div
-          :style="{
-            display: 'inline-block', marginTop: '10px', padding: '5px 18px',
-            borderRadius: '999px', background: T.neutral + '18',
-            fontSize: '15px', fontWeight: 700, color: T.neutral, letterSpacing: '0.75px',
-          }"
-        >
-          WOODLED ROTOR
         </div>
       </div>
 

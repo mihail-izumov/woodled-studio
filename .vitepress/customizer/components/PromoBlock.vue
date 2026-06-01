@@ -50,7 +50,7 @@ const emit = defineEmits<{ click: [] }>()
       </div>
       <!-- batch11 #7 (#5): «и получите скидку» убрано -->
       <div :style="{ fontSize: '13px', fontWeight: 500, color: T.textSec }">
-        Соберите лес WOODLED Rotor
+        Соберите лес WOODLED
       </div>
     </div>
     <svg

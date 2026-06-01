@@ -113,8 +113,8 @@ function onPick(id: RoomTypeId) {
             color: '#FFFFFF',
             border: 'none',
             borderRadius: '12px',
-            fontSize: '22px',
-            fontWeight: 500,
+            fontSize: '17px',
+            fontWeight: 600,
             cursor: 'pointer',
             fontFamily: 'inherit',
           }"

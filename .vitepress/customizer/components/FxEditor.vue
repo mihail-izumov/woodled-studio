@@ -119,7 +119,9 @@ const isDirty = computed(() => JSON.stringify(build.value) !== initialBuildSnaps
 const showLeaveConfirm = ref(false)
 /* Выход со сводки: если есть изменения — спросить подтверждение, иначе закрыть.
    Для провизорного нового светильника close в App.vue его удалит. */
-function requestClose(){ if(isDirty.value){ showLeaveConfirm.value=true } else { emit('close') } }
+/* Провизорный (только что добавленный) светильник спрашиваем ВСЕГДА — даже без
+   правок: иначе пользователь может уйти, думая что «добавил», и потерять его. */
+function requestClose(){ if(isDirty.value||props.isProvisional){ showLeaveConfirm.value=true } else { emit('close') } }
 function confirmLeave(){ showLeaveConfirm.value=false; emit('close') }
 /* Плашка «несохранённые изменения» скроллит к нижней кнопке «Сохранить»
    (единая логика с RoomSettings). Нижняя кнопка — единственная точка сохранения. */
@@ -414,7 +416,12 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
     <div :style="{position:'fixed',inset:0,zIndex:48,background:'rgba(0,0,0,0.55)',pointerEvents:'none',opacity:highlightSave?1:0,transition:'opacity .45s ease'}" />
 
-    <LeaveConfirmModal v-if="showLeaveConfirm" @save="doSave" @discard="confirmLeave" @cancel="showLeaveConfirm=false" />
+    <LeaveConfirmModal
+      v-if="showLeaveConfirm"
+      :title="props.isProvisional ? 'Светильник\nне добавлен' : 'Изменения\nне сохранятся'"
+      :save-label="props.isProvisional ? 'Добавить' : 'Сохранить'"
+      @save="doSave" @discard="confirmLeave" @cancel="showLeaveConfirm=false"
+    />
 
     <SmartHelpModal v-if="showHelp" @close="showHelp=false" />
 

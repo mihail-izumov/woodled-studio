@@ -22,6 +22,7 @@ import type { ZoneId } from '../data/catalog'
 import { roomZones } from '../engine/zone-engine'
 import { useConfigurator } from '../store/configurator'
 import NavHeader from './ui/NavHeader.vue'
+import LeaveConfirmModal from './ui/LeaveConfirmModal.vue'
 
 interface Props {
   rt: RoomType
@@ -136,11 +137,17 @@ const saveBtnEl = ref<HTMLButtonElement | null>(null)
 const highlightSave = ref(false)
 let highlightTimer: ReturnType<typeof setTimeout> | null = null
 function scrollToSave() {
-  saveBtnEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  /* behavior:'auto' — иначе smooth двигает кнопку под пальцем (movable target). */
+  saveBtnEl.value?.scrollIntoView({ behavior: 'auto', block: 'center' })
   highlightSave.value = true
   if (highlightTimer) clearTimeout(highlightTimer)
   highlightTimer = setTimeout(() => { highlightSave.value = false }, 2000)
 }
+
+/* Подтверждение выхода при несохранённых изменениях (единая логика с FxEditor). */
+const showLeaveConfirm = ref(false)
+function requestClose() { if (isDirty.value) { showLeaveConfirm.value = true } else { emit('close') } }
+function confirmLeave() { showLeaveConfirm.value = false; emit('close') }
 
 function onSave() {
   /* Если юзер был в edit-mode площади — коммитим input перед save */
@@ -173,7 +180,6 @@ function hexToRgba(hex: string, a: number): string {
   return `rgba(${r},${g},${b},${a})`
 }
 
-const displayName = computed(() => props.room.customName || props.rt.name)
 </script>
 
 <template>
@@ -184,10 +190,10 @@ const displayName = computed(() => props.room.customName || props.rt.name)
       inset: 0,
       background: T.bg,
       zIndex: Z.fullscreenModal,
-      overflow: 'auto',
+      overflow: showLeaveConfirm ? 'hidden' : 'auto',
     }"
   >
-    <NavHeader title="Параметры комнаты" back="Назад" @back="emit('close')" />
+    <NavHeader title="Параметры комнаты" back="Назад" @back="requestClose" />
 
     <div
       v-if="isDirty"
@@ -203,10 +209,8 @@ const displayName = computed(() => props.room.customName || props.rt.name)
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '10px',
-        cursor: 'pointer',
         boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
       }"
-      @click="scrollToSave"
     >
       <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0 }">
@@ -218,7 +222,7 @@ const displayName = computed(() => props.room.customName || props.rt.name)
           Есть несохранённые изменения
         </span>
       </div>
-      <span :style="{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0, background: T.text, color: T.bg, padding: '6px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700 }">
+      <span :style="{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0, background: T.text, color: T.bg, padding: '6px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }" @click="scrollToSave">
         Сохранить
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19" />
@@ -589,6 +593,8 @@ const displayName = computed(() => props.room.customName || props.rt.name)
 
     <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
     <div :style="{ position: 'fixed', inset: 0, zIndex: 48, background: 'rgba(0,0,0,0.55)', pointerEvents: 'none', opacity: highlightSave ? 1 : 0, transition: 'opacity .45s ease' }" />
+
+    <LeaveConfirmModal v-if="showLeaveConfirm" @confirm="confirmLeave" @cancel="showLeaveConfirm = false" />
   </div>
 </template>
 

@@ -23,6 +23,7 @@ import { buildSizeRecommendation, type AreaFit, type SizeCandidate } from '../en
 import Icon, { fxIcName, type IconName } from './ui/Icons.vue'
 import NavHeader from './ui/NavHeader.vue'
 import SmartHelpModal from './ui/SmartHelpModal.vue'
+import LeaveConfirmModal from './ui/LeaveConfirmModal.vue'
 import { buildFixtureShareUrl } from '../engine/share'
 import ShareModal from './ShareModal.vue'
 
@@ -127,7 +128,9 @@ const saveBtnEl = ref<HTMLButtonElement|null>(null)
 const highlightSave = ref(false)
 let highlightTimer: ReturnType<typeof setTimeout>|null = null
 function scrollToSave(){
-  saveBtnEl.value?.scrollIntoView({behavior:'smooth',block:'center'})
+  /* behavior:'auto' (мгновенно) — иначе smooth-скролл двигает кнопку под пальцем
+     и тап попадает на «Поделиться» ниже. */
+  saveBtnEl.value?.scrollIntoView({behavior:'auto',block:'center'})
   highlightSave.value=true
   if(highlightTimer)clearTimeout(highlightTimer)
   highlightTimer=setTimeout(()=>{highlightSave.value=false},2000)
@@ -247,14 +250,13 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <!-- Плашка «несохранённые изменения» — только на сводке -->
     <div
       v-if="isDirty&&view==='summary'"
-      :style="{position:'sticky',top:'44px',zIndex:9,background:props.roomTint??T.neutral,color:T.bg,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',cursor:'pointer',boxShadow:'0 2px 12px rgba(0,0,0,0.4)'}"
-      @click="scrollToSave"
+      :style="{position:'sticky',top:'44px',zIndex:9,background:props.roomTint??T.neutral,color:T.bg,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',boxShadow:'0 2px 12px rgba(0,0,0,0.4)'}"
     >
       <span :style="{display:'flex',alignItems:'center',gap:'8px',flex:1,minWidth:0}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{flexShrink:0}"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span :style="{fontSize:'13px',fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}">Есть несохранённые изменения</span>
       </span>
-      <span :style="{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,background:T.text,color:T.bg,padding:'6px 12px',borderRadius:'8px',fontSize:'13px',fontWeight:700}">{{ props.isProvisional?'Добавить':'Сохранить' }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
+      <span :style="{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,background:T.text,color:T.bg,padding:'6px 12px',borderRadius:'8px',fontSize:'13px',fontWeight:700,cursor:'pointer'}" @click="scrollToSave">{{ props.isProvisional?'Добавить':'Сохранить' }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
     </div>
 
     <div :style="{maxWidth:'480px',margin:'0 auto',padding:'16px 20px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
@@ -412,13 +414,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
     <div :style="{position:'fixed',inset:0,zIndex:48,background:'rgba(0,0,0,0.55)',pointerEvents:'none',opacity:highlightSave?1:0,transition:'opacity .45s ease'}" />
 
-    <div v-if="showLeaveConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,0.82)',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}" @click.self="showLeaveConfirm=false">
-      <div :style="{width:'100%',maxWidth:'320px',background:T.bg,borderRadius:'18px',border:`1px solid ${T.border}`,padding:'24px 20px'}">
-        <div :style="{fontSize:'17px',fontWeight:600,color:T.text,textAlign:'center',lineHeight:1.3,marginBottom:'20px'}">Изменения не сохранятся</div>
-        <button :style="{width:'100%',padding:'15px',background:'#FFFFFF',color:T.bg,border:'none',borderRadius:'12px',cursor:'pointer',fontSize:'17px',fontWeight:600,marginBottom:'10px',fontFamily:'inherit'}" @click="confirmLeave">Выйти</button>
-        <button :style="{width:'100%',padding:'15px',background:'none',border:'none',color:T.textSec,cursor:'pointer',fontSize:'17px',fontWeight:600,fontFamily:'inherit'}" @click="showLeaveConfirm=false">Отмена</button>
-      </div>
-    </div>
+    <LeaveConfirmModal v-if="showLeaveConfirm" @confirm="confirmLeave" @cancel="showLeaveConfirm=false" />
 
     <SmartHelpModal v-if="showHelp" @close="showHelp=false" />
 

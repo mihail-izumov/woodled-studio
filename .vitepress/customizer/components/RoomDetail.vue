@@ -493,7 +493,7 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
             borderRadius: '8px',
             color: T.red,
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '17px',
             fontWeight: 600,
           }"
           @click="confirmDel = true"

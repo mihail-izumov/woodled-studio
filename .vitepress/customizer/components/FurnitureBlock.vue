@@ -14,7 +14,7 @@
 
 import { computed } from 'vue'
 import { T } from '../theme/tokens'
-import { FURN, furnText, furnStatus } from '../data/furniture'
+import { FURN, furnText } from '../data/furniture'
 import type { FurnId, Room, RoomType } from '../data/rooms'
 import Chip from './ui/Chip.vue'
 
@@ -30,7 +30,6 @@ const emit = defineEmits<{
 }>()
 
 const text = computed(() => furnText(props.room.furniture, props.furnPct))
-const status = computed(() => furnStatus(props.furnPct))
 
 function handleToggle(id: FurnId) {
   const f = FURN[id]
@@ -53,21 +52,21 @@ function handleToggle(id: FurnId) {
 <template>
   <div
     :style="{
-      background: props.tint + '08',
-      borderRadius: '10px',
-      padding: '12px',
+      background: props.tint + '06',
+      borderRadius: '16px',
+      padding: '20px 16px 22px',
       marginTop: '16px',
       marginBottom: '16px',
       textAlign: 'center',
-      border: `1px solid ${props.tint}18`,
+      border: `1px solid ${props.tint}33`,
     }"
   >
     <div
       :style="{
-        fontSize: '14px',
-        fontWeight: 600,
+        fontSize: '17px',
+        fontWeight: 700,
         color: T.text,
-        marginBottom: '10px',
+        marginBottom: '18px',
       }"
     >
       Обстановка
@@ -93,7 +92,7 @@ function handleToggle(id: FurnId) {
       </Chip>
     </div>
 
-    <div v-if="props.furnPct !== 0" :style="{ marginTop: '10px' }">
+    <div v-if="props.furnPct !== 0" :style="{ marginTop: '16px' }">
       <span
         :style="{
           display: 'inline-block',
@@ -107,7 +106,6 @@ function handleToggle(id: FurnId) {
       >
         <template v-if="props.furnPct > 0">−{{ props.furnPct }}% меньше света</template>
         <template v-else>+{{ Math.abs(props.furnPct) }}% больше</template>
-        · {{ status }}
       </span>
     </div>
 
@@ -115,7 +113,7 @@ function handleToggle(id: FurnId) {
       :style="{
         fontSize: '13px',
         color: T.text,
-        marginTop: '10px',
+        marginTop: '14px',
         lineHeight: 1.55,
       }"
     >

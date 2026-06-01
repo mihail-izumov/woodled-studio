@@ -51,9 +51,8 @@ function toggleExpand() {
 <template>
   <footer
     :style="{
-      padding: '16px 24px 32px',
-      maxWidth: '720px',
-      margin: '60px auto 20px',
+      padding: 0,
+      margin: '48px 0 0',
       width: '100%',
       boxSizing: 'border-box',
     }"
@@ -63,11 +62,13 @@ function toggleExpand() {
       :style="{
         width: '100%',
         padding: '12px clamp(14px, 3vw, 18px)',
-        background: T.card,
+        /* кредиты, не продукт: «утопленная» плашка — темнее фона,
+           без тени, тонкая рамка → не спорит с баннерами (T.card, raised)
+           и со стики-CTA (белая кнопка) */
+        background: 'rgba(0, 0, 0, 0.28)',
         borderRadius: '999px',
         border: `1px solid ${T.border}`,
-        boxShadow:
-          '0 8px 28px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+        boxShadow: 'none',
         display: 'grid',
         gridTemplateColumns: 'clamp(36px, 8vw, 40px) 1fr clamp(36px, 8vw, 40px)',
         alignItems: 'center',
@@ -164,7 +165,7 @@ function toggleExpand() {
           width: 'clamp(32px, 7vw, 38px)',
           height: 'clamp(32px, 7vw, 38px)',
           borderRadius: '50%',
-          background: T.neutral + '22',
+          background: T.neutral + '14',
           border: 'none',
           padding: 0,
           cursor: 'pointer',

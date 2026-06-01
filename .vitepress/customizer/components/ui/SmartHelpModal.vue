@@ -21,7 +21,7 @@ defineEmits<{ close: [] }>()
 
 const helpStatuses = [
   { label: 'Не хватает',  color: T.red,     desc: 'Меньше половины нормы. Будет темно даже днём.' },
-  { label: 'Приглушённо', color: T.yellow,  desc: '0.5–0.8× от нормы. Хорошо для атмосферы и засыпания.' },
+  { label: 'Приглушённо', color: T.yellow,  desc: '0.5–0.8× от нормы. Мягкий свет под плед, чашку чая и неспешный вечер.' },
   { label: 'Комфортно',   color: T.green,   desc: '0.8–2× — целевой диапазон. Достаточно для всех задач.' },
   { label: 'С запасом',   color: T.neutral, desc: '2–4×. Для рабочих зон или комнат с тёмными стенами.' },
   { label: 'Избыточно',   color: T.textDim, desc: 'Больше 4× нормы. Поставьте диммер или возьмите меньше.' },
@@ -79,11 +79,11 @@ const helpStatuses = [
               </div>
               <div :style="{ padding: '14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }">
                 <div :style="{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: T.yellow + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="T.yellow" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20.9 18.55-8-15.98a1 1 0 0 0-1.8 0l-8 15.98"/><ellipse cx="12" cy="19" rx="9" ry="3"/></svg></div>
-                <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '3px' }">Все светильники в комнате</div><div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">Спот, бра, торшер — суммируем общий свет, и на этом фоне считаем, сколько добавит выбранный Rotor.</div></div>
+                <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '3px' }">Все светильники в комнате</div><div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">Спот, бра, торшер — суммируем общий свет и на этом фоне считаем, сколько добавит выбранный Rotor.</div></div>
               </div>
               <div :style="{ padding: '14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }">
                 <div :style="{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: T.green + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="T.green" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M5 18v2"/><path d="M19 18v2"/></svg></div>
-                <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '3px' }">Мебель и зоны</div><div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">Стол, диван, кухонный гарнитур поднимают локальную норму — рабочей зоне нужно больше света, чем проходу.</div></div>
+                <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '3px' }">Мебель и зоны</div><div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">Стол, диван, кухонный гарнитур поднимают локальную норму — рабочей зоне нужно больше света.</div></div>
               </div>
             </div>
           </div>
@@ -138,7 +138,7 @@ const helpStatuses = [
             <div :style="{ display: 'flex', flexDirection: 'column', gap: '6px' }">
               <div :style="{ padding: '12px 14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '10px', display: 'flex', gap: '10px', alignItems: 'flex-start' }">
                 <span :style="{ width: '22px', height: '22px', borderRadius: '6px', background: T.neutral + '22', color: T.neutral, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, flexShrink: 0 }">1</span>
-                <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }"><b :style="{ color: T.text }">Сравните карточки</b> — каждый статус показывает, как ляжет размер именно в эту комнату.</div>
+                <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }"><b :style="{ color: T.text }">Сравните карточки</b> — каждый статус показывает, как изменится освещение именно в этой комнате.</div>
               </div>
               <div :style="{ padding: '12px 14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '10px', display: 'flex', gap: '10px', alignItems: 'flex-start' }">
                 <span :style="{ width: '22px', height: '22px', borderRadius: '6px', background: T.neutral + '22', color: T.neutral, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, flexShrink: 0 }">2</span>

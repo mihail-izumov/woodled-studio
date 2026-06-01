@@ -204,7 +204,14 @@ watch(() => [props.ratio, props.mood.color], () => {
 </script>
 
 <template>
-  <div class="mood-block">
+  <div
+    class="mood-block"
+    :style="{
+      background: mood.color + '06',
+      border: `1px solid ${mood.color}33`,
+      borderRadius: '16px',
+    }"
+  >
     <div class="mood-header" :style="{ color: mood.color + 'bb' }">
       Настроение {{ roomPrepName }}
     </div>
@@ -264,9 +271,6 @@ watch(() => [props.ratio, props.mood.color], () => {
 
 <style scoped>
 .mood-block {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
   padding: 16px 20px 20px;
   margin-bottom: 16px;
   text-align: center;

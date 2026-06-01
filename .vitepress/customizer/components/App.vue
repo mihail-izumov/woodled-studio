@@ -233,7 +233,7 @@ function onGalleryGiftClick() {
           :style="{
             display: 'inline-block', marginBottom: '10px', padding: '5px 18px',
             borderRadius: '999px', background: T.neutral + '18',
-            fontSize: '15px', fontWeight: 700, color: T.neutral, letterSpacing: '0.75px',
+            fontSize: '17px', fontWeight: 500, color: T.neutral,
           }"
         >
           WOODLED Студия

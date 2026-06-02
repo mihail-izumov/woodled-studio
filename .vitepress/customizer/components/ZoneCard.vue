@@ -153,12 +153,12 @@ function orbStyle(wood: Wood, size = 15) {
     </button>
 
     <!-- Список светильников (по одной строке на запись Fixture) -->
-    <div v-else ref="listEl" class="fxscroll" :style="{ flex: 1, minHeight: 0, overflowY: 'auto', marginTop: '8px', paddingRight: '4px', marginRight: '-4px' }">
+    <div v-else ref="listEl" class="fxscroll" :style="{ flex: 1, minHeight: 0, overflowY: 'auto', marginTop: '8px', paddingRight: '4px', marginRight: '-4px', display: 'flex', flexDirection: 'column', gap: '4px' }">
       <button
         v-for="it in zFx"
         :key="it._idx"
         class="fxrow"
-        :style="{ display: 'flex', alignItems: 'center', gap: '7px', width: '100%', padding: '6px 0', borderRadius: '9px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }"
+        :style="{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', padding: '6px 7px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }"
         @click="onRow(it)"
       >
         <span :style="orbStyle(it.wood, 12)" />
@@ -208,6 +208,6 @@ function orbStyle(wood: Wood, size = 15) {
 .fxscroll::-webkit-scrollbar-track { background: transparent; }
 .fxscroll { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
 .fxrow { transition: background 0.15s ease; }
-.fxrow:hover { background: rgba(255, 255, 255, 0.05); }
-.fxrow:active { background: rgba(255, 255, 255, 0.09); }
+.fxrow:hover { background: rgba(255, 255, 255, 0.08) !important; }
+.fxrow:active { background: rgba(255, 255, 255, 0.13) !important; }
 </style>

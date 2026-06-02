@@ -12,9 +12,8 @@
  *   - Gap между чипами увеличен 5px → 7px для воздуха между pills.
  */
 
-import { computed } from 'vue'
 import { T } from '../theme/tokens'
-import { FURN, furnText, gword } from '../data/furniture'
+import { FURN, gword } from '../data/furniture'
 import type { FurnId, Room, RoomType } from '../data/rooms'
 import Chip from './ui/Chip.vue'
 
@@ -28,8 +27,6 @@ const props = withDefaults(defineProps<Props>(), { tint: '#A89878' })
 const emit = defineEmits<{
   toggle: [nextFurn: FurnId[], toast: string]
 }>()
-
-const text = computed(() => furnText(props.room.furniture, props.furnPct))
 
 function handleToggle(id: FurnId) {
   const f = FURN[id]
@@ -117,15 +114,5 @@ function handleToggle(id: FurnId) {
       </span>
     </div>
 
-    <div
-      :style="{
-        fontSize: '13px',
-        color: T.text,
-        marginTop: '14px',
-        lineHeight: 1.55,
-      }"
-    >
-      {{ text }}
-    </div>
   </div>
 </template>

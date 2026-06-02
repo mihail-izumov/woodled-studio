@@ -22,8 +22,9 @@
 
 import { computed } from 'vue'
 import { T, WCOL, type Wood } from '../theme/tokens'
-import { autoMood, getBright } from '../data/moods'
+import { getBright } from '../data/moods'
 import { baseLm, fxLm } from '../engine/brightness'
+import { forestScene } from '../engine/forest'
 import { getRT, type Room } from '../data/rooms'
 
 interface Props {
@@ -59,8 +60,8 @@ const rt = computed(() => getRT(props.room.typeId))
 const base = computed(() => baseLm(rt.value, props.room))
 const actual = computed(() => fxLm(props.room.fixtures))
 const ratio = computed(() => (base.value > 0 ? actual.value / base.value : 0))
-const mood = computed(() => autoMood(ratio.value))
-const isEmpty = computed(() => mood.value.id === 'empty')
+const scene = computed(() => forestScene(rt.value, props.room))
+const isEmpty = computed(() => props.room.fixtures.length === 0)
 const bright = computed(() => getBright(ratio.value).name)
 
 const cc = computed(() => props.room.cardColor || T.neutral)
@@ -192,7 +193,7 @@ const tap = {
         <div
           v-if="!isEmpty"
           :style="{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase', color: cc, lineHeight: 1, marginTop: '6px', whiteSpace: 'nowrap', overflow: 'hidden' }"
-        >{{ mood.name }}</div>
+        >{{ scene.name }}</div>
       </div>
 
       <!-- вход — объёмный стеклянный шар (без halo: свечение отдано солнцу) -->

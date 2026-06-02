@@ -27,7 +27,7 @@ import {
   roomWood, roomZones, glowOpacity, opacityToHex, GLOW_POS,
 } from '../engine/zone-engine'
 import { woodNames, occupiedPhrase } from '../engine/i18n'
-import { lightHint, actionReaction, type LightAction } from '../engine/copy'
+import { actionReaction, type LightAction } from '../engine/copy'
 import { MD } from '../data/catalog'
 import { getBright } from '../data/moods'
 import { useConfigurator } from '../store/configurator'
@@ -35,8 +35,7 @@ import { useConfigurator } from '../store/configurator'
 import Icon from './ui/Icons.vue'
 import Modal from './ui/Modal.vue'
 import NavHeader from './ui/NavHeader.vue'
-import SmartHelpModal from './ui/SmartHelpModal.vue'
-import MoodBlock from './MoodBlock.vue'
+import ForestMood from './ForestMood.vue'
 import ZoneCard from './ZoneCard.vue'
 import FurnitureBlock from './FurnitureBlock.vue'
 import Footer from './Footer.vue'
@@ -136,7 +135,6 @@ const addZone = ref<ZoneId | null>(null)
 const openZoneId = ref<ZoneId | null>(null)
 const showSettings = ref(false)
 const confirmDel = ref(false)
-const showSmartHelp = ref(false)
 
 /* Зона, открытая в ZoneFixturesModal (объект для модалки). */
 const openZone = computed(() => zones.value.find((z) => z.id === openZoneId.value) ?? null)
@@ -152,11 +150,6 @@ const ptsLimit = computed(() =>
   zones.value.reduce((s, z) => s + zoneLimit(z.id), 0),
 )
 
-/* Подсказка на дашборде — собирается движком copy.ts (комната × состояние × вариант).
-   seed = число светильников: вариант меняется при изменении сборки, без дёрганья. */
-const smartLine = computed(() =>
-  lightHint(props.room.typeId, ratio.value, props.room.fixtures.length),
-)
 
 /* ─── Реакция на последнее действие (copy.ts C6): короткая подпись на ~1.8с ─── */
 const reactionText = ref('')
@@ -219,10 +212,6 @@ function confirmDelete() {
   confirmDel.value = false
   emit('delete')
   emit('close')
-}
-
-function onShowMoodDetail() {
-  cfg.showMoodDetail.value = tintedMood.value
 }
 
 /* ──────────── Фотогалерея ──────────── */
@@ -368,46 +357,6 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
           </div>
         </div>
 
-        <div
-          v-if="actual > 0"
-          :style="{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginTop: '10px',
-            padding: '5px 6px 5px 5px',
-            borderRadius: '999px',
-            background: tintedMood.color + '10',
-          }"
-        >
-          <button
-            :style="{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '7px',
-              padding: '6px 14px 6px 9px',
-              borderRadius: '999px',
-              background: tintedMood.color + '22',
-              border: 'none',
-              color: tintedMood.color,
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 700,
-              fontFamily: 'inherit',
-              flexShrink: 0,
-              whiteSpace: 'nowrap',
-            }"
-            @click="showSmartHelp = true"
-          >
-            <div class="rotor-dash" :style="{ '--rc': tintedMood.color }" aria-hidden="true">
-              <div v-for="i in 10" :key="i" class="rotor-dash-l" :style="{ '--rot': ((i - 1) / 10 * 360) + 'deg', animationDelay: ((i - 1) * 30) + 'ms' }" />
-            </div>
-            WOODLED Smart
-          </button>
-          <div :style="{ fontSize: '12px', color: tintedMood.color + 'cc', flex: 1, fontWeight: 500, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }">
-            {{ smartLine }}
-          </div>
-        </div>
 
         <!-- Реакция на последнее действие (transient ~1.8с) -->
         <div
@@ -487,17 +436,17 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
         @toggle="onFurnToggle"
       />
 
-      <MoodBlock
+      <ForestMood
         v-if="props.room.fixtures.length > 0"
-        :mood="tintedMood"
-        :ratio="ratio"
+        :rt="rt"
+        :room="props.room"
+        :tint="tint"
         :room-prep-name="roomPrepName"
-        @show-detail="onShowMoodDetail"
       />
 
       <!--
         Фотогалерея «{Ваш свет в интерьере} | {С похожим набором}».
-        Размещение: после MoodBlock, перед блоком удаления — чтобы вдохновляющий
+        Размещение: после блока настроения, перед блоком удаления — чтобы вдохновляющий
         контент не оказался после destructive action (HANDOFF говорит «перед
         Footer», но это деградирует UX, потому что блок «Удалить комнату»
         сидит прямо перед Footer).
@@ -640,7 +589,6 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
 
     <span v-show="false">{{ Icon }}</span>
 
-    <SmartHelpModal v-if="showSmartHelp" @close="showSmartHelp = false" />
   </div>
 </template>
 

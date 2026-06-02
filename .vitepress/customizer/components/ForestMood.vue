@@ -88,10 +88,14 @@ function onScroll() {
         }"
         @click="emit('showHelp')"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" :stroke="props.tint" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19" />
-        </svg>
+        <span class="rotor-dash" :style="{ '--rc': props.tint }" aria-hidden="true">
+          <span
+            v-for="i in 10"
+            :key="i"
+            class="rotor-dash-l"
+            :style="{ '--rot': ((i - 1) / 10 * 360) + 'deg', animationDelay: ((i - 1) * 30) + 'ms' }"
+          />
+        </span>
         WOODLED Smart
       </button>
     </div>
@@ -162,5 +166,32 @@ function onScroll() {
   flex: 0 0 82%;
   scroll-snap-align: center;
   min-height: 116px;
+}
+.rotor-dash {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  position: relative;
+  flex-shrink: 0;
+}
+.rotor-dash-l {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.5px;
+  height: 5px;
+  margin: -2.5px 0 0 -0.75px;
+  border-radius: 1px;
+  background: var(--rc, #b4915a);
+  transform-origin: 50% 50%;
+  animation: rotorDashCycle 5000ms ease-in-out infinite;
+  opacity: 0;
+}
+@keyframes rotorDashCycle {
+  0%   { transform: rotate(var(--rot)) translateY(-14px) scale(0.3); opacity: 0; }
+  5%   { transform: rotate(var(--rot)) translateY(-7px) scale(1);   opacity: 0.7; }
+  80%  { transform: rotate(var(--rot)) translateY(-7px) scale(1);   opacity: 0.7; }
+  90%  { transform: rotate(var(--rot)) translateY(-14px) scale(0.3); opacity: 0; }
+  100% { transform: rotate(var(--rot)) translateY(-14px) scale(0.3); opacity: 0; }
 }
 </style>

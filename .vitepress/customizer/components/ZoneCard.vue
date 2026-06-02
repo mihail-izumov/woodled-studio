@@ -101,7 +101,7 @@ function orbStyle(wood: Wood, size = 15) {
       position: 'relative',
       aspectRatio: '5 / 6',
       borderRadius: '16px',
-      padding: '13px 14px',
+      padding: '13px 10px',
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
@@ -158,21 +158,21 @@ function orbStyle(wood: Wood, size = 15) {
         v-for="it in zFx"
         :key="it._idx"
         class="fxrow"
-        :style="{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '6px 0', borderRadius: '9px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }"
+        :style="{ display: 'flex', alignItems: 'center', gap: '7px', width: '100%', padding: '6px 0', borderRadius: '9px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }"
         @click="onRow(it)"
       >
-        <span :style="orbStyle(it.wood, 15)" />
+        <span :style="orbStyle(it.wood, 12)" />
         <span :style="{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.15 }">
           <span :style="{ fontSize: '14px', fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxType(it.m) }}
           </span>
-          <span :style="{ fontSize: '11px', fontWeight: 600, color: accent + 'b3', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
+          <span :style="{ fontSize: '9px', fontWeight: 600, color: accent + '66', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxLine(it.m) }}
           </span>
         </span>
         <span
           v-if="fxChip(it.m)"
-          :style="{ marginLeft: 'auto', fontSize: '12px', fontWeight: 700, color: T.text, background: 'rgba(255,255,255,0.1)', padding: '3px 9px', borderRadius: '7px', whiteSpace: 'nowrap', flexShrink: 0 }"
+          :style="{ marginLeft: 'auto', fontSize: '11px', fontWeight: 700, color: T.text, background: 'rgba(255,255,255,0.1)', padding: '2px 7px', borderRadius: '6px', whiteSpace: 'nowrap', flexShrink: 0 }"
         >
           {{ fxChip(it.m) }}
         </span>

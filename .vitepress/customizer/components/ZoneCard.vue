@@ -20,7 +20,7 @@
 
 import { computed, ref, onMounted, nextTick } from 'vue'
 import { T } from '../theme/tokens'
-import { MD, type Fixture, type Zone } from '../data/catalog'
+import { type Fixture, type Zone, fxType, fxChip, fxLine } from '../data/catalog'
 import { WCOL, type Wood } from '../data/materials'
 import type { Mood } from '../data/moods'
 import { zoneLm, zoneFxCount } from '../engine/zone-engine'
@@ -42,34 +42,20 @@ const emit = defineEmits<{
 
 const accent = computed(() => props.mood.color)
 
-interface FxGroup {
-  key: string
-  name: string
-  wood: Wood
-  units: number
-  entries: { _idx: number }[]
-}
+/**
+ * Светильники этой зоны — по одной строке на каждую запись Fixture.
+ * Старая группировка «модель+дерево» в ×N убрана (NAMING_SPEC §6):
+ * опции живут на штуке, поэтому два бра с разными настройками не должны
+ * сливаться в одну строку. Количество всё ещё видно по dots в нижней плашке.
+ */
+interface ZoneFxRow extends Fixture { _idx: number }
+const zFx = computed<ZoneFxRow[]>(() =>
+  props.fixtures
+    .map((it, idx) => ({ ...it, _idx: idx }))
+    .filter((it) => (it.zone ?? 'ceiling') === props.zone.id),
+)
 
-/** Светильники зоны, схлопнутые по «модель + дерево». */
-const groups = computed<FxGroup[]>(() => {
-  const out: FxGroup[] = []
-  props.fixtures.forEach((f, idx) => {
-    if ((f.zone ?? 'ceiling') !== props.zone.id) return
-    const name = MD[f.m]?.name ?? f.m
-    const key = name + '|' + f.wood
-    const q = f.q ?? 1
-    const ex = out.find((g) => g.key === key)
-    if (ex) {
-      ex.units += q
-      ex.entries.push({ _idx: idx })
-    } else {
-      out.push({ key, name, wood: f.wood, units: q, entries: [{ _idx: idx }] })
-    }
-  })
-  return out
-})
-
-const isEmpty = computed(() => groups.value.length === 0)
+const isEmpty = computed(() => zFx.value.length === 0)
 const used = computed(() => zoneFxCount(props.fixtures, props.zone.id))
 const full = computed(() => used.value >= props.limit)
 const zPct = computed(() =>
@@ -89,10 +75,9 @@ function onAdd() {
   if (full.value) emit('limitHit')
   else emit('add')
 }
-function onRow(g: FxGroup) {
-  // Клик по модели открывает страницу светильника (первого в группе).
-  // Список всех — через нижнюю плашку (emit('open')).
-  emit('edit', g.entries[0]._idx)
+function onRow(it: ZoneFxRow) {
+  // Клик по строке открывает страницу именно этого светильника.
+  emit('edit', it._idx)
 }
 function orbStyle(wood: Wood, size = 15) {
   const color = WCOL[wood]
@@ -167,24 +152,29 @@ function orbStyle(wood: Wood, size = 15) {
       <span :style="{ fontSize: '15px', fontWeight: 600, color: T.text, textAlign: 'center', lineHeight: 1.3 }">Добавьте<br />свет</span>
     </button>
 
-    <!-- Список моделей -->
+    <!-- Список светильников (по одной строке на запись Fixture) -->
     <div v-else ref="listEl" class="fxscroll" :style="{ flex: 1, minHeight: 0, overflowY: 'auto', marginTop: '8px', paddingRight: '4px', marginRight: '-4px' }">
       <button
-        v-for="g in groups"
-        :key="g.key"
+        v-for="it in zFx"
+        :key="it._idx"
         class="fxrow"
         :style="{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '6px 0', borderRadius: '9px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }"
-        @click="onRow(g)"
+        @click="onRow(it)"
       >
-        <span :style="orbStyle(g.wood, 15)" />
-        <span :style="{ flex: 1, fontSize: '14px', fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', maskImage: 'linear-gradient(to right, #000 82%, transparent)', WebkitMaskImage: 'linear-gradient(to right, #000 82%, transparent)' }">
-          {{ g.name }}
+        <span :style="orbStyle(it.wood, 15)" />
+        <span :style="{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, gap: '1px' }">
+          <span :style="{ fontSize: '14px', fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
+            {{ fxType(it.m) }}
+          </span>
+          <span :style="{ fontSize: '10px', fontWeight: 500, color: T.textSec, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.2px' }">
+            {{ fxLine(it.m) }}
+          </span>
         </span>
         <span
-          v-if="g.units > 1"
-          :style="{ fontSize: '13px', fontWeight: 700, color: T.text, background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '7px', flexShrink: 0 }"
+          v-if="fxChip(it.m)"
+          :style="{ marginLeft: 'auto', fontSize: '12px', fontWeight: 600, color: T.textSec, whiteSpace: 'nowrap', flexShrink: 0 }"
         >
-          ×{{ g.units }}
+          {{ fxChip(it.m) }}
         </span>
       </button>
     </div>

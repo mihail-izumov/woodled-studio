@@ -30,10 +30,17 @@ export interface WireOption { id: string; label: string; price: number; tip?: st
 export interface BaseColorOption { id: string; label: string; artSuffix: string }
 
 export interface Model {
+  /** Старое имя — используется только для артикулов/совместимости. В UI НЕ показывать. */
   name: string
   letter: string
   type: FxType
   family?: FamilyId
+  /** Подпись линейки/бренда снизу строки (всегда). Например: «Rotor», «Rotor X», «Rotor Elliptical». */
+  collection: string
+  /** Короткий различитель справа в строке комнаты и в навбаре. Размер у люстр, форма/монтаж у остальных. */
+  chip: string
+  /** Полная форма различителя для плашки карточки светильника. */
+  titleFull: string
   lamps: number
   minL: number
   maxL: number
@@ -83,6 +90,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Потолок: ROTOR ── */
   rotor_s: {
     name: 'Rotor S', letter: 'S', type: 'люстра', family: 'rotor',
+    collection: 'Rotor', chip: 'малая', titleFull: 'малая',
     lamps: 4, minL: 4, maxL: 4, lmPer: 1070, sur: 1000,
     sqMin: 6, sqMax: 7, p: { oak: 14900, walnut: 17900, black: 15900 },
     avBowls: BWL_ALL, hasMount: true, diffLoss: 0, bulbsIn: false,
@@ -90,6 +98,7 @@ export const MD: Record<ModelId, Model> = {
   },
   rotor_m: {
     name: 'Rotor M', letter: 'M', type: 'люстра', family: 'rotor',
+    collection: 'Rotor', chip: 'средняя', titleFull: 'средняя',
     lamps: 4, minL: 4, maxL: 6, lmPer: 1500, sur: 1000,
     sqMin: 10, sqMax: 12, p: { oak: 19900, walnut: 22900, black: 20900 },
     avBowls: BWL_ALL, hasMount: true, diffLoss: 0, bulbsIn: false,
@@ -97,6 +106,7 @@ export const MD: Record<ModelId, Model> = {
   },
   rotor_l: {
     name: 'Rotor L', letter: 'L', type: 'люстра', family: 'rotor',
+    collection: 'Rotor', chip: 'большая', titleFull: 'большая',
     lamps: 4, minL: 4, maxL: 8, lmPer: 1500, sur: 1000,
     sqMin: 12, sqMax: 15, p: { oak: 26900, walnut: 30900, black: 27900 },
     avBowls: BWL_ALL, hasMount: true, diffLoss: 0, bulbsIn: false,
@@ -104,6 +114,7 @@ export const MD: Record<ModelId, Model> = {
   },
   rotor_1000: {
     name: 'Rotor 1000', letter: '1000', type: 'люстра', family: 'rotor',
+    collection: 'Rotor', chip: 'огромная', titleFull: 'огромная',
     lamps: 6, minL: 6, maxL: 12, lmPer: 1500, sur: 1000,
     sqMin: 15, sqMax: 20, p: { oak: 39900, walnut: 45900, black: 41900 },
     avBowls: [], hasMount: true, diffLoss: 0, bulbsIn: false,
@@ -113,6 +124,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Потолок: ROTOR X ── */
   rotor_x_m: {
     name: 'Rotor X M', letter: 'M', type: 'люстра', family: 'rotor_x',
+    collection: 'Rotor X', chip: 'средняя', titleFull: 'средняя',
     lamps: 3, minL: 3, maxL: 6, lmPer: 800, sur: 1000,
     sqMin: 4, sqMax: 6, p: { oak: 27900, walnut: 30900, black: 28900 },
     avBowls: BWL_X, hasMount: false, hasDiffuser: true,
@@ -126,6 +138,7 @@ export const MD: Record<ModelId, Model> = {
   },
   rotor_x_l: {
     name: 'Rotor X L', letter: 'L', type: 'люстра', family: 'rotor_x',
+    collection: 'Rotor X', chip: 'большая', titleFull: 'большая',
     lamps: 3, minL: 3, maxL: 8, lmPer: 800, sur: 1000,
     sqMin: 6, sqMax: 7, p: { oak: 34900, walnut: 36900, black: 35900 },
     avBowls: BWL_X, hasMount: false, hasDiffuser: true,
@@ -141,6 +154,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Потолок: ELLIPTICAL ── */
   elliptical_s: {
     name: 'Elliptical S', letter: 'S', type: 'люстра', family: 'elliptical',
+    collection: 'Rotor Elliptical', chip: 'малая', titleFull: 'малая',
     lamps: 4, minL: 4, maxL: 8, lmPer: 970, sur: 500,
     sqMin: 5, sqMax: 15, p: { oak: 25900, walnut: 28900, black: 26900 },
     avBowls: BWL_6, hasMount: false, diffLoss: 0, bulbsIn: true,
@@ -148,6 +162,7 @@ export const MD: Record<ModelId, Model> = {
   },
   elliptical_l: {
     name: 'Elliptical L', letter: 'L', type: 'люстра', family: 'elliptical',
+    collection: 'Rotor Elliptical', chip: 'большая', titleFull: 'большая',
     lamps: 6, minL: 6, maxL: 12, lmPer: 970, sur: 500,
     sqMin: 15, sqMax: 20, p: { oak: 38900, walnut: 43900, black: 40900 },
     avBowls: BWL_6, hasMount: false, diffLoss: 0, bulbsIn: true,
@@ -157,6 +172,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Потолок: SPOT ── */
   spot_s: {
     name: 'Spot S', letter: 'S', type: 'спот', family: 'spot',
+    collection: 'Rotor', chip: 'подвесной', titleFull: 'подвесной',
     lamps: 1, minL: 1, maxL: 1, lmPer: 970, sur: 0,
     sqMin: 3, sqMax: 5, p: { oak: 8900, walnut: 9900, black: 8900 },
     avBowls: BWL_6, hasMount: false, diffLoss: 0, bulbsIn: true,
@@ -164,6 +180,7 @@ export const MD: Record<ModelId, Model> = {
   },
   spot_l: {
     name: 'Spot L', letter: 'L', type: 'спот', family: 'spot',
+    collection: 'Rotor', chip: 'подвесной', titleFull: 'подвесной',
     lamps: 1, minL: 1, maxL: 1, lmPer: 970, sur: 0,
     sqMin: 3, sqMax: 5, p: { oak: 10900, walnut: 11900, black: 10900 },
     avBowls: BWL_6, hasMount: false, diffLoss: 0, bulbsIn: true,
@@ -173,6 +190,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Стена: UNIT ── */
   unit: {
     name: 'Unit', letter: 'U', type: 'спот',
+    collection: 'Rotor', chip: 'настенный', titleFull: 'настенный',
     lamps: 1, minL: 1, maxL: 1, lmPer: 970, sur: 0,
     sqMin: 3, sqMax: 5, p: { oak: 8900, walnut: 9900, black: 8900 },
     avBowls: BWL_4, hasMount: false, diffLoss: 0, bulbsIn: true,
@@ -183,6 +201,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Стена: БРА ── */
   bra_h: {
     name: 'Бра Horizontal', letter: 'H', type: 'бра',
+    collection: 'Rotor', chip: 'гор.', titleFull: 'горизонтальное',
     lamps: 2, minL: 2, maxL: 2, lmPer: 905, sur: 0,
     sqMin: 4, sqMax: 6, p: { oak: 12900, walnut: 13900, black: 12900 },
     avBowls: [], hasMount: false, diffLoss: 0, bulbsIn: false,
@@ -191,6 +210,7 @@ export const MD: Record<ModelId, Model> = {
   },
   bra_v_s: {
     name: 'Бра Vertical S', letter: 'S', type: 'бра', family: 'bra_v',
+    collection: 'Rotor', chip: 'верт.', titleFull: 'вертикальное',
     lamps: 2, minL: 2, maxL: 2, lmPer: 510, sur: 0,
     sqMin: 2, sqMax: 3, p: { oak: 17900, walnut: 20900, black: 18900 },
     avBowls: [], hasMount: false, diffLoss: 0, bulbsIn: true,
@@ -199,6 +219,7 @@ export const MD: Record<ModelId, Model> = {
   },
   bra_v_l: {
     name: 'Бра Vertical L', letter: 'L', type: 'бра', family: 'bra_v',
+    collection: 'Rotor', chip: 'верт.', titleFull: 'вертикальное',
     lamps: 2, minL: 2, maxL: 2, lmPer: 905, sur: 0,
     sqMin: 4, sqMax: 6, p: { oak: 21900, walnut: 24900, black: 22900 },
     avBowls: [], hasMount: false, diffLoss: 0, bulbsIn: false,
@@ -209,6 +230,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Стол ── */
   table_lamp: {
     name: 'Настольная', letter: 'T', type: 'настольная',
+    collection: 'Rotor', chip: '', titleFull: '',
     lamps: 1, minL: 1, maxL: 1, lmPer: 1500, sur: 0,
     sqMin: 2, sqMax: 4, p: { oak: 10900, walnut: 11900, black: 10900 },
     avBowls: [], hasMount: false, diffLoss: 0, bulbsIn: false,
@@ -219,6 +241,7 @@ export const MD: Record<ModelId, Model> = {
   /* ── Пол ── */
   floor_lamp: {
     name: 'Торшер', letter: 'F', type: 'торшер',
+    collection: 'Rotor', chip: 'тренога', titleFull: 'на треноге',
     lamps: 1, minL: 1, maxL: 1, lmPer: 1500, sur: 0,
     sqMin: 5, sqMax: 7, p: { oak: 37900, walnut: 42900, black: 39900 },
     avBowls: [], hasMount: false, diffLoss: 0, bulbsIn: false,
@@ -231,6 +254,7 @@ export const MD: Record<ModelId, Model> = {
   },
   floor_lamp_s: {
     name: 'Торшер S', letter: 'Fs', type: 'торшер',
+    collection: 'Rotor', chip: 'стойка', titleFull: 'на стойке',
     lamps: 1, minL: 1, maxL: 1, lmPer: 1500, sur: 0,
     sqMin: 5, sqMax: 7, p: { oak: 26900, walnut: 28900, black: 27900 },
     avBowls: [], hasMount: false, diffLoss: 0, bulbsIn: false,
@@ -308,4 +332,45 @@ export interface Fixture {
   opts?: Partial<FxOpts>
   /** Список ID шагов чек-листа, которые юзер подтвердил («Готово»). */
   done?: string[]
+}
+
+/* ──────────────── Подписи: единая точка формирования имён ────────────────
+ * Источник правды по контенту — NAMING_SPEC.md. Все имена в UI собираются
+ * только этими хелперами; поле `name` в MD оставлено для артикулов и
+ * совместимости со старыми данными — в UI его не показываем.
+ *
+ *   • строка комнаты (двухстрочная):  fxType (слева) + fxChip (справа) + fxLine (подпись снизу)
+ *   • навбар iOS:                     fxNav     («Люстра большая», «Бра гор.»)
+ *   • плашка карточки светильника:    fxTitle   («Бра горизонтальное») + fxLine
+ */
+export const TYPE_LABEL: Record<FxType, string> = {
+  'люстра':     'Люстра',
+  'спот':       'Спот',
+  'бра':        'Бра',
+  'торшер':     'Торшер',
+  'настольная': 'Настольная',
+}
+
+/** Тип светильника с заглавной — слева в строке комнаты, в заголовке. */
+export const fxType  = (m: ModelId): string => TYPE_LABEL[MD[m].type]
+/** Чип-различитель справа: размер у люстр, форма/монтаж у остальных. У настольной — пусто. */
+export const fxChip  = (m: ModelId): string => MD[m].chip
+/** Короткий заголовок навбара iOS: «Люстра большая», «Бра гор.», «Торшер тренога». */
+export const fxNav   = (m: ModelId): string => [TYPE_LABEL[MD[m].type], MD[m].chip].filter(Boolean).join(' ')
+/** Полный заголовок для плашки: «Бра горизонтальное», «Торшер на треноге». */
+export const fxTitle = (m: ModelId): string => [TYPE_LABEL[MD[m].type], MD[m].titleFull].filter(Boolean).join(' ')
+/** Подпись линейки/бренда снизу: «Rotor», «Rotor X», «Rotor Elliptical» — показываем всегда. */
+export const fxLine  = (m: ModelId): string => MD[m].collection
+
+/** Подпись чипа размера в переключателе у люстр: «малая · 8–10 м²». Механика FAMILIES не меняется. */
+export const SIZE_WORD: Record<string, string> = {
+  S:    'малая',
+  M:    'средняя',
+  L:    'большая',
+  '1000': 'огромная',
+}
+export const fxSizeChip = (m: ModelId): string => {
+  const md = MD[m]
+  const word = SIZE_WORD[md.letter] ?? md.letter
+  return `${word} · ${md.sqMin}–${md.sqMax} м²`
 }

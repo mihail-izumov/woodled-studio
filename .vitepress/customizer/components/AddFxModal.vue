@@ -13,7 +13,7 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { T } from '../theme/tokens'
 import {
-  MD, ALL_ZONES, FAMILIES,
+  MD, ALL_ZONES, FAMILIES, fxTitle,
   type ZoneId, type ModelId, type FamilyId, type Fixture,
 } from '../data/catalog'
 import { type Wood } from '../data/materials'
@@ -65,15 +65,18 @@ const groups = computed<Group[]>(() => {
         seen.add(m.family)
         const fams = FAMILIES[m.family].filter(fid => zone.value.models.includes(fid))
         if (fams.length > 0) {
-          const baseName = fams.length > 1
-            ? (MD[fams[0]].name.replace(/ [SML]$| \d+$/, '') as string)
-            : MD[fams[0]].name
+          // У люстровых семейств подпись = название линейки (Rotor / Rotor X / Rotor Elliptical),
+          // у остальных семейств (где все Rotor) — тип + форма («Спот подвесной», «Бра вертикальное»).
+          const head = MD[fams[0]]
+          const baseName = head.type === 'люстра' ? head.collection : fxTitle(fams[0])
           out.push({ type: 'family', family: m.family, name: baseName, models: fams })
         }
       }
     } else {
       seen.add(mid)
-      out.push({ type: 'single', name: m.name, models: [mid] })
+      // Одиночные модели подписываем через fxTitle (без поля name): «Бра горизонтальное»,
+      // «Спот настенный», «Настольная», «Торшер на треноге/стойке».
+      out.push({ type: 'single', name: fxTitle(mid) || m.collection, models: [mid] })
     }
   }
   return out

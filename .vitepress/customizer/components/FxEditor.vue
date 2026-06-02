@@ -15,7 +15,7 @@
 
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { T, WCOL } from '../theme/tokens'
-import { MD, FAMILIES, type Fixture, type ModelId } from '../data/catalog'
+import { MD, FAMILIES, fxNav, fxTitle, fxLine, fxSizeChip, SIZE_WORD, type Fixture, type ModelId } from '../data/catalog'
 import { MATS, BOWLS as ALL_BOWLS, BTEMPS, DEF_OPT, OPT_PRICE, WOOD_TIPS, OPT_TIPS, type Wood, type Bowl } from '../data/materials'
 import { getBright } from '../data/moods'
 import { buildSizeRecommendation, type AreaFit, type SizeCandidate } from '../engine/autosize'
@@ -205,9 +205,9 @@ const sizeAdvice=computed<SizeAdvice|null>(()=>{
   if(!sel)return null;const selBright=getBright(sel.projectedRatio).name
   const cats=recs.map(r=>getBright(r.projectedRatio).name);const uniqueCats=[...new Set(cats)]
   const comfCount=recs.filter(r=>r.projectedRatio>=0.8&&r.projectedRatio<=2.0).length
-  if(rec&&rec.mid===sel.mid){if(comfCount>1)return{text:`${MD[rec.mid].name} — лучший баланс яркости и размера для вашей комнаты. Остальные «комфортные» тоже подойдут — выбирайте по диаметру под потолок и стиль интерьера.`,tone:'good'};return{text:`${MD[rec.mid].name} — оптимальный выбор для этой комнаты. Ровно столько света, сколько нужно.`,tone:'good'}}
+  if(rec&&rec.mid===sel.mid){if(comfCount>1)return{text:`${fxNav(rec.mid)} — лучший баланс яркости и размера для вашей комнаты. Остальные «комфортные» тоже подойдут — выбирайте по диаметру под потолок и стиль интерьера.`,tone:'good'};return{text:`${fxNav(rec.mid)} — оптимальный выбор для этой комнаты. Ровно столько света, сколько нужно.`,tone:'good'}}
   if(uniqueCats.length===1){if(selBright==='Не хватает'||selBright==='Приглушённо')return{text:`Ни один размер этой коллекции не осветит ${props.roomArea} м² самостоятельно. Выберите крупнейший — он даст максимум, а остальной свет добавьте бра, торшером или спотами.`,tone:'bad'};if(selBright==='Избыточно')return{text:`Все размеры дают слишком много света для этой комнаты. Возьмите наименьший и обязательно поставьте диммер — будете управлять яркостью.`,tone:'warn'};if(selBright==='С запасом')return{text:`Все размеры дают запас яркости. Крупный — для выразительного потолка, компактный — если хотите минимализм. Диммер пригодится в любом случае.`,tone:'neutral'};return{text:`Все размеры подходят по яркости — свет одинаковый. Крупнее — выразительнее на потолке, компактнее — деликатнее. Выбирайте по диаметру под высоту потолка и стиль.`,tone:'neutral'}}
-  if(rec&&sel){const recName=MD[rec.mid].name;if(sel.modelLm<rec.modelLm){if(selBright==='Не хватает')return{text:`Этого размера не хватит — будет темно. Рекомендуем ${recName} или добавьте дополнительные светильники (бра, торшер).`,tone:'bad'};if(selBright==='Приглушённо')return{text:`Получится приглушённый свет — для атмосферы хорошо, для работы мало. Хотите ярче — возьмите ${recName}.`,tone:'warn'};return{text:`Чуть меньше рекомендуемого, но всё равно комфортно. Если любите яркость — возьмите ${recName}.`,tone:'neutral'}};if(selBright==='Избыточно')return{text:`Этот размер даст слишком много света. Возьмите ${recName} — он идеально балансирует, или поставьте диммер.`,tone:'warn'};if(selBright==='С запасом')return{text:`Будет с запасом — хорошо для рабочей зоны или если в комнате тёмные стены. Поставьте диммер для вечернего режима.`,tone:'neutral'};return{text:`Хороший выбор. Рекомендация — ${recName}, но ваш вариант тоже в комфортном диапазоне.`,tone:'good'}}
+  if(rec&&sel){const recName=fxNav(rec.mid);if(sel.modelLm<rec.modelLm){if(selBright==='Не хватает')return{text:`Этого размера не хватит — будет темно. Рекомендуем ${recName} или добавьте дополнительные светильники (бра, торшер).`,tone:'bad'};if(selBright==='Приглушённо')return{text:`Получится приглушённый свет — для атмосферы хорошо, для работы мало. Хотите ярче — возьмите ${recName}.`,tone:'warn'};return{text:`Чуть меньше рекомендуемого, но всё равно комфортно. Если любите яркость — возьмите ${recName}.`,tone:'neutral'}};if(selBright==='Избыточно')return{text:`Этот размер даст слишком много света. Возьмите ${recName} — он идеально балансирует, или поставьте диммер.`,tone:'warn'};if(selBright==='С запасом')return{text:`Будет с запасом — хорошо для рабочей зоны или если в комнате тёмные стены. Поставьте диммер для вечернего режима.`,tone:'neutral'};return{text:`Хороший выбор. Рекомендация — ${recName}, но ваш вариант тоже в комфортном диапазоне.`,tone:'good'}}
   if(selBright==='Не хватает')return{text:`Для ${props.roomArea} м² этого мало. Возьмите крупнее или добавьте другие светильники — бра, торшер, споты.`,tone:'bad'};if(selBright==='Приглушённо')return{text:`Приглушённый свет — создаст атмосферу, но для постоянного использования мало. Добавьте бра или возьмите размер крупнее.`,tone:'warn'};if(selBright==='Избыточно')return{text:`Много света для этой комнаты. Возьмите размер поменьше или установите диммер.`,tone:'warn'};if(selBright==='С запасом')return{text:`С запасом яркости — комфортно днём, а вечером приглушите диммером. Хороший вариант для светлых комнат и рабочих зон.`,tone:'neutral'};return{text:`Комфортный уровень света для вашей комнаты.`,tone:'good'}
 })
 function adviceColor(tone:'good'|'warn'|'bad'|'neutral'):string{if(tone==='good')return T.green;if(tone==='warn')return T.yellow;if(tone==='bad')return T.red;return T.neutral}
@@ -244,7 +244,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 <template>
   <div :style="{position:'fixed',inset:0,background:T.bg,overflow:showLeaveConfirm?'hidden':'auto'}">
     <NavHeader
-      :title="model.name"
+      :title="fxNav(build.m)"
       :back="view==='summary' ? (props.roomName || 'Назад') : 'Назад'"
       @back="view==='summary'?requestClose():backFromStep()"
     />
@@ -270,7 +270,8 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
             <!-- batch11 #1: fxIcName(model.type) вместо захардкоженного "ceiling" -->
             <div :style="{width:'52px',height:'52px',borderRadius:'12px',background:WCOL[build.wood]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}"><Icon :name="fxIcName(model.type)" :color="WCOL[build.wood]" :size="26"/></div>
             <div :style="{flex:1,minWidth:0}">
-              <div :style="{fontSize:'17px',fontWeight:600,color:T.text,marginBottom:'4px'}">{{ model.name }}</div>
+              <div :style="{fontSize:'17px',fontWeight:600,color:T.text,lineHeight:1.2}">{{ fxTitle(build.m) }}</div>
+              <div :style="{fontSize:'11px',fontWeight:500,color:T.textSec,marginTop:'2px',marginBottom:'6px',letterSpacing:'0.2px'}">{{ fxLine(build.m) }}</div>
               <div :style="{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}">
                 <span :style="{display:'inline-flex',alignItems:'center',gap:'5px',padding:'2px 10px 2px 4px',borderRadius:'12px',background:WCOL[build.wood]+'22',fontSize:'11px',fontWeight:600,color:T.text}"><span :style="{width:'14px',height:'14px',borderRadius:'50%',background:WCOL[build.wood],flexShrink:0}"/>{{ simMats.find(x=>x.id===build.wood)?.name }}</span>
                 <span :style="{display:'inline-block',padding:'2px 10px',borderRadius:'12px',border:`1px solid ${sc}55`,background:'transparent',fontSize:'11px',fontWeight:600,color:sc}">{{ status }}</span>
@@ -335,7 +336,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           <GallerySection
             v-if="galleryDisplayItems.length > 0"
             :items="galleryDisplayItems"
-            :title="model.name + ' в интерьере'"
+            :title="fxTitle(build.m) + ' в интерьере'"
             context="fx"
             :accent="sc"
             @gift-click="onGalleryGift"
@@ -368,13 +369,13 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           <div v-if="curStep==='size'&&families">
             <div v-if="hasRoomContext" :style="{textAlign:'center',marginBottom:'14px'}">
               <div :style="{fontSize:'18px',fontWeight:800,color:T.text,letterSpacing:'.3px',marginBottom:'6px'}">WOODLED Smart</div>
-              <div v-if="recommendedMid" :style="{fontSize:'13px',color:T.textSec,fontWeight:500,marginBottom:'8px'}">Рекомендация — <span :style="{fontWeight:700,color:T.text}">{{ MD[recommendedMid].name }}</span></div>
+              <div v-if="recommendedMid" :style="{fontSize:'13px',color:T.textSec,fontWeight:500,marginBottom:'8px'}">Рекомендация — <span :style="{fontWeight:700,color:T.text}">{{ fxNav(recommendedMid) }}</span></div>
               <button :style="{display:'inline-flex',alignItems:'center',gap:'6px',padding:'6px 14px',borderRadius:'14px',background:T.neutral+'22',border:`1px solid ${T.neutral}55`,color:T.text,cursor:'pointer',fontSize:'12px',fontWeight:500}" @click="showHelp=true"><span :style="{width:'16px',height:'16px',borderRadius:'50%',background:T.neutral,color:T.bg,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:800}">?</span><span>Как подбирается размер</span></button>
             </div>
             <div :style="{fontSize:'13px',fontWeight:600,color:T.textSec,marginBottom:'10px'}">Сравните размеры:</div>
             <div :style="{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'14px'}">
               <button v-for="fid in families" :key="fid" :style="{padding:'14px 10px',borderRadius:'10px',cursor:'pointer',textAlign:'center',border:build.m===fid?`2px solid ${recommendedMid===fid?T.green:T.neutral}`:`1px solid ${T.border}`,background:build.m===fid?(recommendedMid===fid?T.green+'10':T.neutral+'10'):T.cardAlt,position:'relative',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px'}" @click="()=>{mid=fid;upBuild({m:fid,lamps:MD[fid].lamps})}">
-                <div :style="{display:'flex',alignItems:'center',justifyContent:'center',width:'100%',gap:'6px'}"><span :style="{fontSize:'20px',fontWeight:800,color:build.m===fid?T.text:T.textSec}">{{ MD[fid].letter }}</span><span v-if="recommendedMid===fid" :style="{width:'20px',height:'20px',borderRadius:'50%',background:T.green,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',color:T.bg,fontWeight:700}">✓</span></div>
+                <div :style="{display:'flex',alignItems:'center',justifyContent:'center',width:'100%',gap:'6px'}"><span :style="{fontSize:'18px',fontWeight:800,color:build.m===fid?T.text:T.textSec,textAlign:'center',lineHeight:1.1}">{{ SIZE_WORD[MD[fid].letter] ?? MD[fid].letter }}</span><span v-if="recommendedMid===fid" :style="{width:'20px',height:'20px',borderRadius:'50%',background:T.green,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',color:T.bg,fontWeight:700,flexShrink:0}">✓</span></div>
                 <div v-if="hasRoomContext" :style="{padding:'6px 14px',borderRadius:'7px',background:brightColor(fid)+'22',color:brightColor(fid),fontSize:'13px',fontWeight:700,whiteSpace:'nowrap'}">{{ brightLabel(fid) }}</div>
                 <div :style="{padding:'5px 12px',borderRadius:'7px',border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:'13px',fontWeight:700,whiteSpace:'nowrap'}">{{ MD[fid].dimD }} см</div>
                 <div :style="{fontSize:'11px',color:T.textSec,lineHeight:'1.5'}"><div>{{ fmt(MD[fid].lmPer*MD[fid].lamps) }} лм</div><div>{{ MD[fid].sqMin }}–{{ MD[fid].sqMax }} м²</div></div>
@@ -405,7 +406,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <div v-if="showDeleteConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}" @click.self="showDeleteConfirm=false">
       <div :style="{width:'100%',maxWidth:'340px',background:T.bg,borderRadius:'16px',border:`1px solid ${T.border}`,padding:'24px 20px',textAlign:'center'}">
         <div :style="{fontSize:'16px',fontWeight:700,color:T.text,marginBottom:'8px'}">Удалить светильник?</div>
-        <div :style="{fontSize:'13px',color:T.textSec,lineHeight:1.5,marginBottom:'20px'}">{{ model.name }} будет удалён из комнаты. Все настройки потеряются.</div>
+        <div :style="{fontSize:'13px',color:T.textSec,lineHeight:1.5,marginBottom:'20px'}">{{ fxTitle(build.m) }} будет удалён из комнаты. Все настройки потеряются.</div>
         <div :style="{display:'flex',gap:'8px'}">
           <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:'pointer',fontSize:'13px',fontWeight:600}" @click="showDeleteConfirm=false">Отмена</button>
           <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:'none',background:T.red,color:'#fff',cursor:'pointer',fontSize:'13px',fontWeight:700}" @click="showDeleteConfirm=false;emit('delete')">Удалить</button>
@@ -429,8 +430,8 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       v-if="showShare"
       :longUrl="fixtureLongUrl"
       subtitle="Поделитесь светильником WOODLED"
-      :shareTitle="model.name"
-      :shareText="`Посмотрите светильник ${model.name} WOODLED`"
+      :shareTitle="fxTitle(build.m)"
+      :shareText="`Посмотрите светильник ${fxTitle(build.m)} WOODLED`"
       @close="showShare=false"
       @feedback="(msg) => emit('feedback', msg)"
     />

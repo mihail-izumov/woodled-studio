@@ -16,7 +16,7 @@
 
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Z } from '../theme/tokens'
-import { MD, type Fixture, type Zone } from '../data/catalog'
+import { MD, type Fixture, type Zone, fxNav, fxLine } from '../data/catalog'
 import { MATS, WCOL, type Wood } from '../data/materials'
 import { zoneLm, zoneFxCount } from '../engine/zone-engine'
 import { occupiedPhrase } from '../engine/i18n'
@@ -180,7 +180,8 @@ function orbStyle(wood: Wood, size = 13) {
             <Icon :name="fxIcName(MD[it.m].type)" color="#A8895A" :size="22" />
           </div>
           <div>
-            <div :style="{ fontSize: '15px', fontWeight: 600, color: L.text }">{{ MD[it.m]?.name }}</div>
+            <div :style="{ fontSize: '15px', fontWeight: 600, color: L.text }">{{ fxNav(it.m) }}</div>
+            <div :style="{ fontSize: '11px', fontWeight: 500, color: L.textSec, marginTop: '2px', letterSpacing: '0.2px' }">{{ fxLine(it.m) }}</div>
             <div :style="{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '9px' }">
               <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
                 <span :style="orbStyle(it.wood, 13)" />{{ WOOD_NAME[it.wood] }}

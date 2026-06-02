@@ -15,7 +15,7 @@
 
 import { computed, ref, reactive } from 'vue'
 import { T, Z, WCOL } from '../theme/tokens'
-import { MD, type Fixture } from '../data/catalog'
+import { MD, fxTitle, fxLine, type Fixture } from '../data/catalog'
 import { MATS } from '../data/materials'
 import { fxPrice, itemPrice } from '../data/price-engine'
 import { getRT, type Room } from '../data/rooms'
@@ -192,7 +192,11 @@ function woodBadgeStyle(woodColor: string) {
               <div :style="{ width: '48px', height: '48px', borderRadius: '12px', background: WCOL[fx.wood ?? 'oak'] + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }"><Icon :name="fxIcName(MD[fx.m].type)" :color="WCOL[fx.wood ?? 'oak']" :size="24" /></div>
               <!-- batch11 #1 v4: stretch + space-between — название вверху, бейдж дерева внизу -->
               <div :style="{ flex: 1, minWidth: 0, alignSelf: 'stretch', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }">
-                <div :style="{ fontSize: '13px', fontWeight: 600, color: T.text, display: 'flex', alignItems: 'center', gap: '6px' }"><span>{{ MD[fx.m].name }}</span><span v-if="(fx.q ?? 1) > 1" :style="{ color: T.textSec, fontWeight: 400, fontSize: '12px' }">× {{ fx.q }}</span></div>
+                <div :style="{ fontSize: '13px', fontWeight: 600, color: T.text, lineHeight: 1.25 }">
+                  <span>{{ fxTitle(fx.m) }}</span>
+                  <span v-if="(fx.q ?? 1) > 1" :style="{ color: T.textSec, fontWeight: 400, fontSize: '12px', marginLeft: '6px' }">× {{ fx.q }}</span>
+                  <div :style="{ fontSize: '11px', fontWeight: 500, color: T.textSec, marginTop: '1px', letterSpacing: '0.2px' }">{{ fxLine(fx.m) }}</div>
+                </div>
                 <div :style="woodBadgeStyle(WCOL[fx.wood ?? 'oak'])"><div :style="{ width: '16px', height: '16px', borderRadius: '50%', background: WCOL[fx.wood ?? 'oak'] }" />{{ MATS.find((x) => x.id === (fx.wood ?? 'oak'))?.name }}</div>
               </div>
               <div :style="{ flexShrink: 0, textAlign: 'right' }">

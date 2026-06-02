@@ -25,6 +25,34 @@ function nextId(): string {
   return `r${_id++}`
 }
 
+/* ──────────────── Нормализация q>1 → q:1 ──────────────── */
+/**
+ * Каждый Fixture с q>1 разворачивается в q отдельных записей q:1.
+ * Опции и done глубоко копируются, чтобы независимое редактирование одной
+ * из «размноженных» строк не задевало соседей.
+ *
+ * Применяется в любой точке загрузки данных извне (localStorage, hash-share),
+ * чтобы в реактивном сторе всегда было «1 запись = 1 физический светильник».
+ * Расчёты люмен/цены продолжают читать `q` — для q:1 они идентичны исходным.
+ */
+function normalizeFixturesQ1(fixtures: Fixture[] | undefined): Fixture[] {
+  if (!fixtures || !fixtures.length) return []
+  return fixtures.flatMap((f) => {
+    const count = Math.max(1, f.q ?? 1)
+    if (count === 1) return [{ ...f, q: 1 }]
+    return Array.from({ length: count }, () => ({
+      ...f,
+      q: 1,
+      opts: f.opts ? { ...f.opts } : undefined,
+      done: f.done ? [...f.done] : undefined,
+    }))
+  })
+}
+
+function normalizeRoomsQ1<R extends { fixtures?: Fixture[] }>(rs: R[]): R[] {
+  return rs.map((r) => ({ ...r, fixtures: normalizeFixturesQ1(r.fixtures) }))
+}
+
 /* ──────────────── Конструктор комнаты ──────────────── */
 
 function makeRoom(typeId: RoomTypeId): Room {
@@ -71,7 +99,9 @@ function restorePersistedState(): boolean {
     const data = JSON.parse(raw)
     if (!data?.rooms?.length) return false
     name.value = data.name ?? 'Живой Дом'
-    rooms.splice(0, rooms.length, ...data.rooms)
+    // Нормализуем q>1 → отдельные q:1 для старых сохранений.
+    const normalized = normalizeRoomsQ1(data.rooms as Room[])
+    rooms.splice(0, rooms.length, ...normalized)
     for (const r of data.rooms) {
       const num = parseInt(String(r.id ?? '').replace('r', '') || '0')
       if (num >= _id) _id = num + 1
@@ -233,7 +263,8 @@ function loadFromHash(): boolean {
   const decoded = decodeState(encoded, nextId)
   if (!decoded) return false
   if (decoded.name) name.value = decoded.name
-  rooms.splice(0, rooms.length, ...decoded.rooms)
+  // Нормализуем q>1 → q:1 на случай старого формата ссылки.
+  rooms.splice(0, rooms.length, ...normalizeRoomsQ1(decoded.rooms))
   persistState()
   return true
 }

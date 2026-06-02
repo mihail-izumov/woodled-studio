@@ -13,7 +13,7 @@ import { T } from '../theme/tokens'
 import { useConfigurator } from '../store/configurator'
 import type { Room } from '../data/rooms'
 import { getRT } from '../data/rooms'
-import { MD } from '../data/catalog'
+import { MD, fxTitle } from '../data/catalog'
 import { baseLm, fxLm, getArea } from '../engine/brightness'
 import { rw } from '../engine/i18n'
 import type { Fixture } from '../data/catalog'
@@ -150,7 +150,7 @@ function onFxSave(next: Fixture) {
   cfg.updateFixture(af.roomId, af.fxIdx, next)
   fxIsProvisional.value = false
   const room = cfg.rooms.find((r: Room) => r.id === af.roomId) as Room | undefined
-  const model = MD[next.m]?.name ?? 'Светильник'
+  const model = fxTitle(next.m) || 'Светильник'
   const where = room ? roomPrepName(room.customName || getRT(room.typeId).name) : ''
   /* Новый светильник → «{Модель} в {Комнате}» (добавлен). Правки существующего
      → «Изменения сохранены» (ничего не добавляли). */

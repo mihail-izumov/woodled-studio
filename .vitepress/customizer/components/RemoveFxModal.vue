@@ -8,7 +8,7 @@
 
 import { computed } from 'vue'
 import { T } from '../theme/tokens'
-import { MD, type Fixture } from '../data/catalog'
+import { fxTitle, type Fixture } from '../data/catalog'
 import Modal from './ui/Modal.vue'
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ confirm: []; close: [] }>()
 
-const name = computed(() => MD[props.item.m]?.name ?? '')
+const name = computed(() => fxTitle(props.item.m))
 </script>
 
 <template>

@@ -162,11 +162,11 @@ function orbStyle(wood: Wood, size = 15) {
         @click="onRow(it)"
       >
         <span :style="orbStyle(it.wood, 15)" />
-        <span :style="{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.05 }">
+        <span :style="{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.15 }">
           <span :style="{ fontSize: '14px', fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxType(it.m) }}
           </span>
-          <span :style="{ fontSize: '12px', fontWeight: 500, color: T.textSec, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
+          <span :style="{ fontSize: '11px', fontWeight: 600, color: accent + 'b3', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxLine(it.m) }}
           </span>
         </span>

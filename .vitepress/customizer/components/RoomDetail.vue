@@ -28,6 +28,7 @@ import {
 } from '../engine/zone-engine'
 import { woodNames, occupiedPhrase } from '../engine/i18n'
 import { actionReaction, type LightAction } from '../engine/copy'
+import { forestScene, roomKnobs } from '../engine/forest'
 import { MD } from '../data/catalog'
 import { getBright } from '../data/moods'
 import { useConfigurator } from '../store/configurator'
@@ -36,6 +37,7 @@ import Icon from './ui/Icons.vue'
 import Modal from './ui/Modal.vue'
 import NavHeader from './ui/NavHeader.vue'
 import ForestMood from './ForestMood.vue'
+import SmartHelpModal from './ui/SmartHelpModal.vue'
 import ZoneCard from './ZoneCard.vue'
 import FurnitureBlock from './FurnitureBlock.vue'
 import Footer from './Footer.vue'
@@ -66,6 +68,8 @@ const base = computed(() => baseLm(rt.value, props.room))
 const actual = computed(() => fxLm(props.room.fixtures))
 const lamps = computed(() => fxLamps(props.room.fixtures))
 const ratio = computed(() => (base.value > 0 ? actual.value / base.value : 0))
+const scene = computed(() => forestScene(rt.value, props.room))
+const knobs = computed(() => roomKnobs(rt.value, props.room))
 const mood = computed<Mood>(() => autoMood(ratio.value))
 const tint = computed(() => props.room.cardColor ?? T.neutral)
 const tintedMood = computed<Mood>(() => ({ ...mood.value, color: tint.value }))
@@ -135,6 +139,7 @@ const addZone = ref<ZoneId | null>(null)
 const openZoneId = ref<ZoneId | null>(null)
 const showSettings = ref(false)
 const confirmDel = ref(false)
+const showSmartHelp = ref(false)
 
 /* Зона, открытая в ZoneFixturesModal (объект для модалки). */
 const openZone = computed(() => zones.value.find((z) => z.id === openZoneId.value) ?? null)
@@ -438,10 +443,11 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
 
       <ForestMood
         v-if="props.room.fixtures.length > 0"
-        :rt="rt"
-        :room="props.room"
+        :scene="scene"
+        :knobs="knobs"
         :tint="tint"
         :room-prep-name="roomPrepName"
+        @show-help="showSmartHelp = true"
       />
 
       <!--
@@ -588,6 +594,8 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
     </Modal>
 
     <span v-show="false">{{ Icon }}</span>
+
+    <SmartHelpModal v-if="showSmartHelp" @close="showSmartHelp = false" />
 
   </div>
 </template>

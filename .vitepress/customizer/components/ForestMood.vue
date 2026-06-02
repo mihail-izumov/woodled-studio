@@ -2,31 +2,29 @@
 /**
  * ForestMood.vue — блок настроения как ЛЕСНАЯ СЦЕНА.
  *
- * Имя (порода × место) + легенда-синтез + слайдер карточек «Как это работает».
- * Всё из engine/forest.ts (forestScene + roomKnobs). Без модалки.
- * Тонируется цветом комнаты (tint = room.cardColor).
+ * Имя (порода × место) + легенда + слайдер карточек «Как это работает».
+ * Получает готовые scene + knobs из RoomDetail (там реактивные computed) —
+ * сам ничего не считает. Иначе глубокая реактивность по props.room терялась
+ * на границе пропса и карточки не обновлялись при изменении набора.
  */
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { T } from '../theme/tokens'
-import { forestScene, roomKnobs } from '../engine/forest'
-import type { Room, RoomType } from '../data/rooms'
+import type { ForestScene, KnobCard } from '../engine/forest'
 
 interface Props {
-  rt: RoomType
-  room: Room
+  scene: ForestScene
+  knobs: KnobCard[]
   tint: string
   roomPrepName: string
 }
 const props = defineProps<Props>()
-
-const scene = computed(() => forestScene(props.rt, props.room))
-const knobs = computed(() => roomKnobs(props.rt, props.room))
+const emit = defineEmits<{ showHelp: [] }>()
 
 const sliderRef = ref<HTMLElement | null>(null)
 const active = ref(0)
 function onScroll() {
   const el = sliderRef.value
-  const n = knobs.value.length
+  const n = props.knobs.length
   if (!el || n === 0) return
   active.value = Math.min(n - 1, Math.max(0, Math.round(el.scrollLeft / (el.scrollWidth / n))))
 }
@@ -56,7 +54,7 @@ function onScroll() {
     </div>
 
     <div :style="{ textAlign: 'center', fontSize: '22px', fontWeight: 700, color: T.text, marginTop: '10px' }">
-      {{ scene.name }}
+      {{ props.scene.name }}
     </div>
 
     <div
@@ -69,15 +67,41 @@ function onScroll() {
         margin: '8px auto 0',
       }"
     >
-      {{ scene.legend }}
+      {{ props.scene.legend }}
     </div>
 
-    <template v-if="knobs.length > 0">
+    <div :style="{ textAlign: 'center', marginTop: '14px' }">
+      <button
+        :style="{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '7px',
+          padding: '6px 14px',
+          borderRadius: '999px',
+          background: props.tint + '1e',
+          border: 'none',
+          color: props.tint,
+          cursor: 'pointer',
+          fontSize: '11px',
+          fontWeight: 700,
+          fontFamily: 'inherit',
+        }"
+        @click="emit('showHelp')"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" :stroke="props.tint" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19" />
+        </svg>
+        WOODLED Smart
+      </button>
+    </div>
+
+    <template v-if="props.knobs.length > 0">
       <div :style="{ height: '1px', background: T.border, margin: '16px 0 14px' }" />
 
       <div ref="sliderRef" class="fm-slider" @scroll="onScroll">
         <div
-          v-for="(k, i) in knobs"
+          v-for="(k, i) in props.knobs"
           :key="i"
           class="fm-slide"
           :style="{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '13px', padding: '14px' }"
@@ -106,7 +130,7 @@ function onScroll() {
 
       <div :style="{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }">
         <span
-          v-for="(k, i) in knobs"
+          v-for="(k, i) in props.knobs"
           :key="i"
           :style="{
             height: '6px',

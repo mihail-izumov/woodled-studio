@@ -35,21 +35,29 @@ export interface ForestScene {
 
 /* ──────────────── Словарь имени (порода × место) ──────────────── */
 
-const PORODA: Record<Wood, string> = { oak: 'Дубовая', walnut: 'Ореховая', black: 'Дремучая' }
+const PORODA: Record<Wood, string> = { oak: 'Дубовая', walnut: 'Ореховая', black: 'Вековая' }
 const PLACE_RU: Record<ForestPlace, string> = { grove: 'роща', thicket: 'чаща', glade: 'поляна' }
 
 /* ──────────────── Место: где свет ──────────────── */
 
-/** Доля света потолка, с которой сцена считается «верхней» (роща). Ниже — чаща. */
-const CEILING_LEAD = 0.35
+/**
+ * Место — по ВЕРТИКАЛИ света (где он, а не сколько):
+ *   потолок доминирует → поляна (свет сверху, открыто)
+ *   свет ушёл вниз     → чаща  (бра/торшеры, потолок слаб)
+ *   между              → роща  (свет ровно по комнате)
+ * Это распределение, а не яркость, поэтому имя не дублирует дашборд:
+ * тусклый верхний свет — всё равно поляна, яркий нижний — чаща.
+ */
+const CEILING_HIGH = 0.6 // потолок несёт большинство → поляна
+const CEILING_LOW = 0.25 // потолок слаб, свет внизу → чаща
 
 function scenePlace(fx: Fixture[]): ForestPlace {
-  const lit = ALL_ZONES.filter((z) => zoneLm(fx, z.id) > 0)
-  if (lit.length <= 1) return 'glade' // один источник — поляна
   const total = fxLm(fx)
-  if (total <= 0) return 'glade'
+  if (total <= 0) return 'grove'
   const ceilingShare = zoneLm(fx, 'ceiling') / total
-  return ceilingShare >= CEILING_LEAD ? 'grove' : 'thicket'
+  if (ceilingShare >= CEILING_HIGH) return 'glade' // поляна — свет сверху
+  if (ceilingShare <= CEILING_LOW) return 'thicket' // чаща — свет внизу
+  return 'grove' // роща — свет ровно по комнате
 }
 
 /* ──────────────── Дерево: доминанта (+ вторичное для смеси) ──────────────── */
@@ -86,9 +94,9 @@ function tempWarmth(fx: Fixture[]): Warmth {
 /* ──────────────── Банки легенды (правятся как таблицы) ──────────────── */
 
 const LEAD: Record<ForestPlace, string> = {
-  grove: 'Главный свет идёт сверху',
-  thicket: 'Свет собрался внизу',
-  glade: 'Один источник света, остальное в тени',
+  glade: 'Главный свет идёт сверху', // поляна
+  grove: 'Свет ровно по всей комнате', // роща
+  thicket: 'Свет собрался внизу', // чаща
 }
 
 type Bright = 'dim' | 'norm' | 'full'
@@ -217,11 +225,11 @@ export function roomKnobs(rt: RoomType, room: Room): KnobCard[] {
     title: 'Где свет',
     chip: top && total > 0 ? `${top.z.name.toLowerCase()} ${Math.round((top.lm / total) * 100)}%` : undefined,
     text:
-      place === 'grove'
-        ? 'Свет в основном сверху. Бра и торшеры подсвечивают низ, чем ниже источник, тем уютнее и тем больше тени по углам.'
+      place === 'glade'
+        ? 'Свет в основном сверху, открыто и ровно по комнате. Чем ниже источник, тем уютнее и тем больше тени по углам.'
         : place === 'thicket'
-          ? 'Свет идёт снизу, от бра и торшеров. Потолок не горит, оттого мягко и углы в тени.'
-          : 'Горит один источник: он даёт пятно света, остальное в тени.',
+          ? 'Свет ушёл вниз, к бра и торшерам — потолок слабый. Оттого уютно и углы в тени.'
+          : 'Свет и сверху, и по нижним источникам — ровно по всей комнате.',
   })
 
   // 2. Сколько света

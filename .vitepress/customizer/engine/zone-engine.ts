@@ -4,7 +4,7 @@
  * Источник: woodled-v42.jsx (zoneLm, zoneFxCount, roomWood).
  */
 
-import { MD, ALL_ZONES, type Fixture, type ZoneId, type Zone } from '../data/catalog'
+import { MD, FX_FACTORS, ALL_ZONES, type Fixture, type ZoneId, type Zone } from '../data/catalog'
 import type { RoomType } from '../data/rooms'
 import type { Wood } from '../data/materials'
 
@@ -16,7 +16,8 @@ export function zoneLm(fixtures: Fixture[], zoneId: ZoneId): number {
       const m = MD[f.m]
       if (!m) return s
       const diff = f.opts?.diffuser && m.diffLoss ? 1 - m.diffLoss : 1
-      return s + Math.round(m.lmPer * (f.l ?? m.lamps) * (f.q ?? 1) * diff)
+      const k = FX_FACTORS[f.m] ?? { body: 1, ambient: 1 }
+      return s + Math.round(m.lmPer * (f.l ?? m.lamps) * (f.q ?? 1) * k.body * diff * k.ambient)
     }, 0)
 }
 

@@ -108,23 +108,25 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         /* Кухня (200 лк — самая «светлоёмкая»): потолочная + 2 настенных Unit
            над рабочей зоной → ~0.97, «Ясный полдень». Без рабочего света кухня
            по честной норме открывалась бы «Не хватает». */
+        /* Кухня (200 лк): потолочная + 3 рабочих Unit над столешницей → ~0.91 с учётом
+           КПД корпусов. Без рабочего света кухня открывалась бы тускло. */
         typeId: 'kitchen',
         sizeIndex: 0,
         ceilingH: 2.7,
         fixtures: [
           { m: 'rotor_s', q: 1, wood: 'oak', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
-          { m: 'unit', q: 2, wood: 'oak', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'unit', q: 3, wood: 'oak', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['dtable', 'fridge', 'kitchen_set', 'stove'],
       },
       {
-        /* Спальня — намеренно мягкий свет (~0.88): бра у изголовья + настольная,
-           потолок и пол пусты → «уютно, но есть что добавить». */
+        /* Спальня: потолочная Rotor S + настольная у кровати → ~0.99 (с учётом КПД).
+           Стены и пол пусты → «уютно, но есть куда добавить бра/торшер». */
         typeId: 'bedroom',
         sizeIndex: 0,
         ceilingH: 2.7,
         fixtures: [
-          { m: 'bra_h', q: 1, wood: 'walnut', zone: 'wall' },
+          { m: 'rotor_s', q: 1, wood: 'walnut', zone: 'ceiling', opts: TPL_OPTS_WOOD_BOWL },
           { m: 'table_lamp', q: 1, wood: 'oak', zone: 'table' },
         ],
         furniture: ['bed', 'wardrobe', 'dresser', 'nightstand'],
@@ -152,9 +154,9 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         sizeIndex: 1,
         ceilingH: 2.7,
         fixtures: [
-          /* Гостиная 25 м² + мебель: Rotor M (5 патронов) + 2 бра + торшер →
-             ~1.27, «Ясный полдень». Многослойный свет = и норма, и +чек. */
-          { m: 'rotor_m', q: 1, wood: 'oak', zone: 'ceiling', l: 5, opts: TPL_OPTS_WOOD_BOWL },
+          /* Гостиная 25 м² + мебель: Rotor M (6 патронов) + 2 бра + торшер →
+             ~0.97 с учётом КПД корпусов. Многослойный свет = и норма, и +чек. */
+          { m: 'rotor_m', q: 1, wood: 'oak', zone: 'ceiling', l: 6, opts: TPL_OPTS_WOOD_BOWL },
           { m: 'bra_h', q: 2, wood: 'oak', zone: 'wall' },
           { m: 'floor_lamp_s', q: 1, wood: 'oak', zone: 'floor' },
         ],
@@ -204,11 +206,12 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         sizeIndex: 2,
         ceilingH: 3.0,
         fixtures: [
-          /* Гостиная 35 м², потолок 3.0 м: Rotor L (6 патронов) + 2 бра + торшер →
-             ~0.98, «Ясный полдень». */
-          { m: 'rotor_l', q: 1, wood: 'walnut', zone: 'ceiling', l: 6, opts: TPL_OPTS_WOOD_BOWL },
+          /* Гостиная 35 м², потолок 3.0 м: Rotor L (8 патронов) + 2 бра + торшер +
+             настольная → ~0.85 с учётом КПД. Большая комната — многослойный свет. */
+          { m: 'rotor_l', q: 1, wood: 'walnut', zone: 'ceiling', l: 8, opts: TPL_OPTS_WOOD_BOWL },
           { m: 'bra_v_l', q: 2, wood: 'walnut', zone: 'wall' },
           { m: 'floor_lamp', q: 1, wood: 'oak', zone: 'floor' },
+          { m: 'table_lamp', q: 1, wood: 'walnut', zone: 'table' },
         ],
         furniture: ['sofa', 'bookshelf', 'dtable', 'jtable', 'tv_stand'],
       },
@@ -227,10 +230,10 @@ export const TEMPLATES: readonly HomeTemplate[] = [
         sizeIndex: 1,
         ceilingH: 3.0,
         fixtures: [
-          /* Детская «голодная» по свету (200 лк + мебель): Rotor M (5 патронов)
-             + Unit на стене → ~0.91, «Ясный полдень» для уроков. */
-          { m: 'rotor_m', q: 1, wood: 'oak', zone: 'ceiling', l: 5, opts: TPL_OPTS_WOOD_BOWL },
-          { m: 'unit', q: 1, wood: 'oak', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
+          /* Детская «голодная» по свету (200 лк + мебель): Rotor M (6 патронов)
+             + 2 Unit на стене → ~0.88 с учётом КПД, для уроков. */
+          { m: 'rotor_m', q: 1, wood: 'oak', zone: 'ceiling', l: 6, opts: TPL_OPTS_WOOD_BOWL },
+          { m: 'unit', q: 2, wood: 'oak', zone: 'wall', opts: TPL_OPTS_WOOD_BOWL },
         ],
         furniture: ['bed', 'desk', 'wardrobe', 'bookshelf'],
       },

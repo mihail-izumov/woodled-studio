@@ -10,7 +10,14 @@
  * чей projectedRatio ближе к 1.0, при прочих равных — меньший (дешевле).
  */
 
-import { MD, type ModelId } from '../data/catalog'
+import { MD, FX_FACTORS, type ModelId } from '../data/catalog'
+
+/** Эффективная отдача модели в общий свет (с КПД корпуса и долей ambient, без рассеивателя). */
+function effModelLm(mid: ModelId): number {
+  const m = MD[mid]
+  const f = FX_FACTORS[mid] ?? { body: 1, ambient: 1 }
+  return m.lmPer * m.lamps * f.body * f.ambient
+}
 
 export type AreaFit = 'ideal' | 'acceptable' | 'poor'
 
@@ -70,7 +77,7 @@ export function pickBestSize(
   const scored = candidates.map((mid) => {
     const m = MD[mid]
     const areaFit = evaluateAreaFit(area, m.sqMin, m.sqMax)
-    const modelLm = m.lmPer * m.lamps
+    const modelLm = effModelLm(mid)
     const coverageRatio = deficit > 0 ? modelLm / deficit : 0
     return { mid, areaFit, modelLm, coverageRatio }
   })
@@ -111,7 +118,7 @@ export function buildSizeRecommendation(
   const results = familyMembers.map((mid) => {
     const m = MD[mid]
     const areaFit = evaluateAreaFit(area, m.sqMin, m.sqMax)
-    const modelLm = m.lmPer * m.lamps
+    const modelLm = effModelLm(mid)
     const projectedLm = currentLmWithoutThis + modelLm * qty
     const projectedRatio = baseLm > 0 ? projectedLm / baseLm : 0
     const deficit = baseLm - currentLmWithoutThis

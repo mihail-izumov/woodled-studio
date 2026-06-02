@@ -16,7 +16,7 @@
  * fxLm = Σ lmPer × l × q × (1 − diffLoss, если включён рассеиватель)
  */
 
-import { MD, type Fixture } from '../data/catalog'
+import { MD, FX_FACTORS, type Fixture } from '../data/catalog'
 import { FURN } from '../data/furniture'
 import type { Room, RoomType, WallFinish } from '../data/rooms'
 
@@ -26,6 +26,17 @@ import type { Room, RoomType, WallFinish } from '../data/rooms'
 const WORK_PLANE = 0.75
 /** Коэффициент эксплуатации: деградация LED + запыление (≈0.8 по СП). */
 const MAINT_FACTOR = 0.8
+/** Свес подвеса, м — опускает потолочный источник ближе к плоскости (даёт больше света). */
+const SUSPENSION_DROP = 0.4
+
+/** Есть ли в комнате подвесной потолочный светильник (для поправки высоты). */
+function hasCeilingPendant(r: Room): boolean {
+  return r.fixtures.some((f) => {
+    const m = MD[f.m]
+    return !!m && (f.zone ?? 'ceiling') === 'ceiling' && m.hasMount
+      && (f.opts?.mount ?? 'pendant') === 'pendant'
+  })
+}
 /** Поправка к UF по отделке стен (отражение): светлые стены возвращают больше света. */
 const WALL_UF_MULT: Record<WallFinish, number> = { light: 1.1, medium: 1.0, dark: 0.85 }
 
@@ -87,7 +98,10 @@ export function getArea(rt: RoomType, r: Room): number {
 export function baseLm(rt: RoomType, r: Room): number {
   const furnFactor = r.furniture.reduce((s, f) => s + (FURN[f]?.ab ?? 0), 0)
   const area = getArea(rt, r)
-  const ri = roomIndex(area, r.ceilingH)
+  // Подвес опускает источник → меньше эффективная высота → выше КПД → ниже норма.
+  const drop = hasCeilingPendant(r) ? SUSPENSION_DROP : 0
+  const effCeilingH = Math.max(2.0, r.ceilingH - drop)
+  const ri = roomIndex(area, effCeilingH)
   const uf = utilizationFactor(ri, r.wallFinish ?? 'medium')
   return Math.round((rt.lux * area * (1 + furnFactor)) / (uf * MAINT_FACTOR))
 }
@@ -104,7 +118,8 @@ export function fxLm(fixtures: Fixture[]): number {
     const l = it.l ?? m.lamps
     const q = it.q ?? 1
     const diff = it.opts?.diffuser && m.diffLoss ? 1 - m.diffLoss : 1
-    return sum + Math.round(m.lmPer * l * q * diff)
+    const f = FX_FACTORS[it.m] ?? { body: 1, ambient: 1 }
+    return sum + Math.round(m.lmPer * l * q * f.body * diff * f.ambient)
   }, 0)
 }
 

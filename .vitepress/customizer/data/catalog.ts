@@ -249,6 +249,36 @@ export const FAMILIES: Record<FamilyId, readonly ModelId[]> = {
   bra_v: ['bra_v_s', 'bra_v_l'],
 }
 
+/* ──────────────── Коэффициенты отдачи светильника ────────────────
+ * Раздельные именованные множители (НЕ слитые в один).
+ * См. WOODLED_коэффициенты_светильников.md §2.1.
+ *   body    — КПД корпуса: оптические потери на ламелях/абажуре (lmPer = люмены лампы).
+ *   ambient — доля света, идущая в ОБЩИЙ свет комнаты (а не локально/в стену).
+ * Рассеиватель (diffLoss) — отдельно, в Model. Высота/подвес — отдельно, в brightness.ts.
+ * Значения — обоснованные оценки в рыночных границах, уточняются замерами команды.
+ */
+export interface FxFactor { body: number; ambient: number }
+
+export const FX_FACTORS: Record<ModelId, FxFactor> = {
+  rotor_s:      { body: 0.65, ambient: 1.0 },   // плотные деревянные ламели — много гасится
+  rotor_m:      { body: 0.65, ambient: 1.0 },
+  rotor_l:      { body: 0.65, ambient: 1.0 },
+  rotor_1000:   { body: 0.65, ambient: 1.0 },
+  rotor_x_m:    { body: 0.85, ambient: 1.0 },   // большие шары, широкие щели — открытее
+  rotor_x_l:    { body: 0.85, ambient: 1.0 },
+  elliptical_s: { body: 0.90, ambient: 1.0 },   // GX53 + встроенный рассеиватель (уже в body)
+  elliptical_l: { body: 0.90, ambient: 1.0 },
+  spot_s:       { body: 1.0,  ambient: 0.85 },  // открытая оптика, но узкий поток (малое пятно)
+  spot_l:       { body: 1.0,  ambient: 0.85 },
+  unit:         { body: 1.0,  ambient: 0.85 },
+  bra_h:        { body: 0.85, ambient: 0.70 },  // часть света в стену/вверх
+  bra_v_s:      { body: 0.80, ambient: 0.70 },
+  bra_v_l:      { body: 0.85, ambient: 0.70 },
+  table_lamp:   { body: 0.75, ambient: 0.55 },  // абажур + локальная задача
+  floor_lamp:   { body: 0.80, ambient: 0.85 },
+  floor_lamp_s: { body: 0.80, ambient: 0.85 },
+}
+
 /* ──────────────── Зоны ──────────────── */
 
 export interface Zone {

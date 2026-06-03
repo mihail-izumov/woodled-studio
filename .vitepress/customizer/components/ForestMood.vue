@@ -108,38 +108,64 @@ function goTo(i: number) {
     <template v-if="props.knobs.length > 0">
       <div :style="{ height: '28px' }" />
 
-      <div ref="sliderRef" class="fm-slider" @scroll="onScroll">
-        <div
-          v-for="(k, i) in props.knobs"
-          :key="i"
-          class="fm-slide"
-          :style="{
-            background: `linear-gradient(135deg, ${props.tint}1c, ${props.tint}0c), ${T.card}`,
-            border: 'none',
-            borderRadius: '16px',
-            padding: '18px',
-          }"
-        >
-          <div :style="{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '10px' }">
-            <span :style="{ fontSize: '16px', fontWeight: 700, color: T.text }">{{ k.title }}</span>
-            <span
-              v-if="k.chip"
-              :style="{
-                marginLeft: 'auto',
-                fontSize: '13px',
-                fontWeight: 700,
-                color: props.tint,
-                background: props.tint + '33',
-                padding: '4px 10px',
-                borderRadius: '8px',
-                whiteSpace: 'nowrap',
-              }"
-            >
-              {{ k.chip }}
-            </span>
+      <div :style="{ position: 'relative' }">
+        <div ref="sliderRef" class="fm-slider" @scroll="onScroll">
+          <div
+            v-for="(k, i) in props.knobs"
+            :key="i"
+            class="fm-slide"
+            :style="{
+              background: `linear-gradient(135deg, ${props.tint}1c, ${props.tint}0c), ${T.card}`,
+              border: 'none',
+              borderRadius: '16px',
+              padding: '18px',
+            }"
+          >
+            <div :style="{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '10px' }">
+              <span :style="{ fontSize: '16px', fontWeight: 700, color: T.text }">{{ k.title }}</span>
+              <span
+                v-if="k.chip"
+                :style="{
+                  marginLeft: 'auto',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: props.tint,
+                  background: props.tint + '33',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  whiteSpace: 'nowrap',
+                }"
+              >
+                {{ k.chip }}
+              </span>
+            </div>
+            <div :style="{ fontSize: '14px', color: 'rgba(232,224,212,0.82)', lineHeight: 1.55 }">{{ k.text }}</div>
           </div>
-          <div :style="{ fontSize: '14px', color: 'rgba(232,224,212,0.82)', lineHeight: 1.55 }">{{ k.text }}</div>
         </div>
+        <div
+          aria-hidden="true"
+          :style="{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: '28px',
+            pointerEvents: 'none',
+            background: `linear-gradient(90deg, ${T.bg} 0%, ${T.bg}cc 40%, ${T.bg}00 100%)`,
+          }"
+        />
+        <div
+          aria-hidden="true"
+          :style="{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: '28px',
+            pointerEvents: 'none',
+            background: `linear-gradient(270deg, ${T.bg} 0%, ${T.bg}cc 40%, ${T.bg}00 100%)`,
+          }"
+        />
       </div>
 
       <div :style="{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '14px' }">

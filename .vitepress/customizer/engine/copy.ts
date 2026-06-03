@@ -22,8 +22,8 @@ export type LightState = 'dark' | 'dim' | 'ok' | 'plenty' | 'over'
 export function lightState(ratio: number): LightState {
   if (ratio <= 0.5) return 'dark'
   if (ratio <= 0.8) return 'dim'
-  if (ratio <= 2.0) return 'ok'
-  if (ratio <= 4.0) return 'plenty'
+  if (ratio <= 1.5) return 'ok'
+  if (ratio <= 2.5) return 'plenty'
   return 'over'
 }
 

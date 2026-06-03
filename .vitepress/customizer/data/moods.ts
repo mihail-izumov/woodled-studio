@@ -238,11 +238,11 @@ export interface Bright {
 }
 
 export const BRIGHT: readonly Bright[] = [
-  { max: 0.5, name: 'Мало света', color: T.red },
-  { max: 0.8, name: 'Почти хватает', color: T.yellow },
-  { max: 2, name: 'В самый раз', color: T.green },
-  { max: 4, name: 'С запасом', color: T.neutral },
-  { max: 999, name: 'Больше, чем надо', color: T.textSec },
+  { max: 0.5, name: 'Темно', color: T.red },
+  { max: 0.8, name: 'Полусвет', color: T.yellow },
+  { max: 1.5, name: 'Светло', color: T.green },
+  { max: 2.5, name: 'Ярко', color: T.neutral },
+  { max: 999, name: 'Праздник', color: T.textSec },
 ] as const
 
 export function getBright(ratio: number): Bright {

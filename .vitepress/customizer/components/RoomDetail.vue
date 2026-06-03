@@ -14,7 +14,7 @@
  *   на пути в HouseStats и движок яркости.
  */
 
-import { computed, ref, watch, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { T, Z } from '../theme/tokens'
 import { ALL_ZONES, type Fixture, type ZoneId } from '../data/catalog'
 import { autoMood, type Mood } from '../data/moods'
@@ -195,7 +195,28 @@ watch(
     if (a) flashReaction(a)
   },
 )
-onUnmounted(() => { if (reactionTimer) clearTimeout(reactionTimer) })
+onUnmounted(() => {
+  if (reactionTimer) clearTimeout(reactionTimer)
+  inlineTitleObs?.disconnect()
+})
+
+/* ─── iOS large-title: показываем sticky-заголовок в NavHeader только тогда,
+ *    когда крупный inline-заголовок ушёл за пределы NavHeader при скроле.
+ *    rootMargin -44px = высота NavHeader (его нижняя кромка).
+ * --- */
+const inlineTitleRef = ref<HTMLElement | null>(null)
+const showStickyTitle = ref(false)
+let inlineTitleObs: IntersectionObserver | null = null
+
+onMounted(() => {
+  if (inlineTitleRef.value && typeof IntersectionObserver !== 'undefined') {
+    inlineTitleObs = new IntersectionObserver(
+      ([entry]) => { showStickyTitle.value = !entry.isIntersecting },
+      { threshold: 0, rootMargin: '-44px 0px 0px 0px' },
+    )
+    inlineTitleObs.observe(inlineTitleRef.value)
+  }
+})
 
 /* Подсказка о лимите точек — по центру экрана (а не нижним тостом). */
 const limitTip = ref<string | null>(null)
@@ -247,17 +268,37 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
   >
     <NavHeader
       :title="props.room.customName || rt.name"
+      :show-title="showStickyTitle"
       back="Домой"
       @back="emit('close')"
     />
 
     <div :style="{ padding: '16px', maxWidth: '480px', margin: '0 auto' }">
       <!--
+        Крупный inline-заголовок комнаты (iOS large title).
+        Пока он виден — в NavHeader заголовок прячется (showStickyTitle=false).
+        Когда уходит за верх вьюпорта — IntersectionObserver включает sticky-заголовок.
+      -->
+      <h1
+        ref="inlineTitleRef"
+        :style="{
+          fontSize: '28px',
+          fontWeight: 500,
+          color: T.text,
+          letterSpacing: '-0.5px',
+          lineHeight: 1.2,
+          margin: '12px 4px 22px',
+        }"
+      >
+        {{ props.room.customName || rt.name }}
+      </h1>
+
+      <!--
         Brightness Arc — заменил линейный бар дашборда. Полная ширина контейнера,
         прозрачный фон, без обводок. В центре — % факт/план, статус BRIGHT
         синхронизирован с яркостью «солнца» внутри полукруга.
       -->
-      <div :style="{ marginBottom: '16px', paddingTop: '4px' }">
+      <div :style="{ marginBottom: '16px' }">
         <BrightnessArc
           :ratio="ratio"
           :color="tint"

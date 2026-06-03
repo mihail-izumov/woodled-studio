@@ -17,8 +17,15 @@ import { T, Z } from '../../theme/tokens'
 interface Props {
   title: string
   back?: string
+  /**
+   * Показывать ли заголовок в баре.
+   * iOS-style large title: на первом экране снаружи рисуется крупный inline-title,
+   * а sticky-заголовок прячется (showTitle=false) до тех пор, пока inline-title
+   * не уйдёт за пределы вьюпорта. Плавный fade-in через opacity + translateY.
+   */
+  showTitle?: boolean
 }
-withDefaults(defineProps<Props>(), { back: 'Назад' })
+withDefaults(defineProps<Props>(), { back: 'Назад', showTitle: true })
 defineEmits<{ back: [] }>()
 </script>
 
@@ -69,8 +76,19 @@ defineEmits<{ back: [] }>()
     </div>
 
     <!-- Заголовок: центральная зона, усекается многоточием.
-         Внутренний блок — для корректного text-overflow на тексте. -->
-    <div :style="{ flex: '0 1 auto', minWidth: 0, padding: '0 6px' }">
+         Внутренний блок — для корректного text-overflow на тексте.
+         showTitle=false → плавный fade + лёгкий translateY (iOS-style). -->
+    <div
+      :style="{
+        flex: '0 1 auto',
+        minWidth: 0,
+        padding: '0 6px',
+        opacity: showTitle ? 1 : 0,
+        transform: showTitle ? 'translateY(0)' : 'translateY(6px)',
+        transition: 'opacity .22s ease, transform .22s ease',
+        pointerEvents: showTitle ? 'auto' : 'none',
+      }"
+    >
       <div
         :style="{
           fontSize: '17px',

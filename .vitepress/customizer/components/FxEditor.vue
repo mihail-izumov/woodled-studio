@@ -123,6 +123,23 @@ const showLeaveConfirm = ref(false)
    правок: иначе пользователь может уйти, думая что «добавил», и потерять его. */
 function requestClose(){ if(isDirty.value||props.isProvisional){ showLeaveConfirm.value=true } else { emit('close') } }
 function confirmLeave(){ showLeaveConfirm.value=false; emit('close') }
+/* iOS large-title pattern: на summary заголовок навбара пустой, пока видна
+   плашка с именем; когда плашка ушла вверх — fxNav плавно появляется в
+   навбаре. На step view заголовок показываем всегда (плашки там нет). */
+const plateEl = ref<HTMLDivElement|null>(null)
+const plateScrolledOut = ref(false)
+let plateObserver: IntersectionObserver|null = null
+watch(plateEl, (el) => {
+  plateObserver?.disconnect(); plateObserver = null
+  if (!el) { plateScrolledOut.value = false; return }
+  plateObserver = new IntersectionObserver(
+    ([entry]) => { plateScrolledOut.value = !entry.isIntersecting },
+    { rootMargin: '-44px 0px 0px 0px', threshold: 0 },
+  )
+  plateObserver.observe(el)
+})
+const navTitleVisible = computed(() => view.value === 'steps' || plateScrolledOut.value)
+
 /* Плашка «несохранённые изменения» скроллит к нижней кнопке «Сохранить»
    (единая логика с RoomSettings). Нижняя кнопка — единственная точка сохранения. */
 const saveBtnEl = ref<HTMLButtonElement|null>(null)
@@ -137,7 +154,7 @@ function scrollToSave(){
   if(highlightTimer)clearTimeout(highlightTimer)
   highlightTimer=setTimeout(()=>{highlightSave.value=false},2000)
 }
-onUnmounted(()=>{ if(highlightTimer)clearTimeout(highlightTimer) })
+onUnmounted(()=>{ if(highlightTimer)clearTimeout(highlightTimer); plateObserver?.disconnect() })
 
 const model=computed(()=>MD[mid.value]); const steps=computed(()=>getSteps(mid.value))
 const curStep=computed(()=>steps.value[stepIdx.value]); const meta=computed(()=>SM[curStep.value]||{name:'',desc:''})
@@ -244,10 +261,14 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 <template>
   <div :style="{position:'fixed',inset:0,background:T.bg,overflow:showLeaveConfirm?'hidden':'auto'}">
     <NavHeader
-      :title="fxNav(build.m)"
+      title=""
       :back="view==='summary' ? (props.roomName || 'Назад') : 'Назад'"
       @back="view==='summary'?requestClose():backFromStep()"
-    />
+    >
+      <template #title>
+        <span :style="{ opacity: navTitleVisible ? 1 : 0, transition: 'opacity 0.2s ease' }">{{ fxNav(build.m) }}</span>
+      </template>
+    </NavHeader>
 
     <!-- Плашка «несохранённые изменения» — только на сводке -->
     <div
@@ -265,7 +286,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 
       <!-- SUMMARY -->
       <template v-if="view==='summary'">
-        <div :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">
+        <div ref="plateEl" :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">
           <div :style="{display:'flex',alignItems:'center',gap:'12px'}">
             <!-- batch11 #1: fxIcName(model.type) вместо захардкоженного "ceiling" -->
             <div :style="{width:'52px',height:'52px',borderRadius:'12px',background:WCOL[build.wood]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}"><Icon :name="fxIcName(model.type)" :color="WCOL[build.wood]" :size="26"/></div>

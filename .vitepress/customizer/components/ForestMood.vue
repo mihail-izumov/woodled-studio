@@ -28,15 +28,19 @@ function onScroll() {
   if (!el || n === 0) return
   active.value = Math.min(n - 1, Math.max(0, Math.round(el.scrollLeft / (el.scrollWidth / n))))
 }
+function goTo(i: number) {
+  const el = sliderRef.value
+  const n = props.knobs.length
+  if (!el || n === 0) return
+  el.scrollTo({ left: (el.scrollWidth / n) * i, behavior: 'smooth' })
+}
 </script>
 
 <template>
   <div
     :style="{
-      border: `1px solid ${props.tint}`,
-      background: props.tint + '0a',
-      borderRadius: '16px',
-      padding: '18px 14px 18px',
+      background: 'transparent',
+      padding: '0',
       marginBottom: '16px',
     }"
   >
@@ -53,17 +57,18 @@ function onScroll() {
       Настроение {{ props.roomPrepName }}
     </div>
 
-    <div :style="{ textAlign: 'center', fontSize: '22px', fontWeight: 700, color: T.text, marginTop: '10px' }">
+    <div :style="{ textAlign: 'center', fontSize: '17px', fontWeight: 700, color: T.text, marginTop: '8px' }">
       {{ props.scene.name }}
     </div>
 
     <div
       :style="{
         textAlign: 'center',
-        fontSize: '13px',
-        color: T.textSec,
-        lineHeight: 1.6,
-        maxWidth: '340px',
+        fontSize: '14px',
+        fontWeight: 500,
+        color: T.text,
+        lineHeight: 1.55,
+        maxWidth: '360px',
         margin: '8px auto 0',
       }"
     >
@@ -101,14 +106,19 @@ function onScroll() {
     </div>
 
     <template v-if="props.knobs.length > 0">
-      <div :style="{ height: '1px', background: T.border, margin: '16px 0 14px' }" />
+      <div :style="{ height: '14px' }" />
 
       <div ref="sliderRef" class="fm-slider" @scroll="onScroll">
         <div
           v-for="(k, i) in props.knobs"
           :key="i"
           class="fm-slide"
-          :style="{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '13px', padding: '14px' }"
+          :style="{
+            background: `linear-gradient(135deg, ${props.tint}1c, ${props.tint}0c), ${T.card}`,
+            border: 'none',
+            borderRadius: '14px',
+            padding: '14px',
+          }"
         >
           <div :style="{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '7px' }">
             <span :style="{ fontSize: '14px', fontWeight: 700, color: T.text }">{{ k.title }}</span>
@@ -119,7 +129,7 @@ function onScroll() {
                 fontSize: '10px',
                 fontWeight: 700,
                 color: props.tint,
-                background: props.tint + '1e',
+                background: props.tint + '33',
                 padding: '2px 7px',
                 borderRadius: '6px',
                 whiteSpace: 'nowrap',
@@ -128,20 +138,26 @@ function onScroll() {
               {{ k.chip }}
             </span>
           </div>
-          <div :style="{ fontSize: '12.5px', color: T.textSec, lineHeight: 1.55 }">{{ k.text }}</div>
+          <div :style="{ fontSize: '13px', color: 'rgba(232,224,212,0.78)', lineHeight: 1.55 }">{{ k.text }}</div>
         </div>
       </div>
 
-      <div :style="{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }">
-        <span
+      <div :style="{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '14px' }">
+        <button
           v-for="(k, i) in props.knobs"
           :key="i"
+          type="button"
+          :aria-label="`К карточке ${i + 1}`"
+          @click="goTo(i)"
           :style="{
-            height: '6px',
-            borderRadius: '3px',
+            height: '12px',
+            width: i === active ? '32px' : '12px',
+            borderRadius: '6px',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
             transition: 'all .2s',
-            width: i === active ? '16px' : '6px',
-            background: i === active ? props.tint : 'rgba(255,255,255,0.18)',
+            background: i === active ? props.tint : 'rgba(255,255,255,0.22)',
           }"
         />
       </div>

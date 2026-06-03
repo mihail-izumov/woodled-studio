@@ -100,7 +100,7 @@ function sphere(wood: Wood, size = 18) {
 /* ─── Прогресс: позиция солнца «женится» с системой отступов ─── */
 const GAP = 15
 const SR = 11
-const pct = computed(() => Math.min(100, Math.max(0, Math.round((ratio.value / 2) * 100))))
+const pct = computed(() => Math.min(100, Math.max(0, Math.round(ratio.value * 100))))
 const sunPos = computed(() => `clamp(${SR}px, ${pct.value}%, calc(100% - ${SR}px))`)
 
 /* ─── Стиль карточки ─── */

@@ -240,8 +240,8 @@ export interface Bright {
 export const BRIGHT: readonly Bright[] = [
   { max: 0.5, name: 'Темно', color: T.red },
   { max: 0.8, name: 'Полусвет', color: T.yellow },
-  { max: 1.5, name: 'Светло', color: T.green },
-  { max: 2.5, name: 'Ярко', color: T.neutral },
+  { max: 1.2, name: 'Светло', color: T.green },
+  { max: 1.5, name: 'Ярко', color: T.neutral },
   { max: 999, name: 'Праздник', color: T.textSec },
 ] as const
 

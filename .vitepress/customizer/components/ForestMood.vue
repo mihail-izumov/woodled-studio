@@ -40,8 +40,8 @@ function goTo(i: number) {
   <div
     :style="{
       background: 'transparent',
-      padding: '0',
-      marginBottom: '16px',
+      padding: '24px 0 4px',
+      marginBottom: '20px',
     }"
   >
     <div
@@ -75,19 +75,19 @@ function goTo(i: number) {
       {{ props.scene.legend }}
     </div>
 
-    <div :style="{ textAlign: 'center', marginTop: '14px' }">
+    <div :style="{ textAlign: 'center', marginTop: '16px' }">
       <button
         :style="{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '7px',
-          padding: '6px 14px',
+          gap: '9px',
+          padding: '9px 20px',
           borderRadius: '999px',
           background: props.tint + '1e',
           border: 'none',
           color: props.tint,
           cursor: 'pointer',
-          fontSize: '11px',
+          fontSize: '14px',
           fontWeight: 700,
           fontFamily: 'inherit',
         }"
@@ -106,7 +106,7 @@ function goTo(i: number) {
     </div>
 
     <template v-if="props.knobs.length > 0">
-      <div :style="{ height: '14px' }" />
+      <div :style="{ height: '28px' }" />
 
       <div ref="sliderRef" class="fm-slider" @scroll="onScroll">
         <div
@@ -116,29 +116,29 @@ function goTo(i: number) {
           :style="{
             background: `linear-gradient(135deg, ${props.tint}1c, ${props.tint}0c), ${T.card}`,
             border: 'none',
-            borderRadius: '14px',
-            padding: '14px',
+            borderRadius: '16px',
+            padding: '18px',
           }"
         >
-          <div :style="{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '7px' }">
-            <span :style="{ fontSize: '14px', fontWeight: 700, color: T.text }">{{ k.title }}</span>
+          <div :style="{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '10px' }">
+            <span :style="{ fontSize: '16px', fontWeight: 700, color: T.text }">{{ k.title }}</span>
             <span
               v-if="k.chip"
               :style="{
                 marginLeft: 'auto',
-                fontSize: '10px',
+                fontSize: '13px',
                 fontWeight: 700,
                 color: props.tint,
                 background: props.tint + '33',
-                padding: '2px 7px',
-                borderRadius: '6px',
+                padding: '4px 10px',
+                borderRadius: '8px',
                 whiteSpace: 'nowrap',
               }"
             >
               {{ k.chip }}
             </span>
           </div>
-          <div :style="{ fontSize: '13px', color: 'rgba(232,224,212,0.78)', lineHeight: 1.55 }">{{ k.text }}</div>
+          <div :style="{ fontSize: '14px', color: 'rgba(232,224,212,0.82)', lineHeight: 1.55 }">{{ k.text }}</div>
         </div>
       </div>
 
@@ -181,12 +181,12 @@ function goTo(i: number) {
 .fm-slide {
   flex: 0 0 82%;
   scroll-snap-align: center;
-  min-height: 116px;
+  min-height: 140px;
 }
 .rotor-dash {
   display: inline-block;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   position: relative;
   flex-shrink: 0;
 }
@@ -194,9 +194,9 @@ function goTo(i: number) {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 1.5px;
-  height: 5px;
-  margin: -2.5px 0 0 -0.75px;
+  width: 2px;
+  height: 6.5px;
+  margin: -3.25px 0 0 -1px;
   border-radius: 1px;
   background: var(--rc, #b4915a);
   transform-origin: 50% 50%;
@@ -204,10 +204,10 @@ function goTo(i: number) {
   opacity: 0;
 }
 @keyframes rotorDashCycle {
-  0%   { transform: rotate(var(--rot)) translateY(-14px) scale(0.3); opacity: 0; }
-  5%   { transform: rotate(var(--rot)) translateY(-7px) scale(1);   opacity: 0.7; }
-  80%  { transform: rotate(var(--rot)) translateY(-7px) scale(1);   opacity: 0.7; }
-  90%  { transform: rotate(var(--rot)) translateY(-14px) scale(0.3); opacity: 0; }
-  100% { transform: rotate(var(--rot)) translateY(-14px) scale(0.3); opacity: 0; }
+  0%   { transform: rotate(var(--rot)) translateY(-18px) scale(0.3); opacity: 0; }
+  5%   { transform: rotate(var(--rot)) translateY(-9px) scale(1);   opacity: 0.7; }
+  80%  { transform: rotate(var(--rot)) translateY(-9px) scale(1);   opacity: 0.7; }
+  90%  { transform: rotate(var(--rot)) translateY(-18px) scale(0.3); opacity: 0; }
+  100% { transform: rotate(var(--rot)) translateY(-18px) scale(0.3); opacity: 0; }
 }
 </style>

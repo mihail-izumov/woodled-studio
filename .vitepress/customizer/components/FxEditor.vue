@@ -37,7 +37,7 @@ interface Props {
   roomArea?: number; roomBaseLm?: number; roomCurrentLmWithoutThis?: number
   roomName?: string; roomTint?: string; isProvisional?: boolean
 }
-const props = withDefaults(defineProps<Props>(), { skipSize: false, backLabel: '← Назад', isProvisional: false })
+const props = withDefaults(defineProps<Props>(), { skipSize: false, backLabel: 'Назад', isProvisional: false })
 const emit = defineEmits<{ (e: 'save', fx: Fixture): void; (e: 'delete'): void; (e: 'close'): void; (e: 'feedback', msg: string): void }>()
 
 const cfg = useConfigurator()
@@ -262,7 +262,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
   <div :style="{position:'fixed',inset:0,background:T.bg,overflow:showLeaveConfirm?'hidden':'auto'}">
     <NavHeader
       title=""
-      :back="view==='summary' ? (props.roomName || 'Назад') : 'Назад'"
+      :back="view==='summary' ? props.backLabel : 'Назад'"
       @back="view==='summary'?requestClose():backFromStep()"
     >
       <template #title>

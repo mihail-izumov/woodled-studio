@@ -109,7 +109,19 @@ const fxEditorRoomContext = computed(() => {
   return { roomArea, roomBaseLm, roomCurrentLmWithoutThis: roomCurrentLm - thisFxLm, roomName: (room as Room).customName || rt.name, roomTint: (room as Room).cardColor ?? T.neutral }
 })
 
-const fxBackLabel = computed(() => { if (cfg.showBuy.value) return '← Мой лес'; if (cfg.active.value) return '← Комната'; return '← Назад' })
+/* Точка возврата из FxEditor:
+   • из BuyModal («Мой Лес») → «Мой Лес»
+   • из RoomDetail → имя комнаты (customName или дефолт по типу)
+   • иначе → «Назад» (deeplink, share-ссылка)
+   Префикс «← » не добавляем — NavHeader сам рисует шеврон. */
+const fxBackLabel = computed(() => {
+  if (cfg.showBuy.value) return 'Мой Лес'
+  if (cfg.active.value) {
+    const r = cfg.rooms.find((rm: Room) => rm.id === cfg.active.value)
+    if (r) return r.customName || getRT(r.typeId).name
+  }
+  return 'Назад'
+})
 
 /**
  * batch11 #9 v3: StickyBar скрывается ТОЛЬКО когда открыты параметры

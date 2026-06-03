@@ -166,7 +166,7 @@ function orbStyle(wood: Wood, size = 15) {
           <span :style="{ fontSize: '14px', fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxType(it.m) }}
           </span>
-          <span :style="{ fontSize: '9px', fontWeight: 600, color: accent + '66', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
+          <span :style="{ fontSize: '10px', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxLine(it.m) }}
           </span>
         </span>

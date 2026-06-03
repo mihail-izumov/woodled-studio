@@ -36,6 +36,7 @@ import { useConfigurator } from '../store/configurator'
 import Icon from './ui/Icons.vue'
 import Modal from './ui/Modal.vue'
 import NavHeader from './ui/NavHeader.vue'
+import BrightnessArc from './ui/BrightnessArc.vue'
 import ForestMood from './ForestMood.vue'
 import SmartHelpModal from './ui/SmartHelpModal.vue'
 import ZoneCard from './ZoneCard.vue'
@@ -251,6 +252,28 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
     />
 
     <div :style="{ padding: '16px', maxWidth: '480px', margin: '0 auto' }">
+      <!--
+        Brightness Arc — заменил линейный бар дашборда. Полная ширина контейнера,
+        прозрачный фон, без обводок. В центре — % факт/план, статус BRIGHT
+        синхронизирован с яркостью «солнца» внутри полукруга.
+      -->
+      <div :style="{ marginBottom: '16px', paddingTop: '4px' }">
+        <BrightnessArc
+          :ratio="ratio"
+          :color="tint"
+          :actual="actual"
+          :plan="base"
+        />
+        <!-- Реакция на последнее действие (transient ~1.8с) -->
+        <div
+          v-if="reactionText"
+          class="action-reaction"
+          :style="{ marginTop: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 600, color: tint }"
+        >
+          {{ reactionText }}
+        </div>
+      </div>
+
       <!-- Параметры комнаты -->
       <div
         :style="{
@@ -297,80 +320,6 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
         >
           <polyline points="9 18 15 12 9 6" />
         </svg>
-      </div>
-
-      <!-- Дашборд + Смарт-подбор -->
-      <div
-        :style="{
-          background: T.card,
-          border: `1px solid ${tintedMood.color}33`,
-          borderRadius: '14px',
-          padding: '12px 14px',
-          marginBottom: '8px',
-        }"
-      >
-        <div :style="{ display: 'flex', alignItems: 'center', gap: '12px' }">
-          <div
-            :style="{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
-              background: tintedMood.color + '18',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
-              flexShrink: 0,
-            }"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" :stroke="tintedMood.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
-              <path d="M9 18h6"/><path d="M10 22h4"/>
-            </svg>
-            <span :style="{ fontSize: '14px', fontWeight: 700, color: tintedMood.color }">{{ lamps }}</span>
-          </div>
-
-          <div :style="{ flex: 1, minWidth: 0 }">
-            <div :style="{ fontSize: '15px', fontWeight: 700, color: T.text, marginBottom: '4px' }">
-              {{ actual.toLocaleString('ru-RU') }}<span :style="{ fontWeight: 400, color: T.textSec }"> из {{ base.toLocaleString('ru-RU') }} лм</span>
-            </div>
-            <div :style="{ height: '5px', background: T.border, borderRadius: '3px', overflow: 'hidden' }">
-              <div
-                :style="{
-                  height: '100%',
-                  width: Math.min((actual / base) * 100, 100) + '%',
-                  background: tintedMood.color,
-                  borderRadius: '3px',
-                  transition: 'width .3s',
-                }"
-              />
-            </div>
-          </div>
-
-          <div
-            :style="{
-              padding: '6px 12px',
-              borderRadius: '8px',
-              background: tintedMood.color + '22',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: tintedMood.color,
-              flexShrink: 0,
-            }"
-          >
-            {{ bright.name }}
-          </div>
-        </div>
-
-
-        <!-- Реакция на последнее действие (transient ~1.8с) -->
-        <div
-          v-if="reactionText"
-          class="action-reaction"
-          :style="{ marginTop: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 600, color: tintedMood.color }"
-        >
-          {{ reactionText }}
-        </div>
       </div>
 
       <!-- Заголовок «Светильники» + счётчик точек комнаты -->

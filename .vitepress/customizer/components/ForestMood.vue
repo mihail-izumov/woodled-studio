@@ -7,7 +7,7 @@
  * сам ничего не считает. Иначе глубокая реактивность по props.room терялась
  * на границе пропса и карточки не обновлялись при изменении набора.
  */
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { T } from '../theme/tokens'
 import type { ForestScene, KnobCard } from '../engine/forest'
 
@@ -22,11 +22,15 @@ const emit = defineEmits<{ showHelp: [] }>()
 
 const sliderRef = ref<HTMLElement | null>(null)
 const active = ref(0)
+const atStart = ref(true)
+const atEnd = ref(false)
 function onScroll() {
   const el = sliderRef.value
   const n = props.knobs.length
   if (!el || n === 0) return
   active.value = Math.min(n - 1, Math.max(0, Math.round(el.scrollLeft / (el.scrollWidth / n))))
+  atStart.value = el.scrollLeft <= 2
+  atEnd.value = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2
 }
 function goTo(i: number) {
   const el = sliderRef.value
@@ -34,6 +38,9 @@ function goTo(i: number) {
   if (!el || n === 0) return
   el.scrollTo({ left: (el.scrollWidth / n) * i, behavior: 'smooth' })
 }
+onMounted(() => {
+  nextTick(() => onScroll())
+})
 </script>
 
 <template>
@@ -151,6 +158,8 @@ function goTo(i: number) {
             bottom: 0,
             width: '28px',
             pointerEvents: 'none',
+            opacity: atStart ? 0 : 1,
+            transition: 'opacity .2s',
             background: `linear-gradient(90deg, ${T.bg} 0%, ${T.bg}cc 40%, ${T.bg}00 100%)`,
           }"
         />
@@ -163,6 +172,8 @@ function goTo(i: number) {
             bottom: 0,
             width: '28px',
             pointerEvents: 'none',
+            opacity: atEnd ? 0 : 1,
+            transition: 'opacity .2s',
             background: `linear-gradient(270deg, ${T.bg} 0%, ${T.bg}cc 40%, ${T.bg}00 100%)`,
           }"
         />

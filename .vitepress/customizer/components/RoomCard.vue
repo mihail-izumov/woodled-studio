@@ -193,7 +193,7 @@ const tap = {
         <div
           v-if="!isEmpty"
           :style="{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase', color: cc, lineHeight: 1, marginTop: '6px', whiteSpace: 'nowrap', overflow: 'hidden' }"
-        >{{ scene.name }}</div>
+        >{{ bright }}</div>
       </div>
 
       <!-- вход — объёмный стеклянный шар (без halo: свечение отдано солнцу) -->
@@ -259,7 +259,7 @@ const tap = {
           display: 'inline-flex', alignItems: 'center', height: '32px', padding: '0 13px', borderRadius: '999px', boxSizing: 'border-box',
           background: cc + '1F', border: `1.5px solid ${cc}3D`, color: cc, fontSize: '12px', fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap',
         }"
-      >{{ bright }}</span>
+      >{{ scene.name }}</span>
     </div>
   </div>
 </template>

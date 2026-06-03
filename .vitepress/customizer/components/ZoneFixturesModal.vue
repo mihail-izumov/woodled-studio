@@ -181,7 +181,7 @@ function orbStyle(wood: Wood, size = 13) {
           </div>
           <div>
             <div :style="{ fontSize: '15px', fontWeight: 600, color: L.text }">{{ fxNav(it.m) }}</div>
-            <div :style="{ fontSize: '11px', fontWeight: 500, color: L.textSec, marginTop: '2px', letterSpacing: '0.2px' }">{{ fxLine(it.m) }}</div>
+            <div :style="{ fontSize: '10px', fontWeight: 700, color: L.textSec, marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.6px' }">{{ fxLine(it.m) }}</div>
             <div :style="{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '9px' }">
               <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
                 <span :style="orbStyle(it.wood, 13)" />{{ WOOD_NAME[it.wood] }}

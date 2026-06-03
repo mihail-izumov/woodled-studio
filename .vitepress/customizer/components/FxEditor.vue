@@ -292,7 +292,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
             <div :style="{width:'52px',height:'52px',borderRadius:'12px',background:WCOL[build.wood]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}"><Icon :name="fxIcName(model.type)" :color="WCOL[build.wood]" :size="26"/></div>
             <div :style="{flex:1,minWidth:0}">
               <div :style="{fontSize:'17px',fontWeight:600,color:T.text,lineHeight:1.2}">{{ fxTitle(build.m) }}</div>
-              <div :style="{fontSize:'11px',fontWeight:500,color:T.textSec,marginTop:'2px',marginBottom:'6px',letterSpacing:'0.2px'}">{{ fxLine(build.m) }}</div>
+              <div :style="{fontSize:'10px',fontWeight:700,color:props.roomTint||T.neutral,marginTop:'3px',marginBottom:'7px',textTransform:'uppercase',letterSpacing:'0.6px'}">{{ fxLine(build.m) }}</div>
               <div :style="{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}">
                 <span :style="{display:'inline-flex',alignItems:'center',gap:'5px',padding:'2px 10px 2px 4px',borderRadius:'12px',background:WCOL[build.wood]+'22',fontSize:'11px',fontWeight:600,color:T.text}"><span :style="{width:'14px',height:'14px',borderRadius:'50%',background:WCOL[build.wood],flexShrink:0}"/>{{ simMats.find(x=>x.id===build.wood)?.name }}</span>
                 <span :style="{display:'inline-block',padding:'2px 10px',borderRadius:'12px',border:`1px solid ${sc}55`,background:'transparent',fontSize:'11px',fontWeight:600,color:sc}">{{ status }}</span>

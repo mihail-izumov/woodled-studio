@@ -190,19 +190,19 @@ function woodBadgeStyle(woodColor: string) {
               <div v-if="discountMode" :style="{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${isDiscounted(r.id, i) ? T.text : T.textDim}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }"><div v-if="isDiscounted(r.id, i)" :style="{ width: '8px', height: '8px', borderRadius: '50%', background: T.text }" /></div>
               <!-- batch11 #1 v3: 48×48 — крупнее, карточка ниже за счёт padding 6px -->
               <div :style="{ width: '48px', height: '48px', borderRadius: '12px', background: WCOL[fx.wood ?? 'oak'] + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }"><Icon :name="fxIcName(MD[fx.m].type)" :color="WCOL[fx.wood ?? 'oak']" :size="24" /></div>
-              <!-- batch11 #1 v4: stretch + space-between — название вверху, бейдж дерева внизу -->
-              <div :style="{ flex: 1, minWidth: 0, alignSelf: 'stretch', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }">
-                <div :style="{ fontSize: '13px', fontWeight: 600, color: T.text, lineHeight: 1.25 }">
+              <!-- Левая колонка: имя + линейка (две строки) -->
+              <div :style="{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '2px' }">
+                <div :style="{ fontSize: '13px', fontWeight: 600, color: T.text, lineHeight: 1.2 }">
                   <span>{{ fxTitle(fx.m) }}</span>
                   <span v-if="(fx.q ?? 1) > 1" :style="{ color: T.textSec, fontWeight: 400, fontSize: '12px', marginLeft: '6px' }">× {{ fx.q }}</span>
-                  <div :style="{ fontSize: '11px', fontWeight: 500, color: T.textSec, marginTop: '1px', letterSpacing: '0.2px' }">{{ fxLine(fx.m) }}</div>
                 </div>
-                <div :style="woodBadgeStyle(WCOL[fx.wood ?? 'oak'])"><div :style="{ width: '16px', height: '16px', borderRadius: '50%', background: WCOL[fx.wood ?? 'oak'] }" />{{ MATS.find((x) => x.id === (fx.wood ?? 'oak'))?.name }}</div>
+                <div :style="{ fontSize: '10px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '0.6px' }">{{ fxLine(fx.m) }}</div>
               </div>
-              <div :style="{ flexShrink: 0, textAlign: 'right' }">
-                <!-- batch11 #1 v5: цены +2 кегля (10→12 и 13→15) -->
+              <!-- Правая колонка: цена + чип дерева под ней -->
+              <div :style="{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '4px' }">
                 <div v-if="isDiscounted(r.id, i)" :style="{ fontSize: '12px', color: T.textDim, textDecoration: 'line-through' }">{{ itemPrice(fx).toLocaleString('ru-RU') }} ₽</div>
                 <div :style="{ fontSize: '15px', fontWeight: 600, color: T.text }">{{ (isDiscounted(r.id, i) ? Math.max(0, itemPrice(fx) - 3000) : itemPrice(fx)).toLocaleString('ru-RU') }} ₽</div>
+                <div :style="{ ...woodBadgeStyle(WCOL[fx.wood ?? 'oak']), alignSelf: 'flex-end' }"><div :style="{ width: '12px', height: '12px', borderRadius: '50%', background: WCOL[fx.wood ?? 'oak'] }" />{{ MATS.find((x) => x.id === (fx.wood ?? 'oak'))?.name }}</div>
               </div>
             </button>
           </div>

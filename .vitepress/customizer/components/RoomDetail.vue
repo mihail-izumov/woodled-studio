@@ -282,12 +282,13 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
       <h1
         ref="inlineTitleRef"
         :style="{
-          fontSize: '28px',
+          fontSize: '34px',
           fontWeight: 500,
           color: T.text,
-          letterSpacing: '-0.5px',
-          lineHeight: 1.2,
-          margin: '12px 4px 22px',
+          letterSpacing: '-0.8px',
+          lineHeight: 1.15,
+          margin: '14px 4px 24px',
+          textAlign: 'center',
         }"
       >
         {{ props.room.customName || rt.name }}

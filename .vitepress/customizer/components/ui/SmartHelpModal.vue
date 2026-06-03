@@ -63,7 +63,7 @@ const helpStatuses = [
           <div :style="{ textAlign: 'center', marginBottom: '24px' }">
             <div :style="{ fontSize: '10px', fontWeight: 700, color: T.neutral, letterSpacing: '1.5px', marginBottom: '8px' }">WOODLED SMART</div>
             <div :style="{ fontSize: '22px', fontWeight: 800, color: T.text, lineHeight: 1.2, marginBottom: '10px' }">Как мы считаем свет</div>
-            <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.6, maxWidth: '340px', margin: '0 auto' }">Алгоритм сравнивает свет ваших светильников с нормой для комнаты и подсказывает, чего не хватает.</div>
+            <div :style="{ fontSize: '14px', fontWeight: 500, color: T.text, lineHeight: 1.6, maxWidth: '340px', margin: '0 auto' }">Алгоритм сравнивает свет ваших светильников с нормой для комнаты и подсказывает, чего не хватает.</div>
           </div>
 
           <!-- Учитываем -->
@@ -76,7 +76,7 @@ const helpStatuses = [
               </div>
               <div :style="{ padding: '14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }">
                 <div :style="{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: T.yellow + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="T.yellow" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></div>
-                <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '3px' }">Отдача светильника</div><div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">Люмены на коробке лампы — это не то, что дойдёт до комнаты. Свет Rotor идёт сквозь деревянные ламели и мягчеет. Бра отдаёт часть в стену, настольная светит на стол. Мы считаем то, что реально доходит.</div></div>
+                <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '3px' }">Отдача светильника</div><div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">Люмены на коробке лампы — это не то, что дойдёт до комнаты. Свет ROTOR проходит сквозь деревянные ламели и становится мягче. Бра отдаёт часть в стену, настольная светит на стол. Мы считаем то, что реально доходит.</div></div>
               </div>
               <div :style="{ padding: '14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }">
                 <div :style="{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: T.green + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="T.green" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M5 18v2"/><path d="M19 18v2"/></svg></div>
@@ -91,7 +91,7 @@ const helpStatuses = [
             <div :style="{ display: 'flex', flexDirection: 'column', gap: '6px' }">
               <div v-for="row in helpStatuses" :key="row.label" :style="{ padding: '10px 12px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px' }">
                 <div :style="{ padding: '4px 10px', borderRadius: '6px', background: row.color + '22', color: row.color, fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, minWidth: '82px', textAlign: 'center' }">{{ row.label }}</div>
-                <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.4, flex: 1 }">{{ row.desc }}</div>
+                <div :style="{ fontSize: '12px', color: T.text, lineHeight: 1.4, flex: 1 }">{{ row.desc }}</div>
               </div>
             </div>
           </div>
@@ -104,19 +104,16 @@ const helpStatuses = [
                 <span :style="{ width: '22px', height: '22px', borderRadius: '50%', background: T.green, color: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700 }">✓</span>
                 <span :style="{ fontSize: '13px', fontWeight: 700, color: T.green }">Доверьтесь зелёной галочке</span>
               </div>
-              <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.6 }">Если подходят несколько размеров — нажмите «Выбери за меня». Алгоритм подберёт самый сбалансированный: света ровно столько, сколько нужно, без переплаты за лишний размер.</div>
+              <div :style="{ fontSize: '12px', color: T.text, lineHeight: 1.6 }">Если подходят несколько размеров — нажмите «Выбери за меня». Алгоритм подберёт самый сбалансированный: света ровно столько, сколько нужно, без переплаты за лишний размер.</div>
             </div>
           </div>
 
           <!-- Когда положиться на алгоритм -->
           <div :style="{ marginBottom: '24px' }">
             <div :style="{ fontSize: '12px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: '10px' }">Когда положиться на алгоритм</div>
-            <div :style="{ padding: '14px', background: T.green + '10', border: `1px solid ${T.green}33`, borderRadius: '12px', marginBottom: '8px' }">
-              <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }">
-                <span :style="{ width: '22px', height: '22px', borderRadius: '50%', background: T.green, color: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700 }">✓</span>
-                <span :style="{ fontSize: '13px', fontWeight: 700, color: T.green }">Обычная комната</span>
-              </div>
-              <div :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.6 }">Обычная мебель, потолок до 2.7 м, светлые или средние стены — рекомендация попадёт точно.</div>
+            <div :style="{ padding: '14px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', marginBottom: '8px' }">
+              <div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '6px' }">Обычная комната</div>
+              <div :style="{ fontSize: '12px', color: T.text, lineHeight: 1.6 }">Обычная мебель, потолок до 2.7 м, светлые или средние стены — рекомендация попадёт точно.</div>
             </div>
             <div :style="{ padding: '14px', background: T.cardAlt, border: `1px solid ${T.border}`, borderRadius: '12px' }">
               <div :style="{ fontSize: '13px', fontWeight: 700, color: T.text, marginBottom: '10px' }">Когда лучше выбрать самим:</div>

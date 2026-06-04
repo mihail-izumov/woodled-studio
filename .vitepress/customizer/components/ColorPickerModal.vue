@@ -26,6 +26,14 @@ const picked = ref<string | undefined>(props.current)
 const tab = ref<'presets' | 'wheel'>('presets')
 const wheelCanvas = ref<HTMLCanvasElement | null>(null)
 const wheelSize = 280
+/* Размер «пука»-указателя (диаметр в px). Должен совпадать со стилем
+   `width/height: 44px` у соответствующего div ниже. Используется, чтобы
+   не выпускать puck за пределы колеса. */
+const PUCK_SIZE = 44
+/* Максимальное относительное расстояние от центра колеса до центра puck,
+   при котором он целиком умещается внутри. radius_wheel − radius_puck,
+   выраженное в долях ширины колеса (0..0.5). */
+const PUCK_MAX_R = 0.5 - PUCK_SIZE / 2 / wheelSize
 const pickerPos = ref<{ x: number; y: number } | null>(null)
 
 /* ────────── HEX input (на вкладке «Свой цвет») ────────── */
@@ -66,19 +74,29 @@ async function pasteHex() {
   }
 }
 
+/* 12 пресетов — реалистичные цвета стен, не акцентная UI-палитра.
+   Подобраны под 2026-тренды (тёплые нейтрали, уход от cool grey),
+   с равномерным распределением по категориям отражения:
+     light (≥0.55):  Бумага, Лён, Холст, Снег
+     medium:         Песок, Камень, Туман, Шалфей, Дымка
+     dark (≤0.20):   Какао, Графит, Терракота
+   Холст #D7D0C2 = Benjamin Moore Edgecomb Gray HC-173 — индустриальный
+   эталон универсального greige. */
 const PRESETS: { color: string; name: string }[] = [
-  { color: '#D4956B', name: 'Закат' },
-  { color: '#C9A84C', name: 'Янтарь' },
-  { color: '#C4A46C', name: 'Песок' },
-  { color: '#A89878', name: 'Лён' },
-  { color: '#8BAA6B', name: 'Поляна' },
-  { color: '#7BA05B', name: 'Лес' },
-  { color: '#5B8BA0', name: 'Озеро' },
-  { color: '#6B8DC4', name: 'Небо' },
-  { color: '#8B6BA0', name: 'Лаванда' },
-  { color: '#B85C6C', name: 'Рубин' },
-  { color: '#B85C4C', name: 'Глина' },
-  { color: '#8B6242', name: 'Орех' },
+  // Тёплая шкала: от бумажного к шоколадному
+  { color: '#F5F1E8', name: 'Бумага' },
+  { color: '#E0D6C4', name: 'Лён' },
+  { color: '#D7D0C2', name: 'Холст' },
+  { color: '#C0AE96', name: 'Песок' },
+  { color: '#8A7F70', name: 'Камень' },
+  { color: '#4F4438', name: 'Какао' },
+  // Холодная шкала + натуральные акценты
+  { color: '#ECECEC', name: 'Снег' },
+  { color: '#A8A8A8', name: 'Туман' },
+  { color: '#3A3A3A', name: 'Графит' },
+  { color: '#8B947E', name: 'Шалфей' },
+  { color: '#7A8B98', name: 'Дымка' },
+  { color: '#A06B4F', name: 'Терракота' },
 ]
 
 function drawWheel() {
@@ -145,7 +163,11 @@ function wheelPosForHex(hex: string): { x: number; y: number } | null {
   const [h, s, l] = hsl
   const tSat = (s - 30) / 70
   const tLit = (85 - l) / 35
-  const t = Math.max(0, Math.min(1, (tSat + tLit) / 2))
+  // t — доля от радиуса колеса (0 = центр, 1 = внешний край). Клампим до
+  // PUCK_MAX_R*2, чтобы puck (44px) умещался внутри колеса полностью,
+  // а не наполовину торчал наружу.
+  const tMax = PUCK_MAX_R * 2 // потому что t масштабируется на 50% (полуширина)
+  const t = Math.max(0, Math.min(tMax, (tSat + tLit) / 2))
   const a = (h * Math.PI) / 180
   return { x: 50 + 50 * t * Math.cos(a), y: 50 + 50 * t * Math.sin(a) }
 }
@@ -155,11 +177,24 @@ function pickFromWheel(e: MouseEvent | TouchEvent) {
   const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX; const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
   const relX = (clientX - rect.left) / rect.width; const relY = (clientY - rect.top) / rect.height
   const dx = relX - 0.5, dy = relY - 0.5; if (Math.sqrt(dx * dx + dy * dy) > 0.49) return
+  // Цвет берём из точки тапа (как и раньше) — пиксель колеса.
   const px_x = Math.round(relX * wheelSize); const px_y = Math.round(relY * wheelSize)
   const ctx = cvs.getContext('2d'); if (!ctx) return; const px = ctx.getImageData(px_x, px_y, 1, 1).data; if (px[3] < 128) return
   const hex = rgbToHex(px[0], px[1], px[2])
-  picked.value = hex; pickerPos.value = { x: relX * 100, y: relY * 100 }
-  hexInput.value = hex
+  picked.value = hex; hexInput.value = hex
+  // А вот позицию puck клампим в окружность радиуса PUCK_MAX_R от центра,
+  // чтобы кружок-указатель целиком оставался внутри колеса. Цвет при
+  // этом — точный пиксель тапа, поэтому при тапе у самого края puck
+  // визуально «сел» чуть ближе к центру, но окрашен в тот цвет, который
+  // пользователь подтвердил тапом.
+  const r = Math.sqrt(dx * dx + dy * dy)
+  let posX = relX, posY = relY
+  if (r > PUCK_MAX_R) {
+    const k = PUCK_MAX_R / r
+    posX = 0.5 + dx * k
+    posY = 0.5 + dy * k
+  }
+  pickerPos.value = { x: posX * 100, y: posY * 100 }
 }
 
 let dragging = false

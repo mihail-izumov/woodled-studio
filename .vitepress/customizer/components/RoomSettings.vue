@@ -69,29 +69,20 @@ const draftCustomArea = ref<number>(
   props.room.customArea ?? props.rt.sizes[2],
 )
 const draftCeilingH = ref<number>(props.room.ceilingH)
-const draftWallFinish = ref<WallFinish>(props.room.wallFinish ?? 'medium')
-/* Свой цвет комнаты (он же цвет стен в физике через wallFinishOf).
-   Изменяется через ColorPickerModal — одну и ту же модалку открываем и
-   с главной (RoomCard), и отсюда. null/undefined = «не задан», работает
-   пресет wallFinish. */
+/* Единый цвет комнаты (он же цвет стен в физике через wallFinishOf).
+   Изменяется через ColorPickerModal — одну и ту же модалку открываем
+   и с главной (RoomCard), и отсюда. undefined = «не задан», физика
+   работает на дефолтной категории medium через fallback wallFinish. */
 const draftCardColor = ref<string | undefined>(props.room.cardColor)
 const draftLimits = ref<ZoneLimits>({
   ...(props.room.limits ?? props.rt.limits),
 })
-
-/** Опции отделки стен: влияют на КПД (отражение света). */
-const WALL_OPTS: readonly { id: WallFinish; label: string; tip: string }[] = [
-  { id: 'light', label: 'Светлая', tip: 'белые, светлые стены' },
-  { id: 'medium', label: 'Средняя', tip: 'обычная отделка' },
-  { id: 'dark', label: 'Тёмная', tip: 'тёмные стены, дерево' },
-]
 
 watch(() => props.room.id, () => {
   draftName.value = props.room.customName ?? ''
   draftSizeIdx.value = props.room.sizeIndex
   draftCustomArea.value = props.room.customArea ?? props.rt.sizes[2]
   draftCeilingH.value = props.room.ceilingH
-  draftWallFinish.value = props.room.wallFinish ?? 'medium'
   draftCardColor.value = props.room.cardColor
   draftLimits.value = { ...(props.room.limits ?? props.rt.limits) }
 })
@@ -162,7 +153,6 @@ const isDirty = computed<boolean>(() => {
     if (draftCustomArea.value !== original) return true
   }
   if (draftCeilingH.value !== props.room.ceilingH) return true
-  if (draftWallFinish.value !== (props.room.wallFinish ?? 'medium')) return true
   /* Цвет комнаты: dirty если поменялся. Сравниваем как строки —
      ColorPickerModal эмитит уже нормализованный HEX или undefined. */
   if ((draftCardColor.value ?? '') !== (props.room.cardColor ?? '')) return true
@@ -205,7 +195,10 @@ function onSave() {
     sizeIndex: draftSizeIdx.value,
     customArea: draftSizeIdx.value === 3 ? draftCustomArea.value : props.room.customArea,
     ceilingH: draftCeilingH.value,
-    wallFinish: draftWallFinish.value,
+    /* wallFinish больше не редактируется в UI — сохраняем как было. Поле
+       осталось как fallback в wallFinishOf для старых сохранений и для
+       случая, когда cardColor не задан. */
+    wallFinish: props.room.wallFinish,
     cardColor: draftCardColor.value,
     limits: { ...draftLimits.value },
   }
@@ -533,92 +526,57 @@ function hexToRgba(hex: string, a: number): string {
         }"
       >
         <div :style="{ fontSize: '20px', fontWeight: 700, color: T.text, marginBottom: '6px', textAlign: 'center', letterSpacing: '0.3px' }">
-          Стены
+          Цвет стен
         </div>
         <div :style="{ fontSize: '13px', color: T.textSec, marginBottom: '14px', textAlign: 'center', lineHeight: 1.4 }">
-          Светлые стены отражают больше света — нужно меньше светильников
+          Светлые стены возвращают свет, тёмные — глушат. Цвет комнаты определит категорию.
         </div>
-        <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }">
-          <div
-            v-for="w in WALL_OPTS"
-            :key="w.id"
+        <!-- Единая плашка выбора цвета. Открывает ту же ColorPickerModal,
+             что и с главной (RoomCard). Категория light/medium/dark
+             классифицируется автоматически по HEX. -->
+        <button
+          type="button"
+          :style="{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 14px',
+            background: T.bg,
+            border: `1px solid ${T.border}`,
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            color: T.text,
+            textAlign: 'left',
+          }"
+          @click="showColorPicker = true"
+        >
+          <span
             :style="{
-              borderRadius: '12px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              border: draftWallFinish === w.id ? `2px solid ${tint}` : `1px solid ${T.border}`,
-              background: draftWallFinish === w.id ? hexToRgba(tint, 0.20) : T.bg,
-              color: draftWallFinish === w.id ? T.text : T.textSec,
-              padding: '14px 8px',
-              transition: 'all .2s',
-              boxSizing: 'border-box',
+              width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0,
+              background: draftCardColor || 'transparent',
+              border: draftCardColor ? `1px solid ${T.border}` : `1px dashed ${T.border}`,
             }"
-            @click="draftWallFinish = w.id"
-          >
-            <div :style="{ fontSize: '16px', fontWeight: 700, textAlign: 'center' }">
-              {{ w.label }}
-            </div>
-            <div :style="{ fontSize: '11px', opacity: 0.75, textAlign: 'center', lineHeight: 1.3 }">
-              {{ w.tip }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Свой цвет комнаты. Открывает ту же модалку, что и с главной
-             (ColorPickerModal — палитра, колесо, HEX-input). Если выбран
-             свой HEX, он перекрывает пресет в расчётах нормы. -->
-        <div :style="{ marginTop: '14px' }">
-          <div :style="{ fontSize: '11px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: '8px', textAlign: 'center' }">
-            Или свой цвет
-          </div>
-          <button
-            type="button"
-            :style="{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '10px 12px',
-              background: T.bg,
-              border: `1px solid ${T.border}`,
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              color: T.text,
-              textAlign: 'left',
-            }"
-            @click="showColorPicker = true"
-          >
-            <span
-              :style="{
-                width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0,
-                background: draftCardColor || 'transparent',
-                border: draftCardColor ? `1px solid ${T.border}` : `1px dashed ${T.border}`,
-              }"
-              aria-hidden="true"
-            />
-            <span :style="{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }">
-              <span :style="{ fontSize: '14px', fontWeight: 600 }">
-                {{ draftCardColor ? draftCardColor.toUpperCase() : 'Выбрать свой цвет' }}
-              </span>
-              <span :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.3 }">
-                <template v-if="draftCardFinish">
-                  Распознан как <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftCardFinish] }}</span> — перекрывает пресет выше.
-                </template>
-                <template v-else>
-                  Палитра, колесо или HEX из референса — система определит категорию.
-                </template>
-              </span>
+            aria-hidden="true"
+          />
+          <span :style="{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }">
+            <span :style="{ fontSize: '15px', fontWeight: 600 }">
+              {{ draftCardColor ? draftCardColor.toUpperCase() : 'Выбрать цвет' }}
             </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" :stroke="T.textSec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0 }">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        </div>
+            <span :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.3 }">
+              <template v-if="draftCardFinish">
+                Распознан как <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftCardFinish] }}</span>
+              </template>
+              <template v-else>
+                Без выбора стены считаются нейтральными — норма без поправок.
+              </template>
+            </span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" :stroke="T.textSec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0 }">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
       </div>
 
       <!-- Точки света -->

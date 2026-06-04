@@ -85,17 +85,20 @@ async function onReload() {
   const timeout = new Promise<void>((r) => setTimeout(r, 800))
   await Promise.race([cleanup, timeout])
 
-  // 3) Cache-bust навигация. location.replace, чтобы новый URL не
-  //    оказался в history (juзер не должен возвращаться кнопкой Back
-  //    на reload-URL). _t снимется в App.vue onMounted через
-  //    history.replaceState.
+  // 3) Cache-bust навигация. Передаём _reload=1, чтобы новая страница
+  //    показала тот же текст «Перезагружаем…» (а не «Загружаем лес»)
+  //    и таймеры подсказок начали отсчёт с нуля на свежей странице.
+  //    Иначе на медленном VPN экран залипает на старом сообщении без
+  //    обновлений: таймеры этой страницы умирают при location.replace,
+  //    а новая страница ещё в пути.
+  //    location.replace (не assign), чтобы reload-URL не лёг в history.
+  //    _t и _reload снимутся в App.vue onMounted через history.replaceState.
   try {
     const url = new URL(window.location.href)
     url.searchParams.set('_t', Date.now().toString(36))
+    url.searchParams.set('_reload', '1')
     window.location.replace(url.toString())
   } catch {
-    // Если URL по какой-то причине не парсится — последний шанс,
-    // просто reload (soft, но хоть что-то).
     try { window.location.reload() } catch { /* noop */ }
   }
 }

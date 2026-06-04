@@ -20,6 +20,7 @@ import {
 } from './lz-string'
 import type { Room, WallFinish } from '../data/rooms'
 import type { Fixture } from '../data/catalog'
+import type { FxOpts } from '../data/materials'
 
 const V2_PREFIX = '2.'
 
@@ -31,15 +32,7 @@ interface PackedFixture {
   w?: string     // wood
   z?: string     // zone
   l?: number     // lamps override
-  o?: Partial<{  // options (только изменённые относительно DEF_OPT)
-    bowl: string
-    mount: string
-    wire: string
-    btemp: string
-    diffuser: boolean
-    moisture: boolean
-    bulbs: boolean
-  }>
+  o?: Partial<FxOpts> // options (включая bulbOpt/baseColor)
   d?: string[]   // done — выполненные шаги чек-листа
 }
 

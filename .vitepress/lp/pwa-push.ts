@@ -43,11 +43,22 @@ export type PushState =
   | { kind: 'subscribed', endpoint: string }
   | { kind: 'permission-default' }       // готов спросить разрешение
 
+/**
+ * Расширенный детект «приложение / не браузер». Повторяет логику
+ * PWAInstallBanner.vue. Покрывает: iOS standalone, все display-mode
+ * варианты (standalone/minimal-ui/fullscreen/wco), Android TWA через
+ * referrer. В пушах не учитываем в-app браузеры отдельно — там
+ * Notification API всё равно недоступен в большинстве случаев.
+ */
 function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
   const nav = window.navigator as Navigator & { standalone?: boolean }
   if (nav.standalone) return true
-  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true
+  if (window.matchMedia) {
+    const modes = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay']
+    if (modes.some((m) => window.matchMedia('(display-mode: ' + m + ')').matches)) return true
+  }
+  if (typeof document !== 'undefined' && /^android-app:\/\//.test(document.referrer)) return true
   return false
 }
 

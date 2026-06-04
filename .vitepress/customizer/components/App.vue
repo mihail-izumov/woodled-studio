@@ -385,13 +385,17 @@ function onGalleryGiftClick() {
     <StickyBar v-if="stickyVisible" @share="cfg.showShare.value = true" @buy="cfg.showBuy.value = true" />
   </template>
 
-  <!-- SoundButton сдвигается вниз на высоту PWA-баннера. Когда банера нет
-       (стандарт) — --wl-banner-h = 0px, кнопка в обычной позиции top:6.
-       Transition top — синхронно с slide-анимацией банера 360ms. -->
+  <!-- SoundButton:
+       • базовый top = 22px — на одной горизонтали с центром бейджа
+         «WOODLED Студия» (бейдж: home pad 16 + wrapper padTop 8 +
+         полвысоты бейджа ≈ 16 → центр ~40px от верха home; минус
+         полкнопки ~20px → top ≈ 20px). 22 — с поправкой на baseline.
+       • с PWA-банером сдвигается ниже на --wl-banner-h (transition
+         синхронно с slide-анимацией банера 360ms). -->
   <div
     :style="{
       position: 'fixed',
-      top: 'calc(6px + var(--wl-banner-h, 0px))',
+      top: 'calc(22px + var(--wl-banner-h, 0px))',
       right: '16px',
       zIndex: 90,
       transition: 'top 360ms cubic-bezier(0.4, 0, 0.2, 1)',

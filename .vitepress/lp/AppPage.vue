@@ -5,7 +5,7 @@
  * Структура (по образцу avito.ru/apps):
  *   1. Hero — «Как пользоваться WOODLED Студией». Краткое объяснение что
  *      сайт работает как приложение (PWA), и две кнопки-якоря: «Добавить
- *      на iPhone» / «Открыть на Android» (на Android — оригинальная ссылка).
+ *      на айфон» / «Открыть на Android» (на Android — оригинальная ссылка).
  *   2. Секция «Добавьте WOODLED на домашний экран айфона» — 3 шага +
  *      картинка-плейсхолдер (будет заменена пользователем).
  *   3. Секция «Разрешите присылать уведомления» — 3 шага + плейсхолдер.
@@ -196,7 +196,7 @@ const notifySteps = [
           >
             <span :style="{ display: 'block' }">Как пользоваться</span>
             <span :style="{ display: 'block' }">WOODLED&nbsp;Студия</span>
-            <span :style="{ display: 'block' }">на iPhone</span>
+            <span :style="{ display: 'block' }">на айфоне</span>
           </h1>
           <p
             :style="{
@@ -211,31 +211,37 @@ const notifySteps = [
             Добавьте ярлык на домашний экран и пользуйтесь как обычным приложением.
           </p>
 
+          <!-- Две кнопки на всю ширину. Primary («Добавить на айфон») —
+               главное действие, медный градиент, поднята визуально.
+               Secondary («Уведомления») — ghost-стиль, бледнее. Так
+               пользователь точно сначала пойдёт по главному пути,
+               а уведомления оставит «на потом». -->
           <div
             :style="{
               display: 'flex',
-              flexWrap: 'wrap',
+              flexDirection: 'column',
               gap: '12px',
+              maxWidth: '420px',
             }"
           >
-            <!-- Кнопка «Добавить на iPhone» — стиль primary CTA лендинга:
-                 медный градиент, белый текст, без border. Иконка
-                 layout-grid (домашний экран). -->
             <a
               href="#install"
               :style="{
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '10px',
-                padding: '14px 22px',
+                width: '100%',
+                padding: '16px 22px',
                 background: `linear-gradient(135deg, ${PAGE.rose} 0%, ${PAGE.roseLight} 50%, ${PAGE.rose} 100%)`,
                 color: '#FFFFFF',
                 borderRadius: '14px',
                 textDecoration: 'none',
-                fontSize: '15px',
+                fontSize: '16px',
                 fontWeight: 700,
                 border: 'none',
-                boxShadow: '0 10px 24px rgba(154, 100, 64, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+                boxShadow: '0 12px 28px rgba(154, 100, 64, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+                boxSizing: 'border-box',
               }"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -245,24 +251,25 @@ const notifySteps = [
                 <rect width="7" height="7" x="14" y="14" rx="1"/>
                 <rect width="7" height="7" x="3" y="14" rx="1"/>
               </svg>
-              Добавить на iPhone
+              Добавить на айфон
             </a>
-            <!-- Кнопка «Уведомления» — тот же стиль, иконка bell-plus -->
             <a
               href="#notify"
               :style="{
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '10px',
-                padding: '14px 22px',
-                background: `linear-gradient(135deg, ${PAGE.rose} 0%, ${PAGE.roseLight} 50%, ${PAGE.rose} 100%)`,
-                color: '#FFFFFF',
+                width: '100%',
+                padding: '16px 22px',
+                background: 'rgba(245, 235, 224, 0.08)',
+                color: 'rgba(245, 235, 224, 0.82)',
                 borderRadius: '14px',
                 textDecoration: 'none',
-                fontSize: '15px',
-                fontWeight: 700,
+                fontSize: '16px',
+                fontWeight: 600,
                 border: 'none',
-                boxShadow: '0 10px 24px rgba(154, 100, 64, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+                boxSizing: 'border-box',
               }"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -277,20 +284,19 @@ const notifySteps = [
           </div>
         </div>
 
-        <!-- Картинка-плейсхолдер (айкона + телефон). Замените на реальный скрин -->
+        <!-- Картинка Hero — рекомендуемый размер 1200×900px PNG, 4:3.
+             Сейчас плейсхолдер: сплошной тёплый фон + иконка по центру.
+             При замене на реальный скрин — просто заменить img.src. -->
         <div
           :style="{
             position: 'relative',
             aspectRatio: '4 / 3',
-            background: 'rgba(245, 235, 224, 0.06)',
-            border: '1px dashed rgba(245, 235, 224, 0.20)',
+            background: 'linear-gradient(135deg, #2A1F18 0%, #3A2A1C 100%)',
             borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'rgba(245, 235, 224, 0.45)',
-            fontSize: '14px',
-            fontWeight: 500,
+            overflow: 'hidden',
           }"
         >
           <img
@@ -303,17 +309,6 @@ const notifySteps = [
               boxShadow: '0 18px 48px rgba(0, 0, 0, 0.35)',
             }"
           />
-          <div
-            :style="{
-              position: 'absolute',
-              bottom: '12px',
-              right: '14px',
-              fontSize: '11px',
-              color: 'rgba(245, 235, 224, 0.35)',
-            }"
-          >
-            замените картинку
-          </div>
         </div>
       </div>
     </section>
@@ -351,12 +346,12 @@ const notifySteps = [
           alignItems: 'center',
         }"
       >
-        <!-- Картинка-плейсхолдер -->
+        <!-- Скрин Safari «Поделиться → На экран Домой».
+             Рекомендуемый размер 750×1000px PNG, 3:4. -->
         <div
           :style="{
             aspectRatio: '3 / 4',
-            background: 'rgba(255, 255, 255, 0.55)',
-            border: `1px dashed ${PAGE.border}`,
+            background: PAGE.pearl,
             borderRadius: '20px',
             display: 'flex',
             alignItems: 'center',
@@ -364,22 +359,10 @@ const notifySteps = [
             color: PAGE.textDim,
             fontSize: '14px',
             fontWeight: 500,
-            position: 'relative',
+            overflow: 'hidden',
           }"
         >
           скрин Safari — кнопка «Поделиться»
-          <div
-            :style="{
-              position: 'absolute',
-              bottom: '12px',
-              right: '14px',
-              fontSize: '11px',
-              color: PAGE.textDim,
-              opacity: 0.7,
-            }"
-          >
-            замените картинку
-          </div>
         </div>
 
         <ol
@@ -476,11 +459,12 @@ const notifySteps = [
           alignItems: 'center',
         }"
       >
+        <!-- Скрин системного запроса разрешения уведомлений.
+             Рекомендуемый размер 750×1000px PNG, 3:4. -->
         <div
           :style="{
             aspectRatio: '3 / 4',
-            background: 'rgba(255, 255, 255, 0.55)',
-            border: `1px dashed ${PAGE.border}`,
+            background: PAGE.pearl,
             borderRadius: '20px',
             display: 'flex',
             alignItems: 'center',
@@ -488,22 +472,10 @@ const notifySteps = [
             color: PAGE.textDim,
             fontSize: '14px',
             fontWeight: 500,
-            position: 'relative',
+            overflow: 'hidden',
           }"
         >
           скрин — запрос разрешения
-          <div
-            :style="{
-              position: 'absolute',
-              bottom: '12px',
-              right: '14px',
-              fontSize: '11px',
-              color: PAGE.textDim,
-              opacity: 0.7,
-            }"
-          >
-            замените картинку
-          </div>
         </div>
 
         <ol

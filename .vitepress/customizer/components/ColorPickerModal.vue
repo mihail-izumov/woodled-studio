@@ -9,6 +9,7 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { T, Z } from '../theme/tokens'
 import NavHeader from './ui/NavHeader.vue'
+import PaletteHelpModal from './ui/PaletteHelpModal.vue'
 import { normalizeHex, wallFinishFromHex } from '../engine/wall-color'
 import type { WallFinish } from '../data/rooms'
 
@@ -24,6 +25,8 @@ const emit = defineEmits<{
 
 const picked = ref<string | undefined>(props.current)
 const tab = ref<'presets' | 'wheel'>('presets')
+/* Флаг показа модалки с разбором палитры (кнопка «?» на вкладке «Подобранные»). */
+const showPaletteInfo = ref(false)
 const wheelCanvas = ref<HTMLCanvasElement | null>(null)
 const wheelSize = 280
 /* Размер «пука»-указателя (диаметр в px). Должен совпадать со стилем
@@ -221,15 +224,32 @@ function reset() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" :stroke="picked ?? T.textDim" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v5"/><path d="M14.829 15.998a3 3 0 1 1-5.658 0"/><path d="M20.92 14.606A1 1 0 0 1 20 16H4a1 1 0 0 1-.92-1.394l3-7A1 1 0 0 1 7 7h10a1 1 0 0 1 .92.606z"/></svg>
         <div :style="{ fontSize: '15px', fontWeight: 600, color: picked ?? T.textDim }">{{ props.roomName }}</div>
       </div>
-      <div :style="{ display: 'flex', width: '100%', maxWidth: '340px', margin: '0 auto', background: T.card, borderRadius: '10px', padding: '3px', marginBottom: '20px', border: `1px solid ${T.border}` }">
-        <button v-for="t in (['presets', 'wheel'] as const)" :key="t" :style="{ flex: 1, padding: '8px 0', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: tab === t ? T.neutral + '33' : 'transparent', color: tab === t ? T.text : T.textSec, transition: 'all .2s' }" @click="switchTab(t)">{{ t === 'presets' ? 'Готовые цвета' : 'Свой цвет' }}</button>
+      <div :style="{ display: 'flex', width: '100%', maxWidth: '340px', margin: '0 auto', background: T.card, borderRadius: '12px', padding: '4px', marginBottom: '20px', border: `1px solid ${T.border}` }">
+        <button v-for="t in (['presets', 'wheel'] as const)" :key="t" :style="{ flex: 1, padding: '11px 0', borderRadius: '9px', border: 'none', cursor: 'pointer', fontSize: '15px', fontWeight: 600, background: tab === t ? T.neutral + '33' : 'transparent', color: tab === t ? T.text : T.textSec, transition: 'all .2s', fontFamily: 'inherit' }" @click="switchTab(t)">{{ t === 'presets' ? 'Подобранные' : 'Свой цвет' }}</button>
       </div>
     </div>
 
     <div :style="{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }">
       <template v-if="tab === 'presets'">
-        <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', justifyItems: 'center', width: '100%', maxWidth: '340px' }">
-          <button v-for="p in PRESETS" :key="p.color" :style="{ width: '42px', height: '42px', borderRadius: '50%', background: p.color, border: picked === p.color ? '3px solid #fff' : '2px solid transparent', boxSizing: 'border-box', cursor: 'pointer', boxShadow: picked === p.color ? `0 0 14px ${p.color}55` : 'none', transition: 'all .2s', padding: 0 }" :title="p.name" @click="picked = p.color; hexInput = p.color; pickerPos = wheelPosForHex(p.color)" />
+        <div :style="{ width: '100%', maxWidth: '340px' }">
+          <!-- Заголовок группы + кнопка «?» с разбором палитры. -->
+          <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }">
+            <div :style="{ fontSize: '12px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.6px' }">Тёплая шкала</div>
+            <button
+              type="button"
+              :style="{ width: '28px', height: '28px', borderRadius: '50%', background: T.neutral + '22', border: `1px solid ${T.neutral}55`, color: T.text, fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }"
+              aria-label="О палитре"
+              @click="showPaletteInfo = true"
+            >?</button>
+          </div>
+          <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', justifyItems: 'center', marginBottom: '20px' }">
+            <button v-for="p in PRESETS.slice(0, 6)" :key="p.color" :style="{ width: '42px', height: '42px', borderRadius: '50%', background: p.color, border: picked === p.color ? '3px solid #fff' : '2px solid transparent', boxSizing: 'border-box', cursor: 'pointer', boxShadow: picked === p.color ? `0 0 14px ${p.color}55` : 'none', transition: 'all .2s', padding: 0 }" :title="p.name" @click="picked = p.color; hexInput = p.color; pickerPos = wheelPosForHex(p.color)" />
+          </div>
+
+          <div :style="{ fontSize: '12px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: '10px' }">Холодная и акценты</div>
+          <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', justifyItems: 'center' }">
+            <button v-for="p in PRESETS.slice(6, 12)" :key="p.color" :style="{ width: '42px', height: '42px', borderRadius: '50%', background: p.color, border: picked === p.color ? '3px solid #fff' : '2px solid transparent', boxSizing: 'border-box', cursor: 'pointer', boxShadow: picked === p.color ? `0 0 14px ${p.color}55` : 'none', transition: 'all .2s', padding: 0 }" :title="p.name" @click="picked = p.color; hexInput = p.color; pickerPos = wheelPosForHex(p.color)" />
+          </div>
         </div>
       </template>
       <template v-if="tab === 'wheel'">
@@ -301,7 +321,8 @@ function reset() {
       </template>
     </div>
 
-    <!-- batch11 #8 v3 (#3): кнопки выше, fontSize 16, fontWeight 500, одинаковый размер -->
+    <!-- Кнопки. fontWeight 600 одинаково — без визуальной «лесенки»
+         между светлой плашкой Готово и тёмной Сбросить. -->
     <div :style="{ padding: '16px 24px 28px', maxWidth: '400px', width: '100%', margin: '0 auto', flexShrink: 0 }">
       <button
         :style="{
@@ -309,7 +330,7 @@ function reset() {
           background: picked ? T.text : T.border,
           color: picked ? T.bg : T.textDim,
           border: 'none', borderRadius: '10px',
-          fontWeight: 500, cursor: 'pointer', fontSize: '16px',
+          fontWeight: 600, cursor: 'pointer', fontSize: '16px',
           fontFamily: 'inherit', marginBottom: '8px',
         }"
         @click="done"
@@ -322,7 +343,7 @@ function reset() {
           width: '100%', padding: '18px',
           background: 'none', border: `1px solid ${T.border}`,
           borderRadius: '10px', color: T.textSec,
-          cursor: 'pointer', fontSize: '16px', fontWeight: 500,
+          cursor: 'pointer', fontSize: '16px', fontWeight: 600,
           fontFamily: 'inherit',
         }"
         @click="reset"
@@ -330,5 +351,8 @@ function reset() {
         Сбросить цвет
       </button>
     </div>
+
+    <!-- Инфо-модалка о палитре. Открывается «?» рядом с заголовком «Тёплая шкала». -->
+    <PaletteHelpModal v-if="showPaletteInfo" @close="showPaletteInfo = false" />
   </div>
 </template>

@@ -528,8 +528,8 @@ function hexToRgba(hex: string, a: number): string {
         <div :style="{ fontSize: '20px', fontWeight: 700, color: T.text, marginBottom: '6px', textAlign: 'center', letterSpacing: '0.3px' }">
           Цвет стен
         </div>
-        <div :style="{ fontSize: '13px', color: T.textSec, marginBottom: '14px', textAlign: 'center', lineHeight: 1.4 }">
-          Светлые стены возвращают свет, тёмные — глушат. Цвет комнаты определит категорию.
+        <div :style="{ fontSize: '13px', color: T.textSec, marginBottom: '14px', textAlign: 'center', lineHeight: 1.45 }">
+          Светлые стены отдают свет в комнату, тёмные — забирают. От цвета зависит, сколько светильников нужно.
         </div>
         <!-- Единая плашка выбора цвета. Открывает ту же ColorPickerModal,
              что и с главной (RoomCard). Категория light/medium/dark
@@ -566,10 +566,10 @@ function hexToRgba(hex: string, a: number): string {
             </span>
             <span :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.3 }">
               <template v-if="draftCardFinish">
-                Распознан как <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftCardFinish] }}</span>
+                По свету — <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftCardFinish] }}</span>
               </template>
               <template v-else>
-                Без выбора стены считаются нейтральными — норма без поправок.
+                Не выбрано — считаем стены нейтральными.
               </template>
             </span>
           </span>

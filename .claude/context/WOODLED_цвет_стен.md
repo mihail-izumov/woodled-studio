@@ -51,7 +51,8 @@
 | **`engine/wall-color.ts`** | Физика и нормализация. `normalizeHex`, `relativeLuminance`, `wallFinishFromHex`, `wallFinishOf(room)`, `wallColorOf(room)`, константы `WALL_FINISH_THRESHOLDS` и `WALL_PRESET_HEX`. |
 | `engine/brightness.ts` | `baseLm` читает `wallFinishOf(r)` и умножает UF на `WALL_UF_MULT[finish]` (light=1.1, medium=1.0, dark=0.85). |
 | `engine/forest-cards.ts` | `wallsCard` собирает chip/swatch/текст из `wallFinishOf(room)` + `room.cardColor`. Банки `WALL_LIGHT / WALL_MEDIUM / WALL_DARK`. |
-| `components/ColorPickerModal.vue` | Единый пикер: вкладка «Готовые цвета» (палитра), вкладка «Свой цвет» (колесо HSL + HEX-input + кнопка «Вставить»). Puck позиционируется через `wheelPosForHex` (HEX→HSL→координаты). |
+| `components/ColorPickerModal.vue` | Единый пикер. Вкладки **«Подобранные»** (палитра 12 цветов, разбита на 2 группы — «Тёплая шкала» и «Холодная и акценты») и **«Свой цвет»** (колесо HSL + HEX-input + «Вставить»). Кнопка «?» рядом с заголовком группы открывает `PaletteHelpModal`. Puck позиционируется через `wheelPosForHex` (HEX→HSL→координаты) и клампится в окружность `PUCK_MAX_R` чтобы не вылезать за колесо. |
+| `components/ui/PaletteHelpModal.vue` | Модалка-помощник «О палитре». Шапка с обоснованием, две секции по 6 цветов (имя, HEX, бейдж категории, описание характера), сноска про BT.709. Тексты по ToV. |
 | `components/RoomSettings.vue` | Три кнопки-пресета wallFinish + кнопка-плашка «Или свой цвет», открывающая локально `ColorPickerModal`. Применяет результат к `draftCardColor`, не трогая props.room до save. |
 | `components/App.vue` | Глобальный `ColorPickerModal` для RoomCard (как раньше) — пишет в `cardColor` через `cfg.updateRoom`. |
 | `components/ForestMood.vue` | Рендерит chip-плашку и цветной кружок 12×12 (если карточка прокинула `swatch`). |

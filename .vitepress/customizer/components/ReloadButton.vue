@@ -6,17 +6,28 @@
  * (standalone PWA) — в обычном Safari есть нативный «обновить»,
  * а в standalone-режиме адресной строки нет.
  *
- * Поведение по тапу — критически важно для iOS PWA:
- *   1. МГНОВЕННЫЙ фидбэк. Запускаем оверлей __wlBoot.show() с текстом
- *      «Перезагружаем…» в тот же тик, в котором поймали клик. Юзер
- *      видит, что нажатие сработало, и не тыкает кнопку второй раз.
- *   2. Сразу зовём location.reload(). Если страница успеет — отлично.
- *   3. Через 1.5с — если ещё здесь — fallback на location.assign(href).
- *      На iOS PWA с VPN reload иногда «глохнет», assign идёт мимо.
- *   4. Оверлей показывает подсказки про VPN на 5с и 12с — пользователь
- *      понимает, почему долго, и не считает что приложение зависло.
- *   5. Иконка кнопки крутится с момента тапа — ещё один слой обратной
- *      связи, на случай если оверлей не успел построиться.
+ * ВАЖНО — это HARD reload, не location.reload().
+ *
+ * location.reload() — soft: берёт ресурсы из кэша (browser cache +
+ * Service Worker). На iOS Safari в standalone-режиме это очень
+ * агрессивно — страница «обновляется» за 100мс, но фактически из
+ * памяти. Пользователь не видит свежий контент после деплоя и не
+ * видит обратной связи про медленный VPN, потому что reload идёт
+ * мимо сети.
+ *
+ * Здесь делаем настоящее обновление в три шага:
+ *   1. Чистим Service Worker регистрации и Cache Storage.
+ *   2. Делаем location.replace(currentUrl + ?_t=now). Cache-bust в
+ *      query заставляет браузер сходить за HTML на сервер.
+ *   3. App.vue после монтирования стирает _t из URL через
+ *      history.replaceState — пользователь не видит мусор в адресе.
+ *
+ * Очистка кешей в Promise.race с таймаутом 800мс — если на iOS
+ * getRegistrations или caches API подвисает (бывает), не блокируем
+ * навигацию навсегда. Лучше частично почистить и пойти дальше.
+ *
+ * Параллельно — мгновенный фидбэк через __wlBoot оверлей и
+ * вращение иконки.
  */
 
 import { ref, onMounted } from 'vue'
@@ -39,26 +50,54 @@ type WlBoot = {
   clear: () => void
 }
 
-function onReload() {
+/** Снять все Service Worker регистрации (если есть). Никогда не throw. */
+async function unregisterServiceWorkers(): Promise<void> {
+  try {
+    if (!('serviceWorker' in navigator)) return
+    const regs = await navigator.serviceWorker.getRegistrations()
+    await Promise.all(regs.map((r) => r.unregister().catch(() => null)))
+  } catch { /* iOS иногда выбрасывает — игнорируем */ }
+}
+
+/** Очистить всё, что лежит в Cache Storage API. Никогда не throw. */
+async function clearCacheStorage(): Promise<void> {
+  try {
+    if (!('caches' in window)) return
+    const keys = await caches.keys()
+    await Promise.all(keys.map((k) => caches.delete(k).catch(() => null)))
+  } catch { /* noop */ }
+}
+
+async function onReload() {
   if (isReloading.value) return
   isReloading.value = true
 
-  // 1) МГНОВЕННЫЙ оверлей — пользователь видит реакцию в тот же кадр.
+  // 1) МГНОВЕННЫЙ фидбэк — оверлей и спиннер появляются в тот же тик.
   const boot = (window as unknown as { __wlBoot?: WlBoot }).__wlBoot
   boot?.show('Перезагружаем…', [
-    { at: 5000,  text: 'Долго не отвечает. С VPN такое бывает — подождите.' },
-    { at: 12000, text: 'Не получается? Закройте и откройте приложение, проверьте интернет.' },
+    { at: 4000,  text: 'Долго не отвечает. С VPN такое бывает — подождите.' },
+    { at: 10000, text: 'Не получается? Закройте и откройте приложение, проверьте интернет.' },
   ])
 
-  // 2) Запускаем перезагрузку сразу.
-  try { window.location.reload() } catch { /* noop */ }
+  // 2) Параллельная очистка кэшей. Race с таймаутом 800мс — если
+  //    API подвисло, всё равно идём дальше.
+  const cleanup = Promise.all([unregisterServiceWorkers(), clearCacheStorage()])
+  const timeout = new Promise<void>((r) => setTimeout(r, 800))
+  await Promise.race([cleanup, timeout])
 
-  // 3) Fallback через 1.5с — если страница ещё не ушла, пробуем assign.
-  //    На iOS PWA reload() иногда «глохнет» (особенно при медленном VPN),
-  //    а assign гарантированно стартует навигацию.
-  setTimeout(() => {
-    try { window.location.assign(window.location.href) } catch { /* noop */ }
-  }, 1500)
+  // 3) Cache-bust навигация. location.replace, чтобы новый URL не
+  //    оказался в history (juзер не должен возвращаться кнопкой Back
+  //    на reload-URL). _t снимется в App.vue onMounted через
+  //    history.replaceState.
+  try {
+    const url = new URL(window.location.href)
+    url.searchParams.set('_t', Date.now().toString(36))
+    window.location.replace(url.toString())
+  } catch {
+    // Если URL по какой-то причине не парсится — последний шанс,
+    // просто reload (soft, но хоть что-то).
+    try { window.location.reload() } catch { /* noop */ }
+  }
 }
 
 onMounted(() => {

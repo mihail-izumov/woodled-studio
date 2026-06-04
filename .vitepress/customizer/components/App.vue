@@ -65,6 +65,17 @@ onMounted(() => {
   // Убираем boot-loader (inline-скрипт из config.mts) — Vue смонтирован,
   // дальше показывает Preloader/WelcomeScreen/главную.
   ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
+  // Если пришли через hard-reload от ReloadButton, в URL остался _t=…
+  // (cache-bust query). Стираем его без перезагрузки, чтобы адрес
+  // остался чистым и не мешал deeplinks/share.
+  try {
+    const u = new URL(window.location.href)
+    if (u.searchParams.has('_t')) {
+      u.searchParams.delete('_t')
+      const clean = u.pathname + (u.search ? u.search : '') + u.hash
+      window.history.replaceState({}, '', clean)
+    }
+  } catch { /* noop */ }
   warmupShortener()
   lockViewport()
   window.addEventListener('beforeunload', cfg.persistState)

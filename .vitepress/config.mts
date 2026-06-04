@@ -8,6 +8,9 @@ export default defineConfig({
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
     ['link', { rel: 'icon', type: 'image/png', href: '/woodled-studio/apple-touch-icon.png' }],
+    // PWA-манифест. Нужен, чтобы iOS 16.4+ согласился пускать Web Push в
+    // standalone-режиме. На Android/Chrome — это же ключ к Add-to-Home prompt.
+    ['link', { rel: 'manifest', href: '/woodled-studio/manifest.webmanifest' }],
     // iOS home-screen icon. sizes указывать обязательно (иначе iOS иногда
     // молча отказывается грузить), и желательно дублировать на /apple-touch-icon.png
     // в корне — некоторые версии Safari дёргают именно этот путь.
@@ -261,6 +264,22 @@ export default defineConfig({
           ]);
         }
       })();
+    `],
+    // Регистрация Service Worker. Лежит в /public/sw.js, в проде доступен
+    // по /woodled-studio/sw.js. Scope тот же — это даёт PWA-режим (офлайн,
+    // push) для всего сайта, не только лендинга. На dev-сервере (npm run
+    // docs:dev) тоже работает — Vite раздаёт public/ как есть.
+    //
+    // Регистрируем после window.load, чтобы не конкурировать за байты с
+    // основным бандлом. Тихо игнорируем ошибки — на HTTP (например, dev
+    // через ngrok без TLS) SW недоступен, и это нормально.
+    ['script', {}, `
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/woodled-studio/sw.js', { scope: '/woodled-studio/' })
+            .catch(function (e) { /* dev/HTTP — ignore */ });
+        });
+      }
     `],
   ],
 

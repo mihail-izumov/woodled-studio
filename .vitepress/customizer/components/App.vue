@@ -280,9 +280,11 @@ function onGalleryGiftClick() {
       }"
     >
       <!-- Reload только в iOS-standalone, в левом-верхнем углу страницы.
-           НЕ fixed — скроллится вместе с контентом. Зеркалит SoundButton
-           (тот сидит fixed top:6 right:16 поверх всех экранов). -->
-      <ReloadButton :style="{ position: 'absolute', top: '6px', left: '16px', zIndex: 1 }" />
+           НЕ fixed — скроллится вместе с контентом. Зеркалит SoundButton:
+           top:20 = на одной линии с центром бейджа «WOODLED Студия»
+           (16 home pad + 8 wrap padTop + ~15 полвысоты бейджа ≈ 39;
+           полкнопки ~20 → top 19-20). -->
+      <ReloadButton :style="{ position: 'absolute', top: '20px', left: '16px', zIndex: 1 }" />
       <div :style="{ textAlign: 'center', marginBottom: '20px', paddingTop: '8px' }">
         <div
           :style="{
@@ -386,15 +388,16 @@ function onGalleryGiftClick() {
   </template>
 
   <!-- SoundButton:
-       • базовый top = 16px — центр кнопки (~22px от верха) на одной
-         горизонтали с центром бейджа «WOODLED Студия» (home padding 16
-         + wrapper padTop 8 + полвысоты бейджа ~13 ≈ 37). 16 + 22 = 38.
+       • базовый top = 20px — на одной линии с центром бейджа
+         «WOODLED Студия» (бейдж: home pad 16 + wrap padTop 8 +
+         полвысоты бейджа ≈ 15 → центр ~39px от верха home; полкнопки
+         ≈ 20 → top 19-20). См. ReloadButton ниже — то же значение.
        • с PWA-банером сдвигается на --wl-banner-h (transition
          синхронно с slide-анимацией банера 360ms). -->
   <div
     :style="{
       position: 'fixed',
-      top: 'calc(16px + var(--wl-banner-h, 0px))',
+      top: 'calc(20px + var(--wl-banner-h, 0px))',
       right: '16px',
       zIndex: 90,
       transition: 'top 360ms cubic-bezier(0.4, 0, 0.2, 1)',

@@ -79,6 +79,14 @@ export interface Room {
   cardColor?: string
   /** Отделка стен (дефолт 'medium'). Влияет на UF в baseLm. Задаётся в RoomSettings (Фаза 2). */
   wallFinish?: WallFinish
+  /**
+   * Свой HEX-цвет стен. Если задан и валиден — категория (`light/medium/dark`)
+   * вычисляется автоматически из relative luminance (см. `engine/wall-color.ts`)
+   * и используется во всех расчётах вместо `wallFinish`. Если не задан —
+   * fallback на пресет `wallFinish`. UI: text-input + кнопка «Вставить» в
+   * RoomSettings, квадратик-превью в карточке «Стены» блока настроения.
+   */
+  wallColor?: string
 }
 
 /* ──────────────── Размеры ──────────────── */

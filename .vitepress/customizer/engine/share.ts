@@ -50,6 +50,7 @@ interface PackedRoom {
   ca?: number          // customArea
   h?: number           // ceilingH (если !==2.7)
   wf?: string          // wallFinish (если !=='medium')
+  wc?: string          // wallColor (свой HEX, если задан) — без `#` для экономии
   fx?: PackedFixture[] // fixtures
   fu?: string[]        // furniture ids
   lim?: Record<string, number> // limits
@@ -90,6 +91,7 @@ function packRoom(r: Room): PackedRoom {
   if (r.customArea != null) out.ca = r.customArea
   if (r.ceilingH !== 2.7) out.h = r.ceilingH
   if (r.wallFinish && r.wallFinish !== 'medium') out.wf = r.wallFinish
+  if (r.wallColor) out.wc = r.wallColor.replace(/^#/, '')
   if (r.fixtures.length > 0) out.fx = r.fixtures.map(packFixture)
   if (r.furniture.length > 0) out.fu = [...r.furniture]
   if (r.limits && Object.keys(r.limits).length > 0) {
@@ -107,6 +109,7 @@ function unpackRoom(p: PackedRoom, id: string): Room {
     customArea: p.ca ?? null,
     ceilingH: p.h ?? 2.7,
     wallFinish: (p.wf ?? 'medium') as WallFinish,
+    wallColor: p.wc ? `#${p.wc}` : undefined,
     fixtures: (p.fx ?? []).map(unpackFixture),
     furniture: (p.fu ?? []) as Room['furniture'],
     limits: (p.lim ?? {}) as Room['limits'],

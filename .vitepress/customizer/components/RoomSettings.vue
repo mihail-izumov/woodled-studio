@@ -20,6 +20,7 @@ import { T, Z } from '../theme/tokens'
 import { SZ, type Room, type RoomType, type ZoneLimits, type WallFinish } from '../data/rooms'
 import type { ZoneId } from '../data/catalog'
 import { roomZones } from '../engine/zone-engine'
+import { normalizeHex, wallFinishFromHex } from '../engine/wall-color'
 import { useConfigurator } from '../store/configurator'
 import NavHeader from './ui/NavHeader.vue'
 import LeaveConfirmModal from './ui/LeaveConfirmModal.vue'
@@ -68,6 +69,9 @@ const draftCustomArea = ref<number>(
 )
 const draftCeilingH = ref<number>(props.room.ceilingH)
 const draftWallFinish = ref<WallFinish>(props.room.wallFinish ?? 'medium')
+/* Свой HEX-цвет стен. Храним в исходном виде (как ввёл юзер) — нормализация
+   при сохранении. null/'' = «не задан», работает пресет wallFinish. */
+const draftWallColor = ref<string>(props.room.wallColor ?? '')
 const draftLimits = ref<ZoneLimits>({
   ...(props.room.limits ?? props.rt.limits),
 })
@@ -85,8 +89,45 @@ watch(() => props.room.id, () => {
   draftCustomArea.value = props.room.customArea ?? props.rt.sizes[2]
   draftCeilingH.value = props.room.ceilingH
   draftWallFinish.value = props.room.wallFinish ?? 'medium'
+  draftWallColor.value = props.room.wallColor ?? ''
   draftLimits.value = { ...(props.room.limits ?? props.rt.limits) }
 })
+
+/* ──────────── Свой цвет стен: нормализация, превью, paste ──────────── */
+
+/** Нормализованный HEX из ввода, либо null если ввод пуст/невалиден. */
+const draftWallColorNorm = computed<string | null>(() => normalizeHex(draftWallColor.value))
+/** HEX валиден (можно показать превью). */
+const draftWallColorValid = computed<boolean>(() => draftWallColorNorm.value !== null)
+/** Текст ввода непуст, но невалиден (показать подсказку «не похоже на HEX»). */
+const draftWallColorBad = computed<boolean>(
+  () => draftWallColor.value.trim().length > 0 && !draftWallColorValid.value,
+)
+/** Категория, в которую попадёт выбранный HEX (для превью эффекта). */
+const draftWallColorFinish = computed<WallFinish | null>(() =>
+  draftWallColorNorm.value ? wallFinishFromHex(draftWallColorNorm.value) : null,
+)
+const WALL_FINISH_LABEL: Record<WallFinish, string> = {
+  light: 'светлый тон',
+  medium: 'нейтральный тон',
+  dark: 'тёмный тон',
+}
+
+/** Вставка из буфера обмена (Pinterest, Figma). Срабатывает по пользовательскому
+ *  жесту, поэтому Permissions API на iOS PWA обычно даёт доступ. */
+async function pasteWallColor() {
+  try {
+    if (!navigator.clipboard?.readText) return
+    const txt = await navigator.clipboard.readText()
+    if (txt) draftWallColor.value = txt.trim()
+  } catch {
+    /* пользователь отказал в доступе — молча игнорируем */
+  }
+}
+
+function clearWallColor() {
+  draftWallColor.value = ''
+}
 
 /* ──────────── Своя площадь: stepper / input ──────────── */
 
@@ -134,6 +175,10 @@ const isDirty = computed<boolean>(() => {
   }
   if (draftCeilingH.value !== props.room.ceilingH) return true
   if (draftWallFinish.value !== (props.room.wallFinish ?? 'medium')) return true
+  /* Свой HEX: dirty если поменялся (с учётом нормализации — '#abc' vs '#aabbcc'
+     равны, поэтому сравниваем нормализованную форму). */
+  const origColorNorm = normalizeHex(props.room.wallColor ?? '')
+  if ((draftWallColorNorm.value ?? '') !== (origColorNorm ?? '')) return true
   const origLimits = props.room.limits ?? props.rt.limits
   if (JSON.stringify(draftLimits.value) !== JSON.stringify(origLimits)) return true
   return false
@@ -174,6 +219,8 @@ function onSave() {
     customArea: draftSizeIdx.value === 3 ? draftCustomArea.value : props.room.customArea,
     ceilingH: draftCeilingH.value,
     wallFinish: draftWallFinish.value,
+    /* Сохраняем нормализованный HEX (`#RRGGBB`) или undefined если пусто/невалидно. */
+    wallColor: draftWallColorNorm.value ?? undefined,
     limits: { ...draftLimits.value },
   }
 
@@ -532,6 +579,87 @@ function hexToRgba(hex: string, a: number): string {
             <div :style="{ fontSize: '11px', opacity: 0.75, textAlign: 'center', lineHeight: 1.3 }">
               {{ w.tip }}
             </div>
+          </div>
+        </div>
+
+        <!-- Свой HEX. Под тремя пресетами — поле ввода + «Вставить».
+             Если задан валидный HEX, он перекрывает пресет в расчётах. -->
+        <div :style="{ marginTop: '14px' }">
+          <div :style="{ fontSize: '11px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: '8px', textAlign: 'center' }">
+            Или свой цвет
+          </div>
+          <div :style="{ display: 'flex', gap: '8px', alignItems: 'center' }">
+            <!-- Квадратик-превью введённого цвета. Если ввод пустой/невалидный
+                 — фон прозрачный с пунктирной рамкой (как «не задан»). -->
+            <div
+              :style="{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                flexShrink: 0,
+                background: draftWallColorValid ? draftWallColorNorm : 'transparent',
+                border: draftWallColorValid ? `1px solid ${T.border}` : `1px dashed ${T.border}`,
+              }"
+              :title="draftWallColorValid ? draftWallColorNorm! : 'Цвет не задан'"
+            />
+            <input
+              v-model="draftWallColor"
+              type="text"
+              inputmode="text"
+              autocapitalize="characters"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="#E8E0D4 или E8E0D4"
+              :style="{
+                flex: 1, minWidth: 0,
+                background: T.bg,
+                border: draftWallColorBad ? `1px solid ${T.red}66` : `1px solid ${T.border}`,
+                borderRadius: '8px',
+                padding: '10px 12px',
+                color: T.text,
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }"
+            />
+            <!-- Вставить из буфера — основное удобство (HEX часто копируется
+                 из Pinterest/Figma). На iOS PWA срабатывает после жеста. -->
+            <button
+              type="button"
+              :style="{
+                background: T.bg,
+                border: `1px solid ${T.border}`,
+                borderRadius: '8px',
+                padding: '10px 12px',
+                color: T.text,
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                flexShrink: 0,
+              }"
+              @click="pasteWallColor"
+            >
+              Вставить
+            </button>
+          </div>
+
+          <!-- Подсказка под полем: либо ошибка, либо подобранная категория. -->
+          <div :style="{ marginTop: '8px', minHeight: '18px', fontSize: '12px', lineHeight: 1.4 }">
+            <span v-if="draftWallColorBad" :style="{ color: T.red }">
+              Не похоже на HEX. Пример: #E8E0D4
+            </span>
+            <span v-else-if="draftWallColorValid" :style="{ color: T.textSec }">
+              Распознан как <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftWallColorFinish!] }}</span> — перекрывает пресет выше.
+              <button
+                type="button"
+                :style="{ marginLeft: '6px', background: 'none', border: 'none', color: T.neutral, fontSize: '12px', fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }"
+                @click="clearWallColor"
+              >Очистить</button>
+            </span>
+            <span v-else :style="{ color: T.textDim }">
+              Скопируйте HEX из референса — система сама определит категорию.
+            </span>
           </div>
         </div>
       </div>

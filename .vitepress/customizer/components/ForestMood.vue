@@ -128,12 +128,15 @@ onMounted(() => {
               padding: '18px',
             }"
           >
-            <div :style="{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '10px' }">
+            <div :style="{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }">
               <span :style="{ fontSize: '16px', fontWeight: 700, color: T.text }">{{ k.title }}</span>
               <span
                 v-if="k.chip"
                 :style="{
                   marginLeft: 'auto',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                   fontSize: '13px',
                   fontWeight: 700,
                   color: props.tint,
@@ -143,6 +146,21 @@ onMounted(() => {
                   whiteSpace: 'nowrap',
                 }"
               >
+                <!-- Цветной кружок, если карточка прокинула swatch (карточка
+                     «Стены» при заданном wallColor). -->
+                <span
+                  v-if="k.swatch"
+                  :style="{
+                    display: 'inline-block',
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: k.swatch,
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    flexShrink: 0,
+                  }"
+                  aria-hidden="true"
+                />
                 {{ k.chip }}
               </span>
             </div>

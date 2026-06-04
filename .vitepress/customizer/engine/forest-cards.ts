@@ -21,6 +21,7 @@ import type { Room, RoomType, RoomTypeId } from '../data/rooms'
 import { baseLm, fxLm, ratioOf, furnPct, getArea } from './brightness'
 import { zoneLm, zoneFxCount } from './zone-engine'
 import { kindWord, woodWord, joinList } from './i18n'
+import { wallFinishOf, wallColorOf, normalizeHex } from './wall-color'
 
 /* ──────────────── Тип карточки ──────────────── */
 
@@ -28,6 +29,10 @@ export interface KnobCard {
   title: string
   chip?: string
   text: string
+  /** Опциональный цвет-«квадратик» рядом с chip (HEX). Сейчас используется
+   *  только карточкой «Стены», когда задан свой wallColor — чтобы пользователь
+   *  видел тот же оттенок, что выбрал в RoomSettings. */
+  swatch?: string
 }
 
 /* ──────────────── Анти-повтор ──────────────── */
@@ -433,8 +438,13 @@ function howMuchCard(rt: RoomType, room: Room, seed: number): KnobCard | null {
 
 const WALL_LIGHT = [
   'Светлые стены отражают часть света — норма получается на ~10% ниже обычной.',
-  'Стены работают на вас: светлые поверхности возвращают часть света. Это +10% к комнате.',
+  'Стены работают на вас: светлые поверхности возвращают часть света. Это −10% к норме.',
   'Светлые стены — союзник: отражают свет обратно. Норма на 10% мягче.',
+] as const
+const WALL_MEDIUM = [
+  'Стены нейтрального тона: ни возвращают свет, ни глушат — норма комнаты как из учебника.',
+  'Нейтральные стены работают по-честному: без поправок в обе стороны.',
+  'Стены среднего тона держат свет ровно — ни помощи, ни помехи, норма без скидок.',
 ] as const
 const WALL_DARK = [
   'Тёмные стены глушат свет — к норме добавляется ~15%.',
@@ -442,13 +452,34 @@ const WALL_DARK = [
   'Тёмные стены забирают часть света — комнате нужно на 15% больше.',
 ] as const
 
+const WALL_CHIP: Record<'light' | 'medium' | 'dark', string> = {
+  light: 'светлые',
+  medium: 'нейтральные',
+  dark: 'тёмные',
+}
+
+/* Карточка «Стены» показывается ВСЕГДА. Источник истины — wallFinishOf:
+   если задан свой HEX (wallColor), категория считается автоматически по
+   relative luminance; если нет — пресет wallFinish.
+   Когда HEX задан — в карточке появляется swatch (тот же оттенок) и
+   chip-текст вида «#E8E0D4 · светлые». */
 function wallsCard(_rt: RoomType, room: Room, seed: number): KnobCard | null {
-  const wf = room.wallFinish ?? 'medium'
-  if (wf === 'medium') return null
-  if (wf === 'light') {
-    return { title: 'Стены', chip: 'светлые', text: pick(WALL_LIGHT, seed) }
+  const wf = wallFinishOf(room)
+  const chipLabel = WALL_CHIP[wf]
+  const text = pick(
+    wf === 'light' ? WALL_LIGHT : wf === 'dark' ? WALL_DARK : WALL_MEDIUM,
+    seed,
+  )
+  const customHex = normalizeHex(room.wallColor ?? '')
+  if (customHex) {
+    return {
+      title: 'Стены',
+      chip: `${customHex.toUpperCase()} · ${chipLabel}`,
+      swatch: customHex,
+      text,
+    }
   }
-  return { title: 'Стены', chip: 'тёмные', text: pick(WALL_DARK, seed) }
+  return { title: 'Стены', chip: chipLabel, text }
 }
 
 /* ──────────────── 4. Дерево ──────────────── */

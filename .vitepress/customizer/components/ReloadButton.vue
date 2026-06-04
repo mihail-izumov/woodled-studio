@@ -68,6 +68,20 @@ async function clearCacheStorage(): Promise<void> {
   } catch { /* noop */ }
 }
 
+/** Прелоад HTML с сервера. Возвращает Promise, который резолвится
+ *  когда ответ пришёл (или упал) — НО ВАЖНО: текущая страница в этот
+ *  момент ещё активна, её таймеры подсказок продолжают тикать.
+ *  Это и решает проблему «спиннер залипает после Перезагружаем…»: пока
+ *  fetch идёт, оверлей живёт; когда fetch резолвится — навигация почти
+ *  моментальная (HTML уже в browser cache).
+ *  cache: 'reload' — браузер обязан сходить на сервер, но сохранит
+ *  ответ в кэше, чтобы следующее location.replace взяло из памяти. */
+function prefetchHtml(url: string, signal: AbortSignal): Promise<void> {
+  return fetch(url, { cache: 'reload', credentials: 'same-origin', signal })
+    .then((res) => { void res.text() })
+    .catch(() => { /* падение — fail-fast, переходим к navigation */ })
+}
+
 async function onReload() {
   if (isReloading.value) return
   isReloading.value = true
@@ -79,25 +93,35 @@ async function onReload() {
     { at: 10000, text: 'Не получается? Закройте и откройте приложение, проверьте интернет.' },
   ])
 
-  // 2) Параллельная очистка кэшей. Race с таймаутом 800мс — если
-  //    API подвисло, всё равно идём дальше.
+  // 2) Параллельная очистка кэшей. Race с таймаутом 800мс.
   const cleanup = Promise.all([unregisterServiceWorkers(), clearCacheStorage()])
-  const timeout = new Promise<void>((r) => setTimeout(r, 800))
-  await Promise.race([cleanup, timeout])
+  await Promise.race([cleanup, new Promise<void>((r) => setTimeout(r, 800))])
 
-  // 3) Cache-bust навигация. Передаём _reload=1, чтобы новая страница
-  //    показала тот же текст «Перезагружаем…» (а не «Загружаем лес»)
-  //    и таймеры подсказок начали отсчёт с нуля на свежей странице.
-  //    Иначе на медленном VPN экран залипает на старом сообщении без
-  //    обновлений: таймеры этой страницы умирают при location.replace,
-  //    а новая страница ещё в пути.
-  //    location.replace (не assign), чтобы reload-URL не лёг в history.
-  //    _t и _reload снимутся в App.vue onMounted через history.replaceState.
+  // 3) Готовим target URL с cache-bust + _reload=1 (на случай, если
+  //    fetch упадёт и навигация всё-таки начнётся — новая страница
+  //    подхватит контекст «Перезагружаем…»).
+  let target = window.location.href
   try {
     const url = new URL(window.location.href)
     url.searchParams.set('_t', Date.now().toString(36))
     url.searchParams.set('_reload', '1')
-    window.location.replace(url.toString())
+    target = url.toString()
+  } catch { /* noop */ }
+
+  // 4) Прелоад. Пока fetch идёт, таймеры подсказок ЖИВЫ. Hard timeout
+  //    25с — если сервер вообще не отвечает, всё равно переходим к
+  //    навигации, дальше уже новая страница покажет свой спиннер.
+  const ctrl = new AbortController()
+  const hardTimeout = setTimeout(() => ctrl.abort(), 25000)
+  await prefetchHtml(target, ctrl.signal)
+  clearTimeout(hardTimeout)
+
+  // 5) Навигация. К этому моменту либо HTML уже в browser memory cache
+  //    (резолв был успешным) и переход моментальный, либо мы исчерпали
+  //    25с — тогда новая страница покажет свой «Перезагружаем…» с уже
+  //    нулевыми таймерами (см. config.mts inline-script + _reload=1).
+  try {
+    window.location.replace(target)
   } catch {
     try { window.location.reload() } catch { /* noop */ }
   }

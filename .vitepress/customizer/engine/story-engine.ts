@@ -1,26 +1,28 @@
 /**
  * story-engine.ts — Генерация слайдов «Посмотрите на свой лес»
  *
- * ТЗ-3: Переработка из 9 слайдов в 8 с нарративной аркой.
- * Синхронизация с mood-системой (dusk/morning/zenith).
- * Обогащение moodMap визуалом pills из WelcomeScreen.
- *
- * 4 фазы:
- *   Фаза 1 — Что вы построили (слайды 1–2)
- *   Фаза 2 — Что это создаёт (слайды 3–5)
+ * 8 слайдов с нарративной аркой:
+ *   Фаза 1 — Что вы построили  (слайды 1–2)
+ *   Фаза 2 — Что это создаёт   (слайды 3–5)
  *   Фаза 3 — Что на это влияет (слайды 6–7)
- *   Фаза 4 — Финал (слайд 8)
+ *   Фаза 4 — Финал             (слайд 8)
+ *
+ * Story показывает ДОМ ЦЕЛИКОМ (агрегация по комнатам). ForestMood работает
+ * ПОКОМНАТНО. Алгоритмы общие (forestScene/scenePlace), нарратив разный —
+ * чтобы Story не дублировал страницу комнаты, а давал верхнеуровневый взгляд.
+ *
+ * Тексты — по `WOODLED_tone_of_voice.md`.
  */
 
 import { FURN } from '../data/furniture'
 import { MATS } from '../data/materials'
-import { MOODS, autoMood, type Mood, type MoodId } from '../data/moods'
 import { T, ROOM_TINTS } from '../theme/tokens'
 import type { Wood } from '../theme/tokens'
 import { getArea, baseLm, fxLm, fxLamps } from './brightness'
 import { zoneLm } from './zone-engine'
 import { woodNames, lw, tw, rw } from './i18n'
 import { getRT, type Room, type RoomTypeId } from '../data/rooms'
+import { forestScene, type ForestScene, type ForestPlace } from './forest'
 
 /* ──────────────── Типы ──────────────── */
 
@@ -32,23 +34,27 @@ export interface StorySlide {
   iconKey: string
   color: string
   blocks?: StoryBlock[] | null
-  /** Вывести карту настроений (слайд 4). */
-  moodMap?: boolean
-  /** Вывести сетку зон (слайд 6). */
+  /** Слайд 4: карта комнат с именами сцен. */
+  sceneMap?: boolean
+  /** Слайд 6: сетка зон с подзаголовком. */
   zoneMap?: boolean
   /** Показывать sub крупнее заголовка. */
   bigSub?: boolean
-  /** Слайд 3: три строки с mood-словарём. */
-  moodIntro?: boolean
-  /** Слайд 6: подзаголовок по распределению. */
+  /** Слайд 3: три карточки «места леса». */
+  placeIntro?: boolean
+  /** Подзаголовок над зонной сеткой (слайд 6). */
   zoneSubtitle?: string
 }
 
-export interface MoodMapEntry {
+export interface SceneMapEntry {
   name: string
-  mood: Mood
-  /** ROOM_TINTS[r.typeId] */
+  scene: ForestScene
+  /** ROOM_TINTS[r.typeId] — основной акцент строки. */
   tint: string
+  /** Цвет, соответствующий ForestPlace (для бейджа сцены). */
+  placeColor: string
+  /** Короткая фраза о свете комнаты (первое предложение легенды). */
+  lead: string
   /** Массив пород из fixtures (для tree-сфер). */
   woods: Wood[]
   /** Для pillStyle. */
@@ -66,23 +72,55 @@ export interface StoryContext {
   allWoods: string
   lmPerM2: number
   dominantWood: string
-  moodMap: MoodMapEntry[]
-  dominantMood: Mood
+  /** Карта комнат с лесными сценами. */
+  sceneMap: SceneMapEntry[]
+  /** Самое частое место леса в доме. */
+  dominantPlace: ForestPlace
+  /** Цвет доминирующего места — для акцентов слайдов 4 и 5. */
+  dominantColor: string
   avgKelvin: string
   furnPctAvg: number
   hasMirror: boolean
+  /**
+   * Две комнаты с разными сценами — для слайда «Дом дышит».
+   * Берётся пара с максимальным контрастом мест (glade ↔ thicket в первую очередь).
+   */
   contrastPair: {
-    soft: string
-    bright: string
-    softMood: Mood
-    brightMood: Mood
+    soft: SceneMapEntry
+    bright: SceneMapEntry
   } | null
   zoneShare: (zid: 'ceiling' | 'wall' | 'floor' | 'table') => number
 }
 
-/* ──────────────── Порядок mood для контраста ──────────────── */
+/* ──────────────── Места леса (palette + порядок «вечер → день») ──────────────── */
 
-const MOOD_ORDER: MoodId[] = ['dusk', 'morning', 'zenith']
+/** Цвет места: glade — дневной мёд, grove — спокойный шалфей, thicket — вечерний персик. */
+export const PLACE_COLOR: Record<ForestPlace, string> = {
+  glade: T.noon,
+  grove: T.clearing,
+  thicket: T.dawn,
+}
+/** Заголовки мест. */
+export const PLACE_TITLE: Record<ForestPlace, string> = {
+  glade: 'Поляна',
+  grove: 'Роща',
+  thicket: 'Чаща',
+}
+/** Короткое описание места под заголовком в слайде 3 «Три места леса». */
+export const PLACE_QUOTE: Record<ForestPlace, string> = {
+  glade: 'Главный свет идёт сверху. Открыто и просторно.',
+  grove: 'Свет идёт ровно — и сверху, и снизу. Спокойно.',
+  thicket: 'Свет собрался внизу. Тихо, для отдыха.',
+}
+/** Иконка для слайда 3. */
+export const PLACE_ICON: Record<ForestPlace, string> = {
+  glade: 'arrowUpRight',
+  grove: 'arrowRight',
+  thicket: 'arrowDownRight',
+}
+
+/** «Дальность» места — для расчёта контраста между комнатами (poляна → чаща). */
+const PLACE_DIST: Record<ForestPlace, number> = { glade: 2, grove: 1, thicket: 0 }
 
 /* ──────────────── Построение контекста ──────────────── */
 
@@ -104,7 +142,7 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
   const allWoods = woodNames(allFx)
   const lmPerM2 = totalArea > 0 ? Math.round(totalLm / totalArea) : 0
 
-  /* Доминирующее дерево */
+  /* Доминирующее дерево по точкам. */
   const woodCounts: Record<string, number> = {}
   for (const f of allFx) {
     const w = f.wood ?? 'oak'
@@ -113,54 +151,77 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
   const topWoodId = Object.entries(woodCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
   const dominantWood = topWoodId ? (MATS.find((m) => m.id === topWoodId)?.name ?? '—') : '—'
 
-  /* Карта настроений — обогащённая tint/woods/typeId */
-  const moodMap: MoodMapEntry[] = filledRooms.map((r) => {
+  /* Карта комнат с лесными сценами. */
+  const sceneMap: SceneMapEntry[] = filledRooms.map((r) => {
     const rt = getRT(r.typeId)
-    const base = baseLm(rt, r)
-    const actual = fxLm(r.fixtures)
-    const ratio = base > 0 ? actual / base : 0
+    const scene = forestScene(rt, r)
     const woods: Wood[] = []
     for (const fx of r.fixtures) {
       const q = fx.q ?? 1
       for (let i = 0; i < q; i++) woods.push((fx.wood ?? 'oak') as Wood)
     }
+    /* «Лид» — первое предложение легенды до запятой («Главный свет идёт сверху», ...). */
+    const lead = scene.legend.split(',')[0] ?? ''
     return {
       name: r.customName || rt.name,
-      mood: autoMood(ratio),
+      scene,
       tint: ROOM_TINTS[r.typeId],
+      placeColor: PLACE_COLOR[scene.place],
+      lead,
       woods,
       typeId: r.typeId,
     }
   })
 
-  /* Доминирующее настроение */
-  const moodCounts: Record<string, number> = {}
-  for (const m of moodMap) {
-    moodCounts[m.mood.id] = (moodCounts[m.mood.id] ?? 0) + 1
-  }
-  const topMoodId = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
-  const dominantMood = topMoodId ? (MOODS.find((m) => m.id === topMoodId) ?? MOODS[1]) : MOODS[1]
+  /* Доминирующее место — по числу комнат с таким местом. */
+  const placeCounts: Record<ForestPlace, number> = { glade: 0, grove: 0, thicket: 0 }
+  for (const e of sceneMap) placeCounts[e.scene.place]++
+  const dominantPlace: ForestPlace =
+    (Object.entries(placeCounts) as [ForestPlace, number][])
+      .sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'grove'
+  const dominantColor = PLACE_COLOR[dominantPlace]
 
-  /* zoneShare */
+  /* Контрастная пара — две комнаты с максимально удалёнными местами. */
+  let contrastPair: StoryContext['contrastPair'] = null
+  if (sceneMap.length >= 2) {
+    let best: { soft: SceneMapEntry; bright: SceneMapEntry; gap: number } | null = null
+    for (let i = 0; i < sceneMap.length; i++) {
+      for (let j = i + 1; j < sceneMap.length; j++) {
+        const a = sceneMap[i]
+        const b = sceneMap[j]
+        const ga = PLACE_DIST[a.scene.place]
+        const gb = PLACE_DIST[b.scene.place]
+        const gap = Math.abs(ga - gb)
+        if (gap > 0 && (!best || gap > best.gap)) {
+          /* «Тихий» = thicket (ниже), «яркий» = glade (выше). */
+          if (ga < gb) best = { soft: a, bright: b, gap }
+          else best = { soft: b, bright: a, gap }
+        }
+      }
+    }
+    if (best) contrastPair = { soft: best.soft, bright: best.bright }
+  }
+
+  /* zoneShare — доля каждой зоны в общем доме. */
   const zoneShare = (zid: 'ceiling' | 'wall' | 'floor' | 'table'): number => {
     const lm = rooms.reduce((s, r) => s + zoneLm(r.fixtures, zid), 0)
     return totalLm > 0 ? Math.round((lm / totalLm) * 100) : 0
   }
 
-  /* Средняя температура */
+  /* Средняя температура (по точкам). */
   let avgKelvin = '—'
   if (filledRooms.length > 0) {
     const denom = Math.max(1, totalTrees)
     const sum = filledRooms
       .flatMap((r) => r.fixtures)
       .reduce((s, f) => {
-        const k = parseInt(f.opts?.btemp ?? '4000К') || 4000
+        const k = parseInt(f.opts?.btemp ?? '4000') || 4000
         return s + k * (f.q ?? 1)
       }, 0)
-    avgKelvin = '~' + Math.round(sum / denom) + 'К'
+    avgKelvin = '~' + Math.round(sum / denom) + 'K'
   }
 
-  /* Средний процент потерь от мебели */
+  /* Средний процент потерь от мебели. */
   const furnPctAvg =
     filledRooms.length > 0
       ? Math.round(
@@ -173,25 +234,6 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
 
   const hasMirror = rooms.some((r) => r.furniture.includes('mirror'))
 
-  /* Контрастная пара — крайние mood по MOOD_ORDER */
-  let contrastPair: StoryContext['contrastPair'] = null
-  if (moodMap.length >= 2) {
-    const uniqueIds = [...new Set(moodMap.map(m => m.mood.id))]
-      .filter(id => id !== 'empty')
-      .sort((a, b) => MOOD_ORDER.indexOf(a as MoodId) - MOOD_ORDER.indexOf(b as MoodId))
-
-    if (uniqueIds.length >= 2) {
-      const darkest = moodMap.find(m => m.mood.id === uniqueIds[0])!
-      const brightest = moodMap.find(m => m.mood.id === uniqueIds[uniqueIds.length - 1])!
-      contrastPair = {
-        soft: darkest.name,
-        bright: brightest.name,
-        softMood: darkest.mood,
-        brightMood: brightest.mood,
-      }
-    }
-  }
-
   return {
     name,
     rooms,
@@ -203,8 +245,9 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
     allWoods,
     lmPerM2,
     dominantWood,
-    moodMap,
-    dominantMood,
+    sceneMap,
+    dominantPlace,
+    dominantColor,
     avgKelvin,
     furnPctAvg,
     hasMirror,
@@ -222,55 +265,69 @@ function treesSub(ctx: StoryContext): string {
   return `Смешанный лес: ${ctx.allWoods}`
 }
 
-/** Подзаголовок moodMap — story.md §6: двоеточие при двух mood. */
-function moodPhrase(ctx: StoryContext): string {
-  const counts: Record<string, number> = {}
-  for (const m of ctx.moodMap) {
-    counts[m.mood.id] = (counts[m.mood.id] ?? 0) + 1
+/** Подзаголовок слайда 4 — что у дома с местами леса. */
+function houseSceneSub(ctx: StoryContext): string {
+  const uniq = new Set(ctx.sceneMap.map((e) => e.scene.place))
+  if (uniq.size === 1) {
+    const p = ctx.dominantPlace
+    if (p === 'glade') return 'Везде поляны — свет идёт сверху по всему дому.'
+    if (p === 'thicket') return 'Везде чащи — свет ушёл вниз, дом получается камерным.'
+    return 'Везде рощи — свет ровно по комнатам, дом дышит спокойно.'
   }
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
-  if (entries.length === 1) {
-    const m = MOODS.find((x) => x.id === entries[0][0])
-    return m ? `Везде ${m.name.toLowerCase()} — целостное настроение` : ''
+  if (uniq.size === 2) {
+    const titles = [...uniq].map((p) => PLACE_TITLE[p].toLowerCase())
+    return `Сочетание: ${titles[0]} и ${titles[1]}. Каждая комната звучит по-своему.`
   }
-  if (entries.length === 2) {
-    const m1 = MOODS.find((x) => x.id === entries[0][0])?.name
-    const m2 = MOODS.find((x) => x.id === entries[1][0])?.name
-    return `Смешение: ${m1} и ${m2}`
-  }
-  return 'Все три настроения живут вместе'
+  return 'И поляны, и рощи, и чащи — три типа леса живут под одной крышей.'
 }
 
-function formSub(ctx: StoryContext): string {
-  if (ctx.furnPctAvg > 0 && ctx.hasMirror) {
-    return `Мебель забирает ${ctx.furnPctAvg}% света, но зеркала возвращают часть. Температура ${ctx.avgKelvin} задаёт тон.`
+/** Слайд 5 (контраст или единое настроение). */
+function breathingSub(ctx: StoryContext): string {
+  if (ctx.contrastPair) {
+    const { soft, bright } = ctx.contrastPair
+    return `${bright.name} светится как ${PLACE_TITLE[bright.scene.place].toLowerCase()}, а ${soft.name.toLowerCase()} затихает как ${PLACE_TITLE[soft.scene.place].toLowerCase()}. Дом дышит ритмом дня.`
   }
-  if (ctx.furnPctAvg > 0) {
-    return `Мебель забирает ${ctx.furnPctAvg}% света — тени делают свет объёмным, не плоским. Температура ${ctx.avgKelvin} задаёт тон.`
-  }
-  return `Температура ${ctx.avgKelvin} определяет оттенок: чем теплее — тем ближе к вечернему свету, чем холоднее — тем ближе к дневному.`
+  /* Все одинаковые — единое настроение. */
+  const p = ctx.dominantPlace
+  const tone =
+    p === 'glade' ? 'дневное и открытое'
+    : p === 'thicket' ? 'вечернее и тихое'
+    : 'ровное и спокойное'
+  return `Везде ${PLACE_TITLE[p].toLowerCase()} — дом звучит в одной интонации, ${tone}.`
 }
 
+/** Слайд 6 (zone subtitle). */
 function zoneSubtitle(zoneShareFn: (zid: 'ceiling' | 'wall' | 'floor' | 'table') => number): string {
   const c = zoneShareFn('ceiling')
   const w = zoneShareFn('wall')
   const f = zoneShareFn('floor')
   const t = zoneShareFn('table')
 
-  if (c > 60) return 'Основной свет сверху — классическая схема'
-  if (w + f + t > c) return 'Акцентный свет доминирует — камерная атмосфера'
+  if (c > 60) return 'Главный свет — сверху. Классическая схема.'
+  if (w + f + t > c) return 'Свет ушёл вниз — дом становится камерным.'
 
-  const vals = [c, w, f, t].filter(v => v > 0)
+  const vals = [c, w, f, t].filter((v) => v > 0)
   if (vals.length >= 2) {
     const spread = Math.max(...vals) - Math.min(...vals)
-    if (spread < 15) return 'Свет распределён равномерно'
+    if (spread < 15) return 'Свет распределён ровно — по всем зонам понемногу.'
   }
 
   const zones: [string, number][] = [
     ['Потолок', c], ['Стены', w], ['Пол', f], ['Мебель', t],
   ]
   const top = zones.sort((a, b) => b[1] - a[1])[0]
-  return `${top[0]} — основной источник`
+  return `Главный источник — ${top[0].toLowerCase()}.`
+}
+
+/** Слайд 7 (что формирует характер). */
+function formSub(ctx: StoryContext): string {
+  if (ctx.furnPctAvg > 0 && ctx.hasMirror) {
+    return `Мебель забирает около ${ctx.furnPctAvg}% света, зеркала немного возвращают. Температура ${ctx.avgKelvin} задаёт характер.`
+  }
+  if (ctx.furnPctAvg > 0) {
+    return `Мебель забирает около ${ctx.furnPctAvg}% света — углы получают мягкие тени, свет становится объёмным. Температура ${ctx.avgKelvin} задаёт характер.`
+  }
+  return `Температура ${ctx.avgKelvin} задаёт характер: тёплая — для вечера, рабочая — для дня.`
 }
 
 /* ──────────────── Построение слайдов (8 штук) ──────────────── */
@@ -289,7 +346,7 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
     color: T.neutral,
   })
 
-  /* Слайд 2 · Ваш лес (слияние бывших слайдов 2+3) */
+  /* Слайд 2 · Ваш лес */
   slides.push({
     title: ctx.totalTrees > 5
       ? `Целый лес — ${ctx.totalTrees} деревьев`
@@ -307,40 +364,31 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
 
   /* ═══ Фаза 2: Что это создаёт ═══ */
 
-  /* Слайд 3 · Три настроения света (НОВЫЙ — образовательный мост) */
+  /* Слайд 3 · Три места леса — образовательный мост */
   slides.push({
-    title: 'Три настроения света',
-    sub: 'Баланс света и пространства определяет атмосферу каждой комнаты',
+    title: 'Три места леса',
+    sub: 'Куда направлен свет в комнате — такой и характер у пространства.',
     iconKey: 'sun',
     color: T.neutral,
-    moodIntro: true,
+    placeIntro: true,
   })
 
-  /* Слайд 4 · Настроение вашего дома (обогащённый moodMap) */
+  /* Слайд 4 · Карта дома */
   slides.push({
-    title: 'Настроение вашего дома',
-    sub: moodPhrase(ctx),
+    title: 'Сцены вашего дома',
+    sub: houseSceneSub(ctx),
     iconKey: 'dotDashed',
-    color: ctx.dominantMood.color,
-    moodMap: true,
+    color: ctx.dominantColor,
+    sceneMap: true,
   })
 
-  /* Слайд 5 · Дыхание дома (всегда виден, две ветки) */
-  if (ctx.contrastPair) {
-    slides.push({
-      title: 'Дом дышит',
-      sub: `${ctx.contrastPair.soft} отдыхает в ${ctx.contrastPair.softMood.name} — ${ctx.contrastPair.bright} работает в ${ctx.contrastPair.brightMood.name}. Диммер позволит переключаться.`,
-      iconKey: 'wind',
-      color: T.dawn,
-    })
-  } else {
-    slides.push({
-      title: 'Единое настроение',
-      sub: `${ctx.dominantMood.name} — ${ctx.dominantMood.desc}`,
-      iconKey: 'wind',
-      color: ctx.dominantMood.color,
-    })
-  }
+  /* Слайд 5 · Дом дышит */
+  slides.push({
+    title: ctx.contrastPair ? 'Дом дышит' : 'Единое настроение',
+    sub: breathingSub(ctx),
+    iconKey: 'wind',
+    color: ctx.contrastPair ? T.dawn : ctx.dominantColor,
+  })
 
   /* ═══ Фаза 3: Что на это влияет ═══ */
 
@@ -354,7 +402,7 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
     zoneSubtitle: zoneSubtitle(ctx.zoneShare),
   })
 
-  /* Слайд 7 · Что формирует настроение (слияние бывших слайдов 7+8) */
+  /* Слайд 7 · Что формирует характер */
   const k = parseInt(ctx.avgKelvin.replace(/[^\d]/g, '')) || 0
   const formBlocks: StoryBlock[] = [
     ['Температура', ctx.avgKelvin],
@@ -363,7 +411,7 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
     formBlocks.push(['Мебель забирает', `${ctx.furnPctAvg}%`])
   }
   slides.push({
-    title: 'Что формирует настроение',
+    title: 'Что формирует характер',
     sub: formSub(ctx),
     iconKey: 'thermo',
     color: k < 3500 ? T.dawn : T.noon,

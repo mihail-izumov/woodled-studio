@@ -13,9 +13,10 @@ import { computed, ref } from 'vue'
 import { T, Z, RGBA } from '../theme/tokens'
 import {
   buildStorySlides, buildStoryContext,
+  PLACE_COLOR, PLACE_TITLE, PLACE_QUOTE, PLACE_ICON,
   type StorySlide,
 } from '../engine/story-engine'
-import { MOODS } from '../data/moods'
+import type { ForestPlace } from '../engine/forest'
 import { pillStyle, treeStyle } from '../theme/styles'
 import { opacityToHex } from '../engine/zone-engine'
 import type { Room } from '../data/rooms'
@@ -44,13 +45,9 @@ function next() {
   if (slide.value < slides.value.length - 1) slide.value++
 }
 
-/* ──────────────── moodIntro: маппинг id → иконка ──────────────── */
+/* ──────────────── placeIntro (слайд 3) — три места леса ──────────────── */
 
-const MOOD_ICON: Record<string, string> = {
-  dusk: 'arrowDownRight',
-  morning: 'arrowRight',
-  zenith: 'arrowUpRight',
-}
+const PLACES: ForestPlace[] = ['glade', 'grove', 'thicket']
 
 /* ──────────────── zoneMap: glow-слои ──────────────── */
 
@@ -69,10 +66,10 @@ function zoneGlowAlpha(zoneId: string): string {
 /* ──────────────── zoneMap: тексты зон ──────────────── */
 
 const ZONE_LABELS: Record<string, { active: string; empty: string }> = {
-  ceiling: { active: 'основа освещения', empty: 'не задействован' },
-  wall:    { active: 'объём и акценты', empty: 'не задействован' },
-  floor:   { active: 'мягкий нижний свет', empty: 'не задействован' },
-  table:   { active: 'точечный рабочий свет', empty: 'не задействован' },
+  ceiling: { active: 'основа освещения',    empty: 'пока пусто' },
+  wall:    { active: 'объём и акценты',      empty: 'пока пусто' },
+  floor:   { active: 'мягкий нижний свет',   empty: 'пока пусто' },
+  table:   { active: 'точечный свет на месте', empty: 'пока пусто' },
 }
 
 function zoneLabel(zid: string): string {
@@ -221,9 +218,9 @@ function zoneLabel(zid: string): string {
         </div>
       </div>
 
-      <!-- ═══ moodIntro (слайд 3) — три строки настроений ═══ -->
+      <!-- ═══ placeIntro (слайд 3) — три места леса ═══ -->
       <div
-        v-if="s.moodIntro"
+        v-if="s.placeIntro"
         :style="{
           display: 'flex',
           flexDirection: 'column',
@@ -235,36 +232,37 @@ function zoneLabel(zid: string): string {
         }"
       >
         <div
-          v-for="m in MOODS"
-          :key="m.id"
+          v-for="p in PLACES"
+          :key="p"
           :style="{
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            background: m.color + '15',
+            background: PLACE_COLOR[p] + '15',
             borderRadius: '8px',
             padding: '10px 14px',
+            textAlign: 'left',
           }"
         >
           <Icon
-            :name="(MOOD_ICON[m.id] ?? 'sun') as IconName"
-            :color="m.color"
+            :name="(PLACE_ICON[p] ?? 'sun') as IconName"
+            :color="PLACE_COLOR[p]"
             :size="18"
           />
           <div :style="{ flex: 1 }">
             <div :style="{ fontSize: '13px', fontWeight: 700, color: T.text }">
-              {{ m.name }}
+              {{ PLACE_TITLE[p] }}
             </div>
             <div :style="{ fontSize: '11px', color: T.textSec, marginTop: '2px' }">
-              {{ m.quote }}
+              {{ PLACE_QUOTE[p] }}
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ═══ moodMap (слайд 4) — pills с деревьями и mood-бейджем ═══ -->
+      <!-- ═══ sceneMap (слайд 4) — pills с деревьями и именем лесной сцены ═══ -->
       <div
-        v-if="s.moodMap"
+        v-if="s.sceneMap"
         :style="{
           display: 'flex',
           flexDirection: 'column',
@@ -275,7 +273,7 @@ function zoneLabel(zid: string): string {
           flexShrink: 0,
         }"
       >
-        <div v-for="(m, i) in ctx.moodMap" :key="i">
+        <div v-for="(m, i) in ctx.sceneMap" :key="i">
           <!-- Pill -->
           <div
             :style="[pillStyle(m.tint), {
@@ -316,16 +314,16 @@ function zoneLabel(zid: string): string {
               :style="{
                 fontSize: '12px',
                 fontWeight: 700,
-                color: m.mood.color,
+                color: m.placeColor,
                 marginLeft: 'auto',
                 whiteSpace: 'nowrap',
                 lineHeight: '1',
               }"
             >
-              {{ m.mood.name }}
+              {{ m.scene.name }}
             </span>
           </div>
-          <!-- Quote под pill -->
+          <!-- Лид под pill -->
           <div
             :style="{
               fontSize: '11px',
@@ -335,7 +333,7 @@ function zoneLabel(zid: string): string {
               lineHeight: 1.4,
             }"
           >
-            {{ m.mood.quote }}
+            {{ m.lead }}
           </div>
         </div>
       </div>

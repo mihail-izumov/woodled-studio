@@ -28,6 +28,7 @@
 |---|---|---|
 | — | `wallFinish` остаётся в `Room` как fallback. UI его не редактирует. Если когда-нибудь решим, что fallback не нужен — можно убрать поле и упростить `wallFinishOf`. | `data/rooms.ts`, `engine/wall-color.ts`. |
 | — | `wallColorOf(room)` сейчас не используется внешним кодом — только потенциальная точка расширения (например, цветные swatch-и в Story). Если не пригодится за пару месяцев — можно удалить. | `engine/wall-color.ts`. |
+| — | Версия `v0.3` дублируется в `Preloader.vue` (`const VERSION`) и `config.mts` (inline-script branded preloader). При бампе версии нужно править оба места. Можно вынести через build-time переменную (vite define), но потребует прокидывания в inline-script. | `Preloader.vue`, `config.mts`. |
 
 ---
 

@@ -62,8 +62,12 @@ function lockViewport() {
 }
 
 onMounted(() => {
-  // Убираем boot-loader (inline-скрипт из config.mts) — Vue смонтирован,
-  // дальше показывает Preloader/WelcomeScreen/главную.
+  // Boot-loader: показывает анимацию пока грузится бандл.
+  // Если он был в branded-режиме (копия Preloader.vue) — он сам себя
+  // финализирует с оригинальным тэглайном «Настоящее дерево…»;
+  // Vue-Preloader.vue в этом случае не показывается, иначе будет
+  // двойная интро-анимация. Если был simple (после reload) — стандартный
+  // быстрый fade-out.
   ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
   // Если пришли через hard-reload от ReloadButton, в URL остался _t и
   // _reload. Стираем оба без перезагрузки — чтобы адрес остался чистым
@@ -209,8 +213,15 @@ const isHome = computed<boolean>(() => !activeFxData.value && !activeRoom.value 
 
 watch(() => [cfg.active.value, cfg.activeFx.value, cfg.welcomeSeen.value, cfg.showBuy.value], () => { nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' })) })
 
-const preloaderDone = ref(false)
-watch(() => cfg.welcomeSeen.value, (seen) => { if (!seen) preloaderDone.value = false })
+/* Если inline-preloader в config.mts уже отработал в branded-режиме
+   (та же визуальная анимация, что и Preloader.vue), Vue-Preloader.vue
+   не показываем — он отыграет дубль и пользователь увидит две интро-
+   анимации подряд. Inline сам себя финализирует с оригинальным тэглайном
+   «Настоящее дерево становится живым светом в доме». */
+const wlBrandedActive = typeof window !== 'undefined'
+  && !!(window as unknown as { __wlBranded?: boolean }).__wlBranded
+const preloaderDone = ref(wlBrandedActive)
+watch(() => cfg.welcomeSeen.value, (seen) => { if (!seen && !wlBrandedActive) preloaderDone.value = false })
 function onPreloaderDone() { preloaderDone.value = true }
 
 /* ──────────── Фотогалерея «Лес шепчет» на главной ──────────── */

@@ -51,7 +51,11 @@ export default defineConfig({
       .wl-pl-asm.spin { animation:wlPlSpin 48s linear infinite; }
       .wl-pl-rs { position:absolute; top:50%; left:50%; width:6px; height:60px; border-radius:2px; margin-top:-30px; margin-left:-3px; transform-origin:center center; opacity:0; transition:transform 1s, opacity .8s; background:linear-gradient(to bottom, #d4b87a, #b4915a, #8a6e3e); }
       .wl-pl-rs.in { opacity:.85; }
-      .wl-pl-sub { text-align:center; max-width:360px; font-size:clamp(15px,4vw,18px); font-weight:600; line-height:1.45; letter-spacing:.1px; color:#F0EAE0; opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease; }
+      /* Фиксированная высота под подзаголовок (~3 строки текста при
+         line-height 1.45 + запас) — чтобы при смене коротких/длинных
+         фраз ламели и логотип НЕ прыгали вверх. Текст растёт вниз
+         внутри уже зарезервированного места. */
+      .wl-pl-sub { text-align:center; max-width:360px; min-height:88px; font-size:clamp(15px,4vw,18px); font-weight:600; line-height:1.45; letter-spacing:.1px; color:#F0EAE0; opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease; display:flex; align-items:flex-start; justify-content:center; }
       .wl-pl-sub.v { opacity:1; transform:translateY(0); }
       .wl-pl-ver { position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom, 0px) + 22px); text-align:center; font-size:12px; font-weight:500; letter-spacing:.06em; color:#C0B8AE; opacity:.35; }
       @keyframes wlPlSpin { to { transform:rotate(360deg); } }

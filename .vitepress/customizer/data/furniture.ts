@@ -6,6 +6,7 @@
  */
 
 import type { FurnId } from './rooms'
+import type { ZoneId } from './catalog'
 
 /** Грамматический род — для согласования в тостах («убран/убрана/убрано»). */
 export type Gender = 'm' | 'f' | 'n'
@@ -69,4 +70,70 @@ export function furnStatus(pct: number): string {
   if (pct <= 5) return 'Почти нет теней'
   if (pct <= 12) return 'Заметные тени'
   return 'Много теней'
+}
+
+/* ──────────────── FURN_HINT — привязка мебели к источнику света ──────────────── */
+
+/**
+ * Для каждой мебели — куда логично поставить источник света и зачем.
+ * Используется в карточке «Мебель» блока настроения:
+ *  - если `zone` есть в комнате И пуста → совет «Добавьте {kind} {where} — {benefit}.»
+ *  - если занята                       → «{Kind} {where} делают своё дело — комната дышит.»
+ *  - если `zone` нет в комнате         → совет пропускается.
+ */
+export interface FurnHint {
+  /** Зона, куда логично поставить источник. */
+  zone: ZoneId
+  /** Где конкретно (в винительном/локативе по делу): «у дивана», «у изголовья», «над столешницей». */
+  where: string
+  /** Что это даст: «подсветит этот угол», «снимет тень с подушки». */
+  benefit: string
+}
+
+/**
+ * Родительный падеж имени мебели — для фраз «у {gen} в тени», «Тени собираются у {gen}».
+ * Если предмета нет в карте, фоллбэк — `FURN[id].name.toLowerCase()` (не идеально, но без падежа).
+ */
+export const FURN_GEN: Record<FurnId, string> = {
+  sofa: 'дивана',
+  armchair: 'кресла',
+  bookshelf: 'стеллажа',
+  dtable: 'обеденного стола',
+  jtable: 'журнального стола',
+  island: 'острова',
+  bar: 'барной стойки',
+  bed: 'кровати',
+  wardrobe: 'шкафа',
+  dresser: 'комода',
+  nightstand: 'тумбочки',
+  desk: 'стола',
+  mirror: 'зеркала',
+  bathtub: 'ванны',
+  shower: 'душевой',
+  sink: 'раковины',
+  washer: 'стиральной машины',
+  fridge: 'холодильника',
+  kitchen_set: 'кухонного гарнитура',
+  stove: 'плиты',
+  tv_stand: 'ТВ-тумбы',
+  shoe_rack: 'полки для обуви',
+  coat_rack: 'вешалки',
+}
+
+export const FURN_HINT: Partial<Record<FurnId, FurnHint>> = {
+  sofa:        { zone: 'floor', where: 'у дивана',          benefit: 'подсветит этот угол' },
+  armchair:    { zone: 'floor', where: 'у кресла',          benefit: 'будет светло для чтения' },
+  bed:         { zone: 'wall',  where: 'у изголовья',        benefit: 'снимет тень с подушки' },
+  bookshelf:   { zone: 'wall',  where: 'у стеллажа',        benefit: 'добавит света в углы' },
+  wardrobe:    { zone: 'wall',  where: 'у шкафа',           benefit: 'подсветит дверцы' },
+  dresser:     { zone: 'wall',  where: 'над комодом',       benefit: 'подсветит верх' },
+  desk:        { zone: 'table', where: 'на стол',           benefit: 'уберёт тень от работы' },
+  dtable:      { zone: 'ceiling', where: 'над обеденным столом', benefit: 'подсветит еду' },
+  kitchen_set: { zone: 'wall',  where: 'над столешницей',   benefit: 'поможет с готовкой' },
+  tv_stand:    { zone: 'wall',  where: 'по бокам экрана',   benefit: 'станет мягким фоном за телевизором' },
+  nightstand:  { zone: 'table', where: 'на тумбочку',       benefit: 'будет удобно читать перед сном' },
+  island:      { zone: 'ceiling', where: 'над островом',    benefit: 'осветит рабочую поверхность' },
+  bathtub:     { zone: 'wall',  where: 'у ванны',           benefit: 'мягко подсветит зону' },
+  shower:      { zone: 'wall',  where: 'у душевой',         benefit: 'осветит кабинку' },
+  sink:        { zone: 'wall',  where: 'у раковины',        benefit: 'будет видно лицо' },
 }

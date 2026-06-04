@@ -12,11 +12,14 @@
  * Слова и правила — WOODLED_сцены_настроения_спека.md + WOODLED_tone_of_voice.md.
  */
 
-import { ALL_ZONES, MD, type Fixture } from '../data/catalog'
+import { type Fixture } from '../data/catalog'
 import { DEF_OPT, type Wood } from '../data/materials'
-import type { Room, RoomType, WallFinish } from '../data/rooms'
+import type { Room, RoomType } from '../data/rooms'
 import { baseLm, fxLm, ratioOf, furnPct } from './brightness'
 import { zoneLm } from './zone-engine'
+import { assembleCards, type KnobCard } from './forest-cards'
+
+export type { KnobCard } from './forest-cards'
 
 /* ──────────────── Тип сцены ──────────────── */
 
@@ -101,8 +104,11 @@ const LEAD: Record<ForestPlace, string> = {
 
 type Bright = 'dim' | 'norm' | 'full'
 function brightLevel(ratio: number): Bright {
+  /* Пороги синхронизированы со шкалой BRIGHT (moods.ts): 0.8 / 1.2.
+     Раньше было 0.8 / 1.4 (наследие старой autoMood) — при ratio 1.3
+     бейдж говорил «Ярко», а легенда — про норму. Теперь согласовано. */
   if (ratio < 0.8) return 'dim'
-  if (ratio < 1.4) return 'norm'
+  if (ratio < 1.2) return 'norm'
   return 'full'
 }
 
@@ -173,130 +179,12 @@ export function forestScene(rt: RoomType, room: Room): ForestScene {
 
 /* ──────────────── Карточки «Как это работает» ──────────────── */
 
-/** Одна карточка-параметр под слайдер: заголовок + бейдж-значение + текст. */
-export interface KnobCard {
-  title: string
-  chip?: string
-  text: string
-}
-
-const WALL_TEXT: Record<WallFinish, string> = {
-  light: 'Стены светлые — отражают свет, его нужно меньше.',
-  medium: 'У вас средние стены — на свет не влияют. Светлые добавили бы яркости, тёмные — наоборот.',
-  dark: 'Стены тёмные — забирают часть света. Сделаете светлее — комната прибавит.',
-}
-
-const WOOD_CHAR: Record<Wood, string> = {
-  oak: 'Дуб — светлый и тёплый.',
-  walnut: 'Орех — глубокий и тёплый.',
-  black: 'Чёрный дуб — строгий и глубокий.',
-}
-const WOOD_CHIP: Record<Wood, string> = { oak: 'дуб', walnut: 'орех', black: 'чёрный дуб' }
-
-/** Есть ли подвесной потолочный светильник (для карточки «Потолок и подвес»). */
-function hasPendant(fx: Fixture[]): boolean {
-  return fx.some(
-    (f) =>
-      !!MD[f.m]?.hasMount &&
-      (f.zone ?? 'ceiling') === 'ceiling' &&
-      (f.opts?.mount ?? 'pendant') === 'pendant',
-  )
-}
-
 /**
- * Карточки «Как это работает» — на реальных значениях ЭТОЙ комнаты, без внутренних
- * коэффициентов (×0.65 и пр.). Тексты по ToV: «вы», живой русский, без «как».
+ * Карточки строятся в `forest-cards.ts` — там банки фраз, сборщики
+ * каждой карточки и логика скрытия (стены medium, мебель пустая, потолок 2.7
+ * без подвеса). Тут — только реэкспорт, чтобы потребители продолжали
+ * импортировать `roomKnobs` из `engine/forest`.
  */
 export function roomKnobs(rt: RoomType, room: Room): KnobCard[] {
-  const fx = room.fixtures
-  if (fx.length === 0) return []
-
-  const total = fxLm(fx)
-  const ratio = ratioOf(baseLm(rt, room), total)
-  const place = scenePlace(fx)
-  const cards: KnobCard[] = []
-
-  // 1. Где свет
-  const lit = ALL_ZONES.map((z) => ({ z, lm: zoneLm(fx, z.id) }))
-    .filter((s) => s.lm > 0)
-    .sort((a, b) => b.lm - a.lm)
-  const top = lit[0]
-  cards.push({
-    title: 'Где свет',
-    chip: top && total > 0 ? `${top.z.name.toLowerCase()} ${Math.round((top.lm / total) * 100)}%` : undefined,
-    text:
-      place === 'glade'
-        ? 'Свет в основном сверху, открыто и ровно по комнате. Чем ниже источник, тем уютнее и тем больше тени по углам.'
-        : place === 'thicket'
-          ? 'Свет ушёл вниз, к бра и торшерам — потолок слабый. Оттого уютно и углы в тени.'
-          : 'Свет и сверху, и по нижним источникам — ровно по всей комнате.',
-  })
-
-  // 2. Сколько света
-  const bl = brightLevel(ratio)
-  cards.push({
-    title: 'Сколько света',
-    chip: `${Math.round(ratio * 100)}%`,
-    text:
-      bl === 'dim'
-        ? 'Собрано меньше нормы, пока неярко. Можно добавить света.'
-        : bl === 'norm'
-          ? 'Собрано около нормы. Всё видно, для вечера часть можно приглушить.'
-          : 'Света с запасом — глазам столько не нужно. Можно приглушить.',
-  })
-
-  // 3. Стены
-  cards.push({ title: 'Стены', text: WALL_TEXT[room.wallFinish ?? 'medium'] })
-
-  // 4. Дерево
-  const order = woodOrder(fx)
-  const counts: Partial<Record<Wood, number>> = {}
-  for (const f of fx) counts[f.wood] = (counts[f.wood] ?? 0) + (f.q ?? 1)
-  cards.push({
-    title: 'Дерево',
-    chip: order.map((w) => `${counts[w]} ${WOOD_CHIP[w]}`).join(', '),
-    text: `Свет проходит сквозь деревянные ламели и оттого мягкий, без резкости. ${WOOD_CHAR[order[0] ?? 'oak']}`,
-  })
-
-  // 5. Мебель
-  const fp = furnPct(room.furniture)
-  cards.push({
-    title: 'Мебель',
-    chip: fp > 0 ? `−${fp}%` : 'пусто',
-    text:
-      fp <= 0
-        ? 'Мебели нет — свету ничего не мешает.'
-        : fp <= 12
-          ? 'Мебели немного — света хватает.'
-          : 'Мебель забирает часть света, в углах темнее. Пара бра на стены это выровняет.',
-  })
-
-  // 6. Оттенок света
-  const temps = new Set(fx.map((f) => f.opts?.btemp ?? DEF_OPT.btemp))
-  const mixed = temps.size > 1
-  const wm = tempWarmth(fx)
-  cards.push({
-    title: 'Оттенок света',
-    chip: mixed ? 'смешанный' : `${[...temps][0]}K`,
-    text: mixed
-      ? 'Оттенки разные — тёплый для уюта, рабочий для дел.'
-      : wm === 'warm'
-        ? 'Свет тёплый — комната вечерняя, уютная.'
-        : wm === 'neutral'
-          ? 'Свет тёплый-нейтральный — баланс уюта и ясности.'
-          : 'Свет рабочий, нейтральный — всё чётко. Сделаете теплее, станет вечерним.',
-  })
-
-  // 7. Потолок и подвес
-  const h = room.ceilingH
-  const pendant = hasPendant(fx)
-  cards.push({
-    title: 'Потолок и подвес',
-    chip: `${h} м${pendant ? ' · подвес' : ''}`,
-    text:
-      (h > 2.7 ? `Потолок ${h} м, выше обычного — свету идти дальше.` : `Потолок ${h} м.`) +
-      (pendant ? ' На подвесе люстра ближе к комнате, и света от неё чуть больше.' : ''),
-  })
-
-  return cards
+  return assembleCards(rt, room)
 }

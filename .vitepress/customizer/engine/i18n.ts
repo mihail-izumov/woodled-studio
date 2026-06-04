@@ -5,7 +5,7 @@
  */
 
 import type { Fixture, FxType } from '../data/catalog'
-import { MATS, type Wood } from '../data/materials'
+import type { Wood } from '../data/materials'
 
 /** Плюрализация «ламп»: 1 → «лампа», 2–4 → «лампы», 0/5+/11–19 → «ламп». */
 export function lw(n: number): string {
@@ -117,25 +117,22 @@ export function joinList(arr: string[]): string {
 }
 
 /**
- * Названия деревьев в формате «2 дуба и 1 орех».
- * Склонения привязаны к конкретным словам (Дуб/Орех/Чёрный дуб).
+ * Названия деревьев в формате «2 дуба и 1 орех» / «6 орехов и 3 чёрных дуба».
+ * Склонения проходят через `woodWord` — поддерживает 5+.
  */
 export function woodNames(fixtures: Fixture[]): string {
-  const grouped: Record<string, number> = {}
-
+  const grouped: Record<Wood, number> = { oak: 0, walnut: 0, black: 0 }
   for (const f of fixtures) {
-    const w = f.wood ?? 'oak'
-    const n = f.q ?? 1
-    const name = MATS.find((m) => m.id === w)?.name ?? 'Дуб'
-    grouped[name] = (grouped[name] ?? 0) + n
+    const w = (f.wood ?? 'oak') as Wood
+    grouped[w] += (f.q ?? 1)
   }
-
-  const parts = Object.entries(grouped).map(([name, cnt]) => {
-    if (name === 'Дуб') return cnt > 1 ? `${cnt} дуба` : 'дуб'
-    if (name === 'Орех') return cnt > 1 ? `${cnt} ореха` : 'орех'
-    // Чёрный дуб
-    return cnt > 1 ? `${cnt} чёрных дуба` : 'чёрный дуб'
-  })
-
+  const parts: string[] = []
+  for (const w of ['oak', 'walnut', 'black'] as Wood[]) {
+    const cnt = grouped[w]
+    if (cnt > 0) {
+      /* count=1 → просто «дуб» / «орех» / «чёрный дуб»; иначе число + правильная форма. */
+      parts.push(cnt === 1 ? woodWord(w, 1) : `${cnt} ${woodWord(w, cnt)}`)
+    }
+  }
   return parts.join(' и ')
 }

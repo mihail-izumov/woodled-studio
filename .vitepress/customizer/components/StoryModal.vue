@@ -168,7 +168,7 @@ function zoneLabel(zid: string): string {
 
       <div
         v-if="s.sub && !s.bigSub"
-        :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.7, maxWidth: '340px', flexShrink: 0 }"
+        :style="{ fontSize: '16px', color: T.textSec, lineHeight: 1.55, maxWidth: '340px', flexShrink: 0 }"
       >
         {{ s.sub }}
       </div>
@@ -196,7 +196,7 @@ function zoneLabel(zid: string): string {
             textAlign: 'center',
           }"
         >
-          <div :style="{ fontSize: '11px', color: T.textSec, marginBottom: '8px' }">
+          <div :style="{ fontSize: '13px', color: T.textSec, marginBottom: '8px' }">
             {{ b[0] }}
           </div>
           <div
@@ -211,7 +211,7 @@ function zoneLabel(zid: string): string {
           </div>
           <div
             v-if="b[2]"
-            :style="{ fontSize: '12px', color: T.textSec, marginTop: '4px' }"
+            :style="{ fontSize: '13px', color: T.textSec, marginTop: '4px' }"
           >
             {{ b[2] }}
           </div>
@@ -250,10 +250,10 @@ function zoneLabel(zid: string): string {
             :size="18"
           />
           <div :style="{ flex: 1 }">
-            <div :style="{ fontSize: '13px', fontWeight: 700, color: T.text }">
+            <div :style="{ fontSize: '15px', fontWeight: 700, color: T.text }">
               {{ PLACE_TITLE[p] }}
             </div>
-            <div :style="{ fontSize: '11px', color: T.textSec, marginTop: '2px' }">
+            <div :style="{ fontSize: '13px', color: T.textSec, marginTop: '3px', lineHeight: 1.4 }">
               {{ PLACE_QUOTE[p] }}
             </div>
           </div>
@@ -284,7 +284,7 @@ function zoneLabel(zid: string): string {
           >
             <span
               :style="{
-                fontSize: '11px',
+                fontSize: '13px',
                 fontWeight: 700,
                 color: T.text,
                 whiteSpace: 'nowrap',
@@ -312,7 +312,7 @@ function zoneLabel(zid: string): string {
             </div>
             <span
               :style="{
-                fontSize: '12px',
+                fontSize: '14px',
                 fontWeight: 700,
                 color: m.placeColor,
                 marginLeft: 'auto',
@@ -326,11 +326,11 @@ function zoneLabel(zid: string): string {
           <!-- Лид под pill -->
           <div
             :style="{
-              fontSize: '11px',
+              fontSize: '13px',
               color: T.textSec,
-              marginTop: '4px',
+              marginTop: '6px',
               paddingLeft: '12px',
-              lineHeight: 1.4,
+              lineHeight: 1.45,
             }"
           >
             {{ m.lead }}
@@ -352,10 +352,10 @@ function zoneLabel(zid: string): string {
         <div
           v-if="s.zoneSubtitle"
           :style="{
-            fontSize: '12px',
+            fontSize: '15px',
             color: T.textSec,
             textAlign: 'center',
-            marginBottom: '12px',
+            marginBottom: '14px',
             lineHeight: 1.5,
           }"
         >
@@ -398,29 +398,33 @@ function zoneLabel(zid: string): string {
               :style="{
                 background: T.card + '88',
                 borderRadius: '10px',
-                padding: '14px 10px',
+                padding: '14px 12px',
                 textAlign: 'left',
               }"
             >
               <div
                 :style="{
-                  fontSize: '10px',
+                  fontSize: '13px',
                   fontWeight: 700,
                   color: T.text,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap',
                 }"
               >
-                {{ zname }}
+                <span>{{ zname }}</span>
                 <span
                   :style="{
-                    marginLeft: '4px',
-                    padding: '1px 5px',
-                    borderRadius: '4px',
-                    background: (s.color ?? T.neutral) + '20',
-                    fontSize: '9px',
-                    fontWeight: 600,
+                    padding: '2px 7px',
+                    borderRadius: '5px',
+                    background: (s.color ?? T.neutral) + '22',
+                    fontSize: '12px',
+                    fontWeight: 700,
                     color: s.color ?? T.neutral,
+                    letterSpacing: 0,
                   }"
                 >
                   {{ ctx.zoneShare(zid as 'ceiling' | 'wall' | 'floor' | 'table') }}%
@@ -429,9 +433,10 @@ function zoneLabel(zid: string): string {
               <!-- Текст-описание зоны -->
               <div
                 :style="{
-                  fontSize: '9px',
+                  fontSize: '12px',
                   color: T.textSec,
-                  marginTop: '4px',
+                  marginTop: '6px',
+                  lineHeight: 1.35,
                 }"
               >
                 {{ zoneLabel(zid) }}

@@ -16,6 +16,7 @@
 
 import { FURN } from '../data/furniture'
 import { MATS } from '../data/materials'
+import { MD } from '../data/catalog'
 import { T, ROOM_TINTS } from '../theme/tokens'
 import type { Wood } from '../theme/tokens'
 import { getArea, baseLm, fxLm, fxLamps } from './brightness'
@@ -61,6 +62,9 @@ export interface SceneMapEntry {
   typeId: RoomTypeId
 }
 
+/** Цоколь — типовая опора лампы. Берётся из `MD[m].ltName`. */
+export type Cap = 'E27' | 'GX53' | 'E14'
+
 export interface StoryContext {
   name: string
   rooms: Room[]
@@ -81,6 +85,8 @@ export interface StoryContext {
   avgKelvin: string
   furnPctAvg: number
   hasMirror: boolean
+  /** Раскладка ламп по цоколю — для финального слайда. */
+  lampsByCap: Record<Cap, number>
   /**
    * Две комнаты с разными сценами — для слайда «Дом дышит».
    * Берётся пара с максимальным контрастом мест (glade ↔ thicket в первую очередь).
@@ -90,6 +96,13 @@ export interface StoryContext {
     bright: SceneMapEntry
   } | null
   zoneShare: (zid: 'ceiling' | 'wall' | 'floor' | 'table') => number
+}
+
+/** Извлекает цоколь из имени лампы модели (`MD[m].ltName`). */
+function detectCap(ltName: string): Cap {
+  if (/GX53/i.test(ltName)) return 'GX53'
+  if (/E14/i.test(ltName)) return 'E14'
+  return 'E27'
 }
 
 /* ──────────────── Места леса (palette + порядок «вечер → день») ──────────────── */
@@ -234,6 +247,15 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
 
   const hasMirror = rooms.some((r) => r.furniture.includes('mirror'))
 
+  /* Цоколи: считаем лампы (l × q) по типу. */
+  const lampsByCap: Record<Cap, number> = { E27: 0, GX53: 0, E14: 0 }
+  for (const f of allFx) {
+    const m = MD[f.m]
+    if (!m) continue
+    const cap = detectCap(m.ltName)
+    lampsByCap[cap] += (f.l ?? m.lamps) * (f.q ?? 1)
+  }
+
   return {
     name,
     rooms,
@@ -251,6 +273,7 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
     avgKelvin,
     furnPctAvg,
     hasMirror,
+    lampsByCap,
     contrastPair,
     zoneShare,
   }
@@ -259,10 +282,37 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
 /* ──────────────── Helper-функции слайдов ──────────────── */
 
 function treesSub(ctx: StoryContext): string {
-  if (ctx.dominantWood === ctx.allWoods) {
-    return `Единый ${ctx.dominantWood.toLowerCase()}овый лес`
+  const wood = ctx.dominantWood === ctx.allWoods
+    ? `Единый ${ctx.dominantWood.toLowerCase()}овый лес`
+    : `Смешанный лес: ${ctx.allWoods}`
+  return `${wood}. ${densityComment(ctx.lmPerM2)}`
+}
+
+/** Комментарий к плотности света — чтобы цифры не висели без объяснения. */
+function densityComment(lmPerM2: number): string {
+  if (lmPerM2 < 80) return 'Света приглушённо — комната для отдыха.'
+  if (lmPerM2 < 160) return 'Привычный уровень для жилых комнат.'
+  if (lmPerM2 < 260) return 'С запасом — подойдёт и для работы.'
+  return 'Света с большим запасом — диммер пригодится.'
+}
+
+/** Комментарий к финалу — что значит N ламп + цоколи. */
+function lampsComment(ctx: StoryContext): string {
+  const parts: string[] = []
+  const caps: Array<[string, number]> = [
+    ['E27', ctx.lampsByCap.E27],
+    ['GX53', ctx.lampsByCap.GX53],
+    ['E14', ctx.lampsByCap.E14],
+  ].filter(([, n]) => (n as number) > 0) as Array<[string, number]>
+
+  if (caps.length === 1) {
+    parts.push(`Все на цоколе ${caps[0][0]} — можно покупать упаковкой.`)
+  } else if (caps.length > 1) {
+    const list = caps.map(([cap, n]) => `${n} на ${cap}`).join(', ')
+    parts.push(`Цоколи: ${list}.`)
   }
-  return `Смешанный лес: ${ctx.allWoods}`
+  parts.push('Меняются за минуту — каждая продолжит светить.')
+  return parts.join(' ')
 }
 
 /** Подзаголовок слайда 4 — что у дома с местами леса. */
@@ -402,7 +452,7 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
     zoneSubtitle: zoneSubtitle(ctx.zoneShare),
   })
 
-  /* Слайд 7 · Что формирует характер */
+  /* Слайд 7 · Характер дома */
   const k = parseInt(ctx.avgKelvin.replace(/[^\d]/g, '')) || 0
   const formBlocks: StoryBlock[] = [
     ['Температура', ctx.avgKelvin],
@@ -411,7 +461,7 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
     formBlocks.push(['Мебель забирает', `${ctx.furnPctAvg}%`])
   }
   slides.push({
-    title: 'Что формирует характер',
+    title: 'Характер дома',
     sub: formSub(ctx),
     iconKey: 'thermo',
     color: k < 3500 ? T.dawn : T.noon,
@@ -420,10 +470,10 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
 
   /* ═══ Фаза 4: Финал ═══ */
 
-  /* Слайд 8 · Финал */
+  /* Слайд 8 · Финал — лампы и цоколи */
   slides.push({
     title: `${ctx.totalLamps} ${lw(ctx.totalLamps)}`,
-    sub: 'Каждая продолжает светить',
+    sub: lampsComment(ctx),
     iconKey: 'bulb',
     color: T.clearing,
   })

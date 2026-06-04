@@ -240,11 +240,16 @@ function onGalleryGiftClick() {
   <template v-else>
     <div
       :style="{
+        position: 'relative',
         maxWidth: '560px', margin: '0 auto', padding: '16px',
         fontFamily: `'Segoe UI', system-ui, sans-serif`,
         color: T.text, background: T.bg, minHeight: '100vh',
       }"
     >
+      <!-- Reload только в iOS-standalone, в левом-верхнем углу страницы.
+           НЕ fixed — скроллится вместе с контентом. Зеркалит SoundButton
+           (тот сидит fixed top:6 right:16 поверх всех экранов). -->
+      <ReloadButton :style="{ position: 'absolute', top: '6px', left: '16px', zIndex: 1 }" />
       <div :style="{ textAlign: 'center', marginBottom: '20px', paddingTop: '8px' }">
         <div
           :style="{
@@ -347,8 +352,7 @@ function onGalleryGiftClick() {
     <StickyBar v-if="stickyVisible" @share="cfg.showShare.value = true" @buy="cfg.showBuy.value = true" />
   </template>
 
-  <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'flex', gap: '8px', alignItems: 'center' }">
-    <ReloadButton v-if="isHome" />
+  <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'block' }">
     <SoundButton />
   </div>
   <Toast :msg="cfg.fb.value" :icon="cfg.fbIcon.value" @done="cfg.clearFB" />

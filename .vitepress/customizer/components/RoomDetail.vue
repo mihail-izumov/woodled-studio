@@ -474,7 +474,7 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
             lineHeight: '1.5',
           }"
         >
-          Комната будет удалена со всеми светильниками и настройками.<template v-if="props.room.fixtures.length > 0"> Потеряете {{ actual.toLocaleString('ru-RU') }} лм и {{ woodNames(props.room.fixtures) }}.</template>
+          Комната будет удалена со всеми светильниками и настройками.<template v-if="props.room.fixtures.length > 0"> Потеряете {{ actual.toLocaleString('ru-RU') }} лм — {{ woodNames(props.room.fixtures) }}.</template>
         </div>
         <button
           :style="{

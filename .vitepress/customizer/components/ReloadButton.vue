@@ -43,8 +43,7 @@ onMounted(() => {
     v-if="isStandalone"
     :style="{
       background: 'none',
-      border: `1px solid ${T.border}`,
-      borderRadius: '8px',
+      border: 'none',
       padding: '6px 8px',
       cursor: 'pointer',
       display: 'flex',

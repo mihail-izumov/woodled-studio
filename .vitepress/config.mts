@@ -8,6 +8,11 @@ export default defineConfig({
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
     ['link', { rel: 'icon', type: 'image/png', href: '/woodled-studio/apple-touch-icon.png' }],
+    // Preload иконки: PWAInstallBanner и AppPage используют apple-touch-icon
+    // в первой отрисовке. Без preload браузер тянет её после CSS/JS-бандла,
+    // и пользователь видит, как иконка появляется частями. Preload даёт ей
+    // приоритет в очереди загрузки.
+    ['link', { rel: 'preload', as: 'image', href: '/woodled-studio/apple-touch-icon.png', fetchpriority: 'high' }],
     // PWA-манифест. Нужен, чтобы iOS 16.4+ согласился пускать Web Push в
     // standalone-режиме. На Android/Chrome — это же ключ к Add-to-Home prompt.
     ['link', { rel: 'manifest', href: '/woodled-studio/manifest.webmanifest' }],

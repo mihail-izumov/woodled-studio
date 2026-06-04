@@ -129,17 +129,22 @@ onBeforeUnmount(() => {
       background: 'linear-gradient(135deg, #C9A47A 0%, #E4C99A 50%, #B58C5C 100%)',
       color: '#1A1410',
       textDecoration: 'none',
-      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+      // Только внешняя тень — никакого inset white, иначе виден тонкий
+      // светлый кант сверху как артефакт.
+      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.28)',
       transform: visible ? 'translateY(0)' : 'translateY(-100%)',
       transition: 'transform 360ms cubic-bezier(0.4, 0, 0.2, 1)',
       boxSizing: 'border-box',
       width: '100%',
     }"
   >
-    <!-- Иконка приложения -->
+    <!-- Иконка приложения. fetchpriority=high + preload в config.mts —
+         чтобы появилась сразу, а не подгружалась частями после JS-бандла. -->
     <img
       :src="ICON_URL"
       alt=""
+      fetchpriority="high"
+      decoding="sync"
       :style="{
         width: '44px',
         height: '44px',

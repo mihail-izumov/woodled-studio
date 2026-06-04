@@ -18,11 +18,30 @@ import { PAGE } from './tokens'
 import { getPushState, enablePush, disablePush, type PushState } from './pwa-push'
 
 const ICON_URL = '/woodled-studio/apple-touch-icon.png'
+const APP_FALLBACK_URL = '/woodled-studio/customizer'
 
 // Состояние push-подписки: пересчитывается на mount и после действий
 // пользователя. Хранится как объект PushState — рендеримся по `.kind`.
 const pushState = ref<PushState | null>(null)
 const pushBusy = ref(false)
+
+/**
+ * Возврат «В приложение». Если пользователь пришёл сюда из конфигуратора
+ * — делаем history.back, чтобы сохранилось его состояние (открытая комната,
+ * незавершённая сборка). Если открыл /app напрямую (по ссылке, закладке) —
+ * простой переход на /customizer.
+ */
+function goBackToApp(e: Event) {
+  if (typeof window === 'undefined') return
+  const ref = document.referrer
+  const sameOrigin = ref && new URL(ref, window.location.href).origin === window.location.origin
+  const fromCustomizer = sameOrigin && /\/woodled-studio\//.test(ref) && !/\/app\/?$/.test(ref)
+  if (fromCustomizer && window.history.length > 1) {
+    e.preventDefault()
+    window.history.back()
+  }
+  // иначе — обычный переход по href (fallback)
+}
 
 async function refreshPush() {
   pushState.value = await getPushState()
@@ -148,14 +167,15 @@ const notifySteps = [
         WOODLED&nbsp;Студия
       </a>
       <a
-        href="/woodled-studio/"
+        :href="APP_FALLBACK_URL"
+        @click="goBackToApp"
         :style="{
           fontSize: '14px',
           color: PAGE.textSec,
           textDecoration: 'none',
         }"
       >
-        ← На главную
+        ← В приложение
       </a>
     </header>
 
@@ -639,10 +659,9 @@ const notifySteps = [
     >
       <div
         :style="{
-          background: 'rgba(255, 255, 255, 0.45)',
+          background: PAGE.pearl,
           borderRadius: '20px',
           padding: '24px',
-          border: `1px solid ${PAGE.borderSoft}`,
           fontSize: '14px',
           lineHeight: 1.55,
           color: PAGE.textSec,

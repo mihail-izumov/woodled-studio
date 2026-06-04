@@ -103,7 +103,7 @@ export function baseLm(rt: RoomType, r: Room): number {
   const drop = hasCeilingPendant(r) ? SUSPENSION_DROP : 0
   const effCeilingH = Math.max(2.0, r.ceilingH - drop)
   const ri = roomIndex(area, effCeilingH)
-  // wallFinishOf учитывает r.wallColor: если задан валидный HEX, категория
+  // wallFinishOf учитывает r.cardColor: если задан валидный HEX, категория
   // вычисляется автоматически по relative luminance. Иначе — пресет wallFinish.
   const uf = utilizationFactor(ri, wallFinishOf(r))
   return Math.round((rt.lux * area * (1 + furnFactor)) / (uf * MAINT_FACTOR))

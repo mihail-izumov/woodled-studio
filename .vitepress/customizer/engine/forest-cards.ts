@@ -21,7 +21,7 @@ import type { Room, RoomType, RoomTypeId } from '../data/rooms'
 import { baseLm, fxLm, ratioOf, furnPct, getArea } from './brightness'
 import { zoneLm, zoneFxCount } from './zone-engine'
 import { kindWord, woodWord, joinList } from './i18n'
-import { wallFinishOf, wallColorOf, normalizeHex } from './wall-color'
+import { wallFinishOf, normalizeHex } from './wall-color'
 
 /* ──────────────── Тип карточки ──────────────── */
 
@@ -30,8 +30,8 @@ export interface KnobCard {
   chip?: string
   text: string
   /** Опциональный цвет-«квадратик» рядом с chip (HEX). Сейчас используется
-   *  только карточкой «Стены», когда задан свой wallColor — чтобы пользователь
-   *  видел тот же оттенок, что выбрал в RoomSettings. */
+   *  только карточкой «Стены», когда задан свой cardColor — чтобы
+   *  пользователь видел тот же оттенок, что выбрал в ColorPickerModal. */
   swatch?: string
 }
 
@@ -459,8 +459,8 @@ const WALL_CHIP: Record<'light' | 'medium' | 'dark', string> = {
 }
 
 /* Карточка «Стены» показывается ВСЕГДА. Источник истины — wallFinishOf:
-   если задан свой HEX (wallColor), категория считается автоматически по
-   relative luminance; если нет — пресет wallFinish.
+   если задан свой цвет комнаты (room.cardColor), категория считается
+   автоматически по relative luminance; если нет — пресет wallFinish.
    Когда HEX задан — в карточке появляется swatch (тот же оттенок) и
    chip-текст вида «#E8E0D4 · светлые». */
 function wallsCard(_rt: RoomType, room: Room, seed: number): KnobCard | null {
@@ -470,7 +470,9 @@ function wallsCard(_rt: RoomType, room: Room, seed: number): KnobCard | null {
     wf === 'light' ? WALL_LIGHT : wf === 'dark' ? WALL_DARK : WALL_MEDIUM,
     seed,
   )
-  const customHex = normalizeHex(room.wallColor ?? '')
+  // Источник «своего цвета стен» — единый цвет комнаты (cardColor),
+  // выбранный в ColorPickerModal. wallFinish (пресет) — fallback.
+  const customHex = normalizeHex(room.cardColor ?? '')
   if (customHex) {
     return {
       title: 'Стены',

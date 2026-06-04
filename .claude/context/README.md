@@ -13,6 +13,7 @@
 | `WOODLED_сцены_настроения_спека.md` | Концепция лесных сцен: 9 имён (порода × место), банки легенды, словарь карточек, разделение ролей дашборд↔настроение. | Перед изменением логики `forest.ts` (PORODA, PLACE_RU, scenePlace) или редизайном блока. |
 | `WOODLED_все_тексты.md` | Банки текстов **дашборда** (`copy.ts`: подсказки, реакции на действие) и **мебели** (`furnText`, тосты). | Перед правкой `engine/copy.ts`, `data/furniture.ts` (тексты, не алгоритм). |
 | `NAMING_SPEC.md` | Как формируется подпись светильника в UI: тип + чип, без `collection`/`name`. Слои подписи на разных поверхностях. | Перед правкой строк в `RoomDetail`, `FxEditor` нав-баре, плашке карточки светильника. |
+| `WOODLED_цвет_стен.md` | Подсистема цвета стен: пресеты `light/medium/dark`, свой HEX, автоклассификация по relative luminance (BT.709), пороги, влияние на норму, UI в `RoomSettings`, swatch в карточке настроения, share/persist. | Перед правкой `engine/wall-color.ts`, `engine/brightness.ts` (UF), `engine/forest-cards.ts` (wallsCard), `RoomSettings.vue` (HEX-input), `ForestMood.vue` (swatch). |
 
 ### 📐 Рационал и архитектура (для понимания «почему так»)
 

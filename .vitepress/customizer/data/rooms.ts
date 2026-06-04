@@ -77,16 +77,14 @@ export interface Room {
   furniture: FurnId[]
   limits: ZoneLimits
   cardColor?: string
-  /** Отделка стен (дефолт 'medium'). Влияет на UF в baseLm. Задаётся в RoomSettings (Фаза 2). */
-  wallFinish?: WallFinish
   /**
-   * Свой HEX-цвет стен. Если задан и валиден — категория (`light/medium/dark`)
-   * вычисляется автоматически из relative luminance (см. `engine/wall-color.ts`)
-   * и используется во всех расчётах вместо `wallFinish`. Если не задан —
-   * fallback на пресет `wallFinish`. UI: text-input + кнопка «Вставить» в
-   * RoomSettings, квадратик-превью в карточке «Стены» блока настроения.
+   * Отделка стен (дефолт 'medium'). Влияет на UF в baseLm. Задаётся через
+   * три пресет-кнопки в RoomSettings — это явный выбор «Светлая / Средняя /
+   * Тёмная». Используется как **fallback** для физики стен: если у комнаты
+   * не задан `cardColor`, расчёт берёт эту категорию. Если `cardColor`
+   * задан, он перекрывает пресет (см. `wallFinishOf` в `engine/wall-color.ts`).
    */
-  wallColor?: string
+  wallFinish?: WallFinish
 }
 
 /* ──────────────── Размеры ──────────────── */

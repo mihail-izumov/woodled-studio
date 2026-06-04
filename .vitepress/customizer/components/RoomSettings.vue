@@ -20,10 +20,11 @@ import { T, Z } from '../theme/tokens'
 import { SZ, type Room, type RoomType, type ZoneLimits, type WallFinish } from '../data/rooms'
 import type { ZoneId } from '../data/catalog'
 import { roomZones } from '../engine/zone-engine'
-import { normalizeHex, wallFinishFromHex } from '../engine/wall-color'
+import { wallFinishFromHex } from '../engine/wall-color'
 import { useConfigurator } from '../store/configurator'
 import NavHeader from './ui/NavHeader.vue'
 import LeaveConfirmModal from './ui/LeaveConfirmModal.vue'
+import ColorPickerModal from './ColorPickerModal.vue'
 
 interface Props {
   rt: RoomType
@@ -69,9 +70,11 @@ const draftCustomArea = ref<number>(
 )
 const draftCeilingH = ref<number>(props.room.ceilingH)
 const draftWallFinish = ref<WallFinish>(props.room.wallFinish ?? 'medium')
-/* Свой HEX-цвет стен. Храним в исходном виде (как ввёл юзер) — нормализация
-   при сохранении. null/'' = «не задан», работает пресет wallFinish. */
-const draftWallColor = ref<string>(props.room.wallColor ?? '')
+/* Свой цвет комнаты (он же цвет стен в физике через wallFinishOf).
+   Изменяется через ColorPickerModal — одну и ту же модалку открываем и
+   с главной (RoomCard), и отсюда. null/undefined = «не задан», работает
+   пресет wallFinish. */
+const draftCardColor = ref<string | undefined>(props.room.cardColor)
 const draftLimits = ref<ZoneLimits>({
   ...(props.room.limits ?? props.rt.limits),
 })
@@ -89,23 +92,19 @@ watch(() => props.room.id, () => {
   draftCustomArea.value = props.room.customArea ?? props.rt.sizes[2]
   draftCeilingH.value = props.room.ceilingH
   draftWallFinish.value = props.room.wallFinish ?? 'medium'
-  draftWallColor.value = props.room.wallColor ?? ''
+  draftCardColor.value = props.room.cardColor
   draftLimits.value = { ...(props.room.limits ?? props.rt.limits) }
 })
 
-/* ──────────── Свой цвет стен: нормализация, превью, paste ──────────── */
+/* ──────────── Свой цвет: открываем общую модалку ──────────── */
 
-/** Нормализованный HEX из ввода, либо null если ввод пуст/невалиден. */
-const draftWallColorNorm = computed<string | null>(() => normalizeHex(draftWallColor.value))
-/** HEX валиден (можно показать превью). */
-const draftWallColorValid = computed<boolean>(() => draftWallColorNorm.value !== null)
-/** Текст ввода непуст, но невалиден (показать подсказку «не похоже на HEX»). */
-const draftWallColorBad = computed<boolean>(
-  () => draftWallColor.value.trim().length > 0 && !draftWallColorValid.value,
-)
-/** Категория, в которую попадёт выбранный HEX (для превью эффекта). */
-const draftWallColorFinish = computed<WallFinish | null>(() =>
-  draftWallColorNorm.value ? wallFinishFromHex(draftWallColorNorm.value) : null,
+/** Локальный флаг показа ColorPickerModal — таким же, как в App.vue, но
+ *  применяется к draft, а не к props.room (чтобы isDirty работал). */
+const showColorPicker = ref(false)
+
+/** Категория, в которую попадает выбранный HEX (для подписи под кнопкой). */
+const draftCardFinish = computed<WallFinish | null>(() =>
+  draftCardColor.value ? wallFinishFromHex(draftCardColor.value) : null,
 )
 const WALL_FINISH_LABEL: Record<WallFinish, string> = {
   light: 'светлый тон',
@@ -113,20 +112,9 @@ const WALL_FINISH_LABEL: Record<WallFinish, string> = {
   dark: 'тёмный тон',
 }
 
-/** Вставка из буфера обмена (Pinterest, Figma). Срабатывает по пользовательскому
- *  жесту, поэтому Permissions API на iOS PWA обычно даёт доступ. */
-async function pasteWallColor() {
-  try {
-    if (!navigator.clipboard?.readText) return
-    const txt = await navigator.clipboard.readText()
-    if (txt) draftWallColor.value = txt.trim()
-  } catch {
-    /* пользователь отказал в доступе — молча игнорируем */
-  }
-}
-
-function clearWallColor() {
-  draftWallColor.value = ''
+function onPickColor(color: string | undefined) {
+  draftCardColor.value = color
+  showColorPicker.value = false
 }
 
 /* ──────────── Своя площадь: stepper / input ──────────── */
@@ -175,10 +163,9 @@ const isDirty = computed<boolean>(() => {
   }
   if (draftCeilingH.value !== props.room.ceilingH) return true
   if (draftWallFinish.value !== (props.room.wallFinish ?? 'medium')) return true
-  /* Свой HEX: dirty если поменялся (с учётом нормализации — '#abc' vs '#aabbcc'
-     равны, поэтому сравниваем нормализованную форму). */
-  const origColorNorm = normalizeHex(props.room.wallColor ?? '')
-  if ((draftWallColorNorm.value ?? '') !== (origColorNorm ?? '')) return true
+  /* Цвет комнаты: dirty если поменялся. Сравниваем как строки —
+     ColorPickerModal эмитит уже нормализованный HEX или undefined. */
+  if ((draftCardColor.value ?? '') !== (props.room.cardColor ?? '')) return true
   const origLimits = props.room.limits ?? props.rt.limits
   if (JSON.stringify(draftLimits.value) !== JSON.stringify(origLimits)) return true
   return false
@@ -219,8 +206,7 @@ function onSave() {
     customArea: draftSizeIdx.value === 3 ? draftCustomArea.value : props.room.customArea,
     ceilingH: draftCeilingH.value,
     wallFinish: draftWallFinish.value,
-    /* Сохраняем нормализованный HEX (`#RRGGBB`) или undefined если пусто/невалидно. */
-    wallColor: draftWallColorNorm.value ?? undefined,
+    cardColor: draftCardColor.value,
     limits: { ...draftLimits.value },
   }
 
@@ -582,85 +568,56 @@ function hexToRgba(hex: string, a: number): string {
           </div>
         </div>
 
-        <!-- Свой HEX. Под тремя пресетами — поле ввода + «Вставить».
-             Если задан валидный HEX, он перекрывает пресет в расчётах. -->
+        <!-- Свой цвет комнаты. Открывает ту же модалку, что и с главной
+             (ColorPickerModal — палитра, колесо, HEX-input). Если выбран
+             свой HEX, он перекрывает пресет в расчётах нормы. -->
         <div :style="{ marginTop: '14px' }">
           <div :style="{ fontSize: '11px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: '8px', textAlign: 'center' }">
             Или свой цвет
           </div>
-          <div :style="{ display: 'flex', gap: '8px', alignItems: 'center' }">
-            <!-- Квадратик-превью введённого цвета. Если ввод пустой/невалидный
-                 — фон прозрачный с пунктирной рамкой (как «не задан»). -->
-            <div
+          <button
+            type="button"
+            :style="{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 12px',
+              background: T.bg,
+              border: `1px solid ${T.border}`,
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              color: T.text,
+              textAlign: 'left',
+            }"
+            @click="showColorPicker = true"
+          >
+            <span
               :style="{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                flexShrink: 0,
-                background: draftWallColorValid ? draftWallColorNorm : 'transparent',
-                border: draftWallColorValid ? `1px solid ${T.border}` : `1px dashed ${T.border}`,
+                width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0,
+                background: draftCardColor || 'transparent',
+                border: draftCardColor ? `1px solid ${T.border}` : `1px dashed ${T.border}`,
               }"
-              :title="draftWallColorValid ? draftWallColorNorm! : 'Цвет не задан'"
+              aria-hidden="true"
             />
-            <input
-              v-model="draftWallColor"
-              type="text"
-              inputmode="text"
-              autocapitalize="characters"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="#E8E0D4 или E8E0D4"
-              :style="{
-                flex: 1, minWidth: 0,
-                background: T.bg,
-                border: draftWallColorBad ? `1px solid ${T.red}66` : `1px solid ${T.border}`,
-                borderRadius: '8px',
-                padding: '10px 12px',
-                color: T.text,
-                fontSize: '14px',
-                fontFamily: 'inherit',
-                outline: 'none',
-              }"
-            />
-            <!-- Вставить из буфера — основное удобство (HEX часто копируется
-                 из Pinterest/Figma). На iOS PWA срабатывает после жеста. -->
-            <button
-              type="button"
-              :style="{
-                background: T.bg,
-                border: `1px solid ${T.border}`,
-                borderRadius: '8px',
-                padding: '10px 12px',
-                color: T.text,
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                flexShrink: 0,
-              }"
-              @click="pasteWallColor"
-            >
-              Вставить
-            </button>
-          </div>
-
-          <!-- Подсказка под полем: либо ошибка, либо подобранная категория. -->
-          <div :style="{ marginTop: '8px', minHeight: '18px', fontSize: '12px', lineHeight: 1.4 }">
-            <span v-if="draftWallColorBad" :style="{ color: T.red }">
-              Не похоже на HEX. Пример: #E8E0D4
+            <span :style="{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }">
+              <span :style="{ fontSize: '14px', fontWeight: 600 }">
+                {{ draftCardColor ? draftCardColor.toUpperCase() : 'Выбрать свой цвет' }}
+              </span>
+              <span :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.3 }">
+                <template v-if="draftCardFinish">
+                  Распознан как <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftCardFinish] }}</span> — перекрывает пресет выше.
+                </template>
+                <template v-else>
+                  Палитра, колесо или HEX из референса — система определит категорию.
+                </template>
+              </span>
             </span>
-            <span v-else-if="draftWallColorValid" :style="{ color: T.textSec }">
-              Распознан как <span :style="{ color: T.text, fontWeight: 600 }">{{ WALL_FINISH_LABEL[draftWallColorFinish!] }}</span> — перекрывает пресет выше.
-              <button
-                type="button"
-                :style="{ marginLeft: '6px', background: 'none', border: 'none', color: T.neutral, fontSize: '12px', fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }"
-                @click="clearWallColor"
-              >Очистить</button>
-            </span>
-            <span v-else :style="{ color: T.textDim }">
-              Скопируйте HEX из референса — система сама определит категорию.
-            </span>
-          </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" :stroke="T.textSec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0 }">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -781,6 +738,17 @@ function hexToRgba(hex: string, a: number): string {
     <div :style="{ position: 'fixed', inset: 0, zIndex: 48, background: 'rgba(0,0,0,0.55)', pointerEvents: 'none', opacity: highlightSave ? 1 : 0, transition: 'opacity .45s ease' }" />
 
     <LeaveConfirmModal v-if="showLeaveConfirm" @save="onSave" @discard="confirmLeave" @cancel="showLeaveConfirm = false" />
+
+    <!-- Та же модалка, что и с главной (RoomCard «Цвет комнаты»).
+         Применяем выбор только к draftCardColor — реальный props.room не
+         трогаем, чтобы isDirty/Save работал через общий путь. -->
+    <ColorPickerModal
+      v-if="showColorPicker"
+      :current="draftCardColor"
+      :room-name="draftName || props.rt.name"
+      @pick="onPickColor"
+      @close="showColorPicker = false"
+    />
   </div>
 </template>
 

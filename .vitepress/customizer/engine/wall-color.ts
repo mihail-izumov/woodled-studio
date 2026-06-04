@@ -91,26 +91,36 @@ export const WALL_PRESET_HEX: Record<WallFinish, string> = {
 /* ──────────────── Эффективный финиш и цвет ──────────────── */
 
 /**
- * Эффективная категория отделки. Приоритет — у `wallColor` (свободный HEX
- * → автоклассификация). Если HEX не задан или невалиден — fallback на
- * `wallFinish` (один из пресетов), либо `medium` по умолчанию.
+ * Эффективная категория отделки. Источник истины — единый цвет комнаты
+ * `room.cardColor` (выбирается в `ColorPickerModal`). Если HEX задан и
+ * валиден — категория определяется автоклассификацией по relative
+ * luminance. Иначе fallback на пресет `wallFinish` (явный выбор в
+ * RoomSettings — Светлая / Средняя / Тёмная), либо `medium` по умолчанию.
+ *
+ * Раньше под «свой HEX стен» было отдельное поле `wallColor`, но
+ * пользователю это путало два разных пикера. Теперь один цвет
+ * комнаты — он же цвет стен.
  */
-export function wallFinishOf(room: Pick<Room, 'wallFinish' | 'wallColor'>): WallFinish {
-  if (room.wallColor) {
-    const norm = normalizeHex(room.wallColor)
+export function wallFinishOf(
+  room: Pick<Room, 'wallFinish' | 'cardColor'>,
+): WallFinish {
+  if (room.cardColor) {
+    const norm = normalizeHex(room.cardColor)
     if (norm) return wallFinishFromHex(norm)
   }
   return room.wallFinish ?? 'medium'
 }
 
 /**
- * Эффективный HEX для UI-превью (квадратик в карточке настроения,
- * сэмпл в RoomSettings). Если пользователь не ввёл свой — отдаём
- * репрезентативный цвет пресета.
+ * Эффективный HEX для UI-превью (квадратик в карточке настроения).
+ * Если пользователь выбрал цвет комнаты — отдаём его. Иначе
+ * репрезентативный HEX пресета.
  */
-export function wallColorOf(room: Pick<Room, 'wallFinish' | 'wallColor'>): string {
-  if (room.wallColor) {
-    const norm = normalizeHex(room.wallColor)
+export function wallColorOf(
+  room: Pick<Room, 'wallFinish' | 'cardColor'>,
+): string {
+  if (room.cardColor) {
+    const norm = normalizeHex(room.cardColor)
     if (norm) return norm
   }
   return WALL_PRESET_HEX[room.wallFinish ?? 'medium']

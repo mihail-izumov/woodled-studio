@@ -22,6 +22,7 @@ import Toast from './ui/Toast.vue'
 
 import OnboardingLink from './OnboardingLink.vue'
 import PromoBlock from './PromoBlock.vue'
+import PWAInstallBanner from './PWAInstallBanner.vue'
 import RoomCard from './RoomCard.vue'
 import SoundButton from './SoundButton.vue'
 import ReloadButton from './ReloadButton.vue'
@@ -265,6 +266,11 @@ function onGalleryGiftClick() {
   </template>
 
   <template v-else>
+    <!-- PWA-баннер «Откройте WOODLED как приложение». Sticky сверху,
+         поверх него остаётся видна SoundButton (z 90 > banner z 80).
+         Показывается только тут (главная с комнатами); внутрь самой
+         комнаты, светильника или поверх модалок — НЕ заходит. -->
+    <PWAInstallBanner />
     <div
       :style="{
         position: 'relative',

@@ -3,7 +3,6 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { PAGE } from './tokens'
 import Header from './Header.vue'
 import StickyHeader from './StickyHeader.vue'
-import PWAInstallBanner from './PWAInstallBanner.vue'
 import Hero from './Hero.vue'
 import Slider from './Slider.vue'
 import Descriptions from './Descriptions.vue'
@@ -139,7 +138,6 @@ onBeforeUnmount(() => {
       }"
     />
 
-    <PWAInstallBanner />
     <StickyHeader :show="showSticky" />
 
     <div :style="{ position: 'relative', zIndex: 1 }">

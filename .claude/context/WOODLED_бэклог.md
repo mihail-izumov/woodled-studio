@@ -22,6 +22,40 @@
 | 4 | Слайд про стены в Story-модалке | Story показывает «дом целиком», но про цвета стен молчит. Можно добавить слайд «По стенам у вас в основном …» с swatch-ами комнат. | `engine/story-engine.ts` — `buildStorySlides`; новый слайд с агрегацией `wallFinishOf` по комнатам. `components/StoryModal.vue` — рендер. |
 | 5 | Единая логика текстов про стены | Сейчас про стены пишут в трёх местах: дашборд (`copy.ts`), карточка настроения (`forest-cards.ts`), плашка RoomSettings (локальные строки в Vue). Чтобы не было «трёх разных формулировок про одно и то же», стоит вынести общие фразы в один банк. | Новый файл `engine/wall-copy.ts` или секция в `forest-cards.ts`. Перед рефактором — пройтись по всем трём местам, выписать формулировки. |
 
+### PWA — push-уведомления (нужен бэкенд)
+
+Состояние на момент записи: фронт-инфраструктура готова — `manifest.webmanifest`, `sw.js`, `lp/pwa-push.ts` с `getPushState`/`enablePush`/`disablePush`, кнопка на `/app`. Без следующих шагов кнопка показывает «Разработчику: не задан VAPID-ключ» и пуши не работают.
+
+**Что такое VAPID и как получить.** Voluntary Application Server Identification — пара ECDSA P-256 ключей. Public встраивается во фронт (не секрет, можно коммитить), private — только на сервере (в .gitignore / env). Push-сервис провайдера (Apple для Safari, Google FCM для Chrome, Mozilla autopush для Firefox) сверяет подпись каждого push-запроса с public-ключом, который пришёл при `pushManager.subscribe`. Так провайдер понимает, что пуш отправляете именно вы.
+
+Генерация: `npx web-push generate-vapid-keys`. Public-ключ — в `DEFAULT_VAPID_PUBLIC_KEY` в `.vitepress/lp/pwa-push.ts`. Private — в env переменную бэка (`VAPID_PRIVATE_KEY`). Один раз сгенерировал — навсегда; при ротации все существующие subscription'ы инвалидируются.
+
+**Нужен бэкенд.** Без него пуши отправлять нельзя — каждый push-запрос подписывается приватным ключом VAPID, который не должен попадать на фронт. Минимум — два эндпоинта:
+
+| # | Что | Зачем | Где |
+|---|---|---|---|
+| 1 | Сгенерировать VAPID-пару и вставить public в код | Без этого `pushManager.subscribe()` падает с TypeError; флоу обрывается на «no-vapid-key». | `npx web-push generate-vapid-keys` → копи в `.vitepress/lp/pwa-push.ts` `DEFAULT_VAPID_PUBLIC_KEY`. Private — в секреты бэка. |
+| 2 | Поднять бэкенд: Node + Express + `web-push` | Принимать subscription'ы (POST `/api/push/subscribe`), хранить (БД / Redis / JSON-файл), на событие — рассылать через `webpush.sendNotification(sub, payload)`. Подойдёт VPS, Vercel/Netlify functions, Railway, Render, Cloudflare Workers. | Новый репо или папка `/server`; единственный обязательный код — `webpush.setVapidDetails(...)`, два роута, простая БД. |
+| 3 | Подцепить `fetch('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) })` в `enablePush` | Сейчас subscription только в localStorage — бэк не знает кому слать. | `.vitepress/lp/pwa-push.ts` — после `pushManager.subscribe()` отправить sub на backend, при `disablePush` — DELETE с тем же endpoint. |
+| 4 | Админка/триггеры рассылки | Откуда начинается push: новый заказ, добавлена коллекция, статус сборки изменился. Решить — runtime-событие из самого WOODLED-бэка или ручная кнопка в админке. | Зависит от выбора бэка. На старте достаточно одной ручки `POST /api/push/broadcast` с пейлоадом. |
+
+**Альтернатива — готовый сервис (без своего сервера).**
+
+| Сервис | Плюсы | Минусы |
+|---|---|---|
+| **OneSignal** | Бесплатно до 10k подписчиков. Один SDK-скрипт, своя админка для рассылок. Кладёт свой SW (наш `sw.js` придётся подружить или удалить). | Subscription'ы хранятся у них — миграция к своему бэку = переподписка всех пользователей. |
+| **Firebase Cloud Messaging (FCM)** | Бесплатно. Интегрировано с остальной Firebase. | Сложнее настройка, нужен Google Cloud-проект и Service Account. |
+| **Pusher Beams** | Простой API, хорошая документация. | Платный (есть триал). |
+
+Рекомендация: для нашей сборки — собственный мини-бэк (`web-push` npm-пакет, Vercel Function на бесплатном тире). Это ~50 строк кода и полный контроль. OneSignal — если push не критичен и хочется минимально вмешиваться в стек.
+
+**Что должен помнить разработчик при работе с этой темой.**
+- Public VAPID-ключ — в коде / коммитах. Private — никогда, только env.
+- На iOS Web Push работает ТОЛЬКО в standalone-режиме (запуск с домашнего экрана) и только iOS 16.4+. В обычной вкладке Safari `Notification.requestPermission()` молча игнорируется. `pwa-push.ts/getPushState` это учитывает — возвращает `needs-install`.
+- При деплое не забыть проверить, что SW реально доступен по `/woodled-studio/sw.js` (а не редирект 404 от GitHub Pages). Если редирект — SW не зарегистрируется молча.
+- `pushManager.subscribe()` нужно вызывать с `userVisibleOnly: true` — silent push на вебе запрещён.
+- Subscription может протухать (пользователь почистил данные браузера). Бэк должен обрабатывать 410 Gone от push-сервиса и удалять такие subscription'ы из БД.
+
 ### Другие наблюдения (для памяти, без приоритета)
 
 | # | Что | Где |

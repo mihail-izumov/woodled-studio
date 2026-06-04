@@ -1,19 +1,26 @@
 <script setup lang="ts">
 /**
- * PWAInstallBanner — sticky-баннер для iOS Safari, по образцу avito.ru/apps.
+ * PWAInstallBanner — sticky-баннер «Откройте WOODLED как приложение»,
+ * по образцу avito.ru/apps.
  *
- * Показывается только когда:
- *   • устройство iOS (iPhone / iPad / iPod)
- *   • это Safari (не Chrome/Firefox iOS — у них свой UI, в них Add to Home недоступен)
- *   • НЕ запущено в standalone (т.е. уже не PWA на спрингборде)
- *   • пользователь его не закрывал (localStorage)
+ * Показывается ВСЕМ кроме:
+ *   • уже установленных PWA (standalone-режим)
+ *   • тех, кто закрывал баннер недавно (localStorage, 14 дней)
+ *   • когда пользователь уже на странице /app (некуда вести)
  *
- * Закрытие сохраняется на 14 дней — потом баннер появится снова. Тап по
- * «Подробнее» / по карточке — ведёт на /app со скрин-инструкцией.
+ * Положение — `position: fixed` сверху. Раньше было `sticky`, но `.lp-root`
+ * имеет `overflow: hidden` → sticky прилипает к нему, а не к viewport,
+ * и фактически не виден. Fixed работает независимо от родителей.
  *
- * Спецификация анимации: после mount ждём 300мс и плавно «приезжаем»
- * сверху (translateY от -100% к 0). Так избегаем «вспышки» баннера на
- * первой отрисовке и даём странице успеть отрисовать первый кадр.
+ * Анимация — slide-in сверху на ~300мс после mount.
+ *
+ * iOS-инструкции (Поделиться → На экран Домой) — у нас УНИВЕРСАЛЬНЫЙ
+ * текст «Откройте как приложение», потому что:
+ *   • на iOS Safari это PWA через Add to Home
+ *   • на Android Chrome — нативный prompt (мы его не перехватываем, но
+ *     пользователь может через меню браузера тоже добавить)
+ *   • на десктопе — Chrome/Edge показывает иконку Install в адресной строке
+ * Конкретные инструкции лежат на /app.
  */
 import { ref, onMounted } from 'vue'
 import { PAGE } from './tokens'
@@ -28,23 +35,15 @@ const mounted = ref(false)
 
 function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
-  // iOS Safari вешает navigator.standalone, modern PWA-движки — display-mode matchMedia
   const nav = window.navigator as Navigator & { standalone?: boolean }
   if (nav.standalone) return true
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true
   return false
 }
 
-function isIosSafari(): boolean {
+function isAppPage(): boolean {
   if (typeof window === 'undefined') return false
-  const ua = window.navigator.userAgent
-  // iPad на iPadOS 13+ маскируется под Mac → проверяем maxTouchPoints
-  const isIpadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
-  const isIos = /iPad|iPhone|iPod/.test(ua) || isIpadOS
-  if (!isIos) return false
-  // Safari: НЕ Chrome (CriOS), НЕ Firefox (FxiOS), НЕ Edge (EdgiOS), НЕ Opera (OPiOS), НЕ Yandex (YaBrowser)
-  const isOtherBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser|DuckDuckGo/.test(ua)
-  return !isOtherBrowser
+  return /\/app\/?$/.test(window.location.pathname)
 }
 
 function wasRecentlyDismissed(): boolean {
@@ -65,18 +64,16 @@ function dismiss(e: Event) {
   e.preventDefault()
   try { localStorage.setItem(STORAGE_KEY, String(Date.now())) } catch {}
   visible.value = false
-  // полностью удалить из DOM после анимации
   setTimeout(() => { mounted.value = false }, 320)
 }
 
 onMounted(() => {
   if (typeof window === 'undefined') return
-  if (isStandalone()) return
-  if (!isIosSafari()) return
+  if (isStandalone()) return     // PWA уже добавлено — не отвлекаем
+  if (isAppPage()) return        // мы и так на странице инструкции
   if (wasRecentlyDismissed()) return
 
   mounted.value = true
-  // следующий кадр — плавный slide-in
   requestAnimationFrame(() => {
     setTimeout(() => { visible.value = true }, 200)
   })
@@ -88,16 +85,20 @@ onMounted(() => {
     v-if="mounted"
     :href="APP_URL"
     :style="{
-      position: 'sticky',
+      // ВАЖНО: fixed, не sticky. Sticky внутри .lp-root (overflow:hidden)
+      // не работает корректно — прилипает к контейнеру, а не к viewport.
+      position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
-      zIndex: 200,
+      zIndex: 300,
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
-      padding: '10px 14px calc(10px + env(safe-area-inset-top, 0px))',
+      paddingLeft: '14px',
+      paddingRight: '14px',
       paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
+      paddingBottom: '10px',
       background: 'rgba(15, 13, 11, 0.96)',
       backdropFilter: 'blur(20px) saturate(180%)',
       WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -123,7 +124,7 @@ onMounted(() => {
       }"
     />
 
-    <!-- Текст: заголовок + ссылка-подсказка -->
+    <!-- Текст: заголовок + подсказка -->
     <div :style="{ flex: '1 1 auto', minWidth: 0, lineHeight: 1.25 }">
       <div
         :style="{
@@ -136,7 +137,7 @@ onMounted(() => {
           textOverflow: 'ellipsis',
         }"
       >
-        Добавьте WOODLED на айфон
+        Откройте WOODLED как приложение
       </div>
       <div
         :style="{

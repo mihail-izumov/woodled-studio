@@ -106,6 +106,27 @@ export default defineConfig({
           document.body.appendChild(rootEl);
         }
 
+        // Применить Stage 1 (классы .v / .in) — синхронно, без таймеров.
+        // Через rAF, чтобы CSS-transition (opacity, transform) увидел
+        // переход и анимировал плавно, а не мгновенно.
+        function applyStage1() {
+          var logo = document.getElementById('wl-pl-logo');
+          var rotor = document.getElementById('wl-pl-rotor');
+          var rss = rootEl ? rootEl.querySelectorAll('.wl-pl-rs') : [];
+          if (logo) logo.classList.add('v');
+          if (textEl) textEl.classList.add('v');
+          if (rotor) rotor.classList.add('v');
+          for (var i = 0; i < rss.length; i++) {
+            var deg = i / LAMEL_COUNT * 360;
+            rss[i].classList.add('in');
+            rss[i].style.transform = 'rotate(' + deg + 'deg) translateY(-' + R_NEAR + 'px)';
+          }
+        }
+        function applySpin() {
+          var asm = document.getElementById('wl-pl-asm');
+          if (asm && !asm.classList.contains('spin')) asm.classList.add('spin');
+        }
+
         function buildBranded(initialText) {
           rootEl = document.createElement('div');
           rootEl.id = 'wl-boot';
@@ -123,25 +144,19 @@ export default defineConfig({
           textEl = rootEl.querySelector('#wl-boot-text');
           document.body.appendChild(rootEl);
           startTime = Date.now();
-          // Stage 1 (+50мс): тексты проявляются, ламели влетают в круг.
-          timers.push(setTimeout(function () {
-            var logo = document.getElementById('wl-pl-logo');
-            var rotor = document.getElementById('wl-pl-rotor');
-            var rss = rootEl ? rootEl.querySelectorAll('.wl-pl-rs') : [];
-            if (logo) logo.classList.add('v');
-            if (textEl) textEl.classList.add('v');
-            if (rotor) rotor.classList.add('v');
-            for (var i = 0; i < rss.length; i++) {
-              var deg = i / LAMEL_COUNT * 360;
-              rss[i].classList.add('in');
-              rss[i].style.transform = 'rotate(' + deg + 'deg) translateY(-' + R_NEAR + 'px)';
-            }
-          }, 50));
-          // Stage 2 (+2500мс): start slow spin.
-          timers.push(setTimeout(function () {
-            var asm = document.getElementById('wl-pl-asm');
-            if (asm) asm.classList.add('spin');
-          }, 2500));
+          // Stage 1 — следующий кадр (rAF). Это критично: если Vue mount
+          // случится через 30мс (бандл из кэша), Stage 1 уже отработал.
+          // Раньше Stage 1 был через setTimeout(50), но его убивал
+          // clearTimers() при clear() — и пользователь видел только
+          // чёрный экран без логотипа и ламелей.
+          if (window.requestAnimationFrame) {
+            requestAnimationFrame(applyStage1);
+          } else {
+            setTimeout(applyStage1, 16);
+          }
+          // Stage 2 — spin через 2500мс. Если Vue mount раньше — в clear()
+          // мы форсируем applySpin синхронно.
+          timers.push(setTimeout(applySpin, 2500));
         }
 
         var Boot = {
@@ -192,6 +207,12 @@ export default defineConfig({
             clearTimers();
             if (!rootEl) return;
             if (mode === 'branded') {
+              // Если Vue mountится очень быстро (бандл в кэше Safari),
+              // Stage 1 через rAF и Stage 2 через setTimeout могут не
+              // успеть. Форсируем синхронно — иначе пользователь увидит
+              // чёрный экран без логотипа, ламелей и подзаголовка.
+              applyStage1();
+              applySpin();
               var elapsed = Date.now() - startTime;
               var waitMin = Math.max(0, 2000 - elapsed);
               timers.push(setTimeout(function () {

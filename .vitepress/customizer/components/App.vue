@@ -386,15 +386,15 @@ function onGalleryGiftClick() {
   </template>
 
   <!-- SoundButton:
-       • базовый top = 64px — кнопка опущена НИЖЕ бейджа «WOODLED Студия»,
-         чтобы не толпиться с ним на одной линии. Визуально лежит на
-         уровне имени дома («Живой Дом») — это естественный второй ярус.
-       • с PWA-банером сдвигается дополнительно на --wl-banner-h
-         (transition синхронно с slide-анимацией банера 360ms). -->
+       • базовый top = 16px — центр кнопки (~22px от верха) на одной
+         горизонтали с центром бейджа «WOODLED Студия» (home padding 16
+         + wrapper padTop 8 + полвысоты бейджа ~13 ≈ 37). 16 + 22 = 38.
+       • с PWA-банером сдвигается на --wl-banner-h (transition
+         синхронно с slide-анимацией банера 360ms). -->
   <div
     :style="{
       position: 'fixed',
-      top: 'calc(64px + var(--wl-banner-h, 0px))',
+      top: 'calc(16px + var(--wl-banner-h, 0px))',
       right: '16px',
       zIndex: 90,
       transition: 'top 360ms cubic-bezier(0.4, 0, 0.2, 1)',

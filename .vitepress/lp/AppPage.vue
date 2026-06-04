@@ -127,7 +127,11 @@ const notifySteps = [
       overflow: 'hidden',
     }"
   >
-    <!-- Фирменный точечный фон, один в один как на лендинге (lp/App.vue) -->
+    <!-- Фирменный точечный фон, один в один как на лендинге (lp/App.vue).
+         z-index 0 для positioned-fixed элемента ПО CSS-stacking лежит
+         ВЫШЕ обычных блоков normal flow → перекрывает всё. Чтобы фон
+         оставался фоном, оборачиваем основной контент ниже в layer
+         z-index 1. -->
     <div
       :style="{
         position: 'fixed',
@@ -140,6 +144,9 @@ const notifySteps = [
         zIndex: 0,
       }"
     />
+    <!-- Контентный слой ВЫШЕ dot grid'a (z 1 > z 0). Без этого точки
+         рисуются поверх плашек и текстов. -->
+    <div :style="{ position: 'relative', zIndex: 1 }">
     <!-- Хедер: лого + ссылка на главную -->
     <header
       :style="{
@@ -674,6 +681,7 @@ const notifySteps = [
         экрана и войдите в профиль.
       </div>
     </section>
+    </div><!-- /контентный слой z-index 1 -->
   </div>
 </template>
 

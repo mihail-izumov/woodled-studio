@@ -28,6 +28,7 @@
 - `WOODLED_все_тексты.md` — банки текстов дашборда (`copy.ts`) и мебели.
 - `NAMING_SPEC.md` — как формируется подпись светильника (тип + чип, без `collection`/`name`).
 - `WOODLED_цвет_стен.md` — отделка стен: пресеты + свой HEX, автоклассификация по relative luminance (BT.709), пороги, влияние на UF, UI в `RoomSettings`, swatch в карточке настроения, share/persist.
+- `WOODLED_шаринг.md` — сериализация состояния в URL-хеш: карта полей `Room`/`Fixture` ↔ `PackedRoom`/`PackedFixture`, дефолты, правило «новое поле в модели → ключ в share.ts», roundtrip-проверка.
 
 **Рационал и голос:**
 - `WOODLED_рационал_и_архитектура.md` — почему норма «честная» (UF×MF), архитектура `ratio`.
@@ -51,6 +52,7 @@
   - `copy.ts` — детерминированный сборщик подсказок дашборда: `lightState`, `lightHint`, `actionReaction`. Пороги синхронны с BRIGHT (`0.5/0.8/1.2/1.5`).
   - `i18n.ts` — склонения: `pw`/`lw`/`rw`/`tw` (точка/лампа/комната/дерево), **`kindWord(type, n)`** (люстра/торшер/настольная/спот/бра), **`woodWord(wood, n)`** (дуб/орех/чёрный дуб), **`joinList(arr)`** (через «и»), `woodNames` (агрегат «6 орехов и 3 дуба»).
   - `autosize.ts`, `gallery-engine.ts`, `story-engine.ts` (см. ниже).
+  - **`share.ts`** — сериализация в URL-хеш (#s=/#fx=). Формат v2 (lz-string). `packRoom`/`unpackRoom` + `packFixture`/`unpackFixture`. **Любое новое поле в `Room`/`Fixture`/`FxOpts` обязано появиться здесь** — иначе шаринг сломается беззвучно (получатель увидит дефолт). Спека и чек-лист — `WOODLED_шаринг.md`.
 - `store/configurator.ts` — глобальное состояние (Vue refs): комнаты, активная комната/светильник,
   и **флаги модалок** (`showBuy`, `showStory`, `showShare`, `showRoomSettings`, `showZoneModal`, …).
   • Тосты: `showFB(msg, icon?)` + `fb`/`fbIcon` (`'check'` → чёрный чекмарк «сделано»).
@@ -177,6 +179,17 @@
 - **Спотлайт-подсветка кнопки:** оверлей затемнения `z-index:48` + кнопка `position:relative; z-index:49`
   (всплывает выше). Работает, т.к. корни экранов — `position:fixed` (свой стекинг-контекст). Затемнение
   гасить только через `opacity`-переход (без `visibility`, иначе обрывается фейд).
+- **Шаринг и поля моделей.** `engine/share.ts` ведёт собственный список полей
+  (`packRoom`/`unpackRoom`, `packFixture`/`unpackFixture`). При добавлении/
+  переименовании поля в `Room` (`data/rooms.ts`), `Fixture` (`data/catalog.ts`)
+  или `FxOpts` (`data/materials.ts`) — обязательно протянуть его в pack/unpack
+  с тем же дефолтом, что используется при создании. Иначе у получателя ссылки
+  поле молча подменится на дефолт: меняется тинт UI, плывут проценты яркости
+  (через `wallFinishOf`→UF→`baseLm`), может уехать сцена/совет. Чек-лист и
+  roundtrip-проверка — `WOODLED_шаринг.md`. Прецедент: `cardColor` забыли в
+  pack после унификации физики стен — у получателя пропадал цвет и
+  расходились %. Тип `PackedFixture.o` теперь `Partial<FxOpts>` —
+  опции `materials.ts` поедут в ссылку без правок share.ts.
 - **Sticky-плашки:** `NavHeader` 44px (z 10), плашка «несохранённые изменения» — `sticky top:44` (z 9).
   Клик «сохранить» вешать на саму кнопку-пилюлю, а не на всю плашку (иначе промах при тапе по «назад»).
 

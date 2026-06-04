@@ -73,6 +73,7 @@
 
 ### 2026-06
 
+- **2026-06-04** · `fix(share): сериализовать cardColor + Partial<FxOpts>` — `packRoom`/`unpackRoom` упускали `cardColor` после унификации физики стен: у получателя пропадал цвет комнаты и расходились проценты яркости (через `wallFinishOf`→UF→`baseLm`). Добавлен ключ `cc`. Тип `PackedFixture.o` приведён к `Partial<FxOpts>` — захватывает `bulbOpt`/`baseColor` без правок типа. Полная карта полей + чек-лист «новое поле → share.ts» — `WOODLED_шаринг.md`, упоминание в `CLAUDE.md` («Подводные камни»).
 - **2026-06-04** · `feat(walls): свой HEX цвета стен + автоклассификация` — добавлена подсистема цвета стен с автоклассификацией HEX в light/medium/dark по relative luminance BT.709. Полная спека — `WOODLED_цвет_стен.md`.
 - **2026-06-04** · `refactor(walls,picker): один цвет комнаты, HEX-input в ColorPickerModal, fix puck` — унификация `cardColor` и физики стен. Два входа в одну модалку (главная + параметры комнаты). HEX-input + paste. Починен баг с позицией puck.
 - **2026-06-04** · `refactor(walls): убрать три пресета wallFinish из RoomSettings` — три кнопки Светлая/Средняя/Тёмная удалены. Цвет задаётся одним способом — через пикер.

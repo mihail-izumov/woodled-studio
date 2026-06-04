@@ -35,49 +35,82 @@ export default defineConfig({
       .VPContent { padding: 0 !important; }
       @keyframes wlBootSpin { to { transform: rotate(360deg); } }
     `],
-    // Boot-loader: показывает спиннер и текст до загрузки JS-бандла.
-    // Сценарий: пользователь в PWA с VPN — JS может тянуться 10–30 сек,
-    // экран остаётся пустым. Этот inline-скрипт работает на чистом DOM,
-    // через 0.5с показывает «Загружаем…», на 8с подсказывает про VPN,
-    // на 20с — переключается на «не загружается? обновите».
-    // Vue после mount вызывает window.__woodledBootClear() — слой исчезает.
+    // Boot-loader: универсальный полноэкранный спиннер с текстом, который
+    // работает БЕЗ Vue. Используется в двух сценариях:
+    //   1) Первый старт PWA — Vue ещё не подгрузился, нужно показать что
+    //      приложение запускается. На 8с — подсказка про VPN, на 20с —
+    //      «не загружается? обновите».
+    //   2) Reload-кнопка из ReloadButton.vue. Вызывает __wlBoot.show()
+    //      и сразу запускает location.reload(), чтобы пользователь видел
+    //      обратную связь СРАЗУ, а не пытался тыкать кнопку второй раз.
+    //
+    // Публичное API на window.__wlBoot:
+    //   show(text, hints?) — показать оверлей с initial-текстом и опц.
+    //     массивом [{at: ms, text: '...'}] — отложенными подсказками
+    //   setText(text)     — перебить текущий текст (например с App.vue)
+    //   clear()           — плавно убрать оверлей (Vue зовёт после mount)
     ['script', {}, `
       (function () {
-        var SHOW_AFTER = 500, HINT_AT = 8000, WARN_AT = 20000;
-        var rootEl = null, textEl = null, t1 = null, t2 = null, t3 = null;
-        function build() {
+        var rootEl = null, textEl = null, timers = [];
+        function build(initialText) {
           if (document.getElementById('wl-boot')) return;
           rootEl = document.createElement('div');
           rootEl.id = 'wl-boot';
-          rootEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;color:#8B8075;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;z-index:9999;text-align:center;background:#13110E;opacity:0;transition:opacity .4s ease';
-          rootEl.innerHTML = '<div style="width:28px;height:28px;border:2px solid #2E2921;border-top-color:#A89878;border-radius:50%;animation:wlBootSpin 1s linear infinite"></div><div id="wl-boot-text" style="font-size:14px;line-height:1.5;max-width:280px;font-weight:500">Загружаем лес WOODLED…</div>';
+          rootEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;color:#8B8075;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;z-index:99998;text-align:center;background:#13110E;opacity:0;transition:opacity .25s ease';
+          rootEl.innerHTML = '<div style="width:28px;height:28px;border:2px solid #2E2921;border-top-color:#A89878;border-radius:50%;animation:wlBootSpin 1s linear infinite"></div><div id="wl-boot-text" style="font-size:14px;line-height:1.5;max-width:280px;font-weight:500"></div>';
           textEl = rootEl.querySelector('#wl-boot-text');
+          if (initialText) textEl.textContent = initialText;
           document.body.appendChild(rootEl);
           requestAnimationFrame(function () { rootEl.style.opacity = '1'; });
         }
-        function start() {
-          if (window.__woodledBootCleared) return;
-          t1 = setTimeout(build, SHOW_AFTER);
-          t2 = setTimeout(function () {
-            if (textEl) textEl.textContent = 'Чуть дольше обычного. С VPN такое бывает — подождите минуту.';
-          }, HINT_AT);
-          t3 = setTimeout(function () {
-            if (textEl) textEl.textContent = 'Не загружается? Проверьте интернет и обновите страницу.';
-          }, WARN_AT);
+        function clearTimers() {
+          for (var i = 0; i < timers.length; i++) clearTimeout(timers[i]);
+          timers = [];
         }
-        window.__woodledBootClear = function () {
-          window.__woodledBootCleared = true;
-          if (t1) clearTimeout(t1); if (t2) clearTimeout(t2); if (t3) clearTimeout(t3);
-          if (rootEl && rootEl.parentNode) {
-            rootEl.style.opacity = '0';
-            setTimeout(function () {
-              if (rootEl && rootEl.parentNode) rootEl.parentNode.removeChild(rootEl);
-            }, 400);
-          }
+        var Boot = {
+          show: function (text, hints) {
+            // Если уже визуально активен — просто перебиваем текст и
+            // обновляем таймеры подсказок.
+            clearTimers();
+            if (!rootEl) build(text || '');
+            else if (textEl && text) textEl.textContent = text;
+            if (hints && hints.length) {
+              for (var i = 0; i < hints.length; i++) (function (h) {
+                timers.push(setTimeout(function () {
+                  if (textEl) textEl.textContent = h.text;
+                }, h.at));
+              })(hints[i]);
+            }
+          },
+          setText: function (text) {
+            if (textEl) textEl.textContent = text;
+          },
+          clear: function () {
+            clearTimers();
+            if (rootEl && rootEl.parentNode) {
+              var el = rootEl;
+              el.style.opacity = '0';
+              setTimeout(function () {
+                if (el && el.parentNode) el.parentNode.removeChild(el);
+              }, 300);
+              rootEl = null; textEl = null;
+            }
+          },
         };
+        window.__wlBoot = Boot;
+        // Сценарий первого старта — стартует через 0.5с, чтобы быстрая
+        // загрузка не мигала.
+        function startInitial() {
+          timers.push(setTimeout(function () {
+            Boot.show('Загружаем лес WOODLED…', [
+              { at: 8000,  text: 'Чуть дольше обычного. С VPN такое бывает — подождите минуту.' },
+              { at: 20000, text: 'Не загружается? Проверьте интернет и обновите страницу.' },
+            ]);
+          }, 500));
+        }
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', start);
-        } else { start(); }
+          document.addEventListener('DOMContentLoaded', startInitial);
+        } else { startInitial(); }
       })();
     `],
   ],

@@ -64,7 +64,7 @@ function lockViewport() {
 onMounted(() => {
   // Убираем boot-loader (inline-скрипт из config.mts) — Vue смонтирован,
   // дальше показывает Preloader/WelcomeScreen/главную.
-  ;(window as unknown as { __woodledBootClear?: () => void }).__woodledBootClear?.()
+  ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
   warmupShortener()
   lockViewport()
   window.addEventListener('beforeunload', cfg.persistState)

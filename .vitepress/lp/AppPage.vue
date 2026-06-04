@@ -89,8 +89,8 @@ const installSteps = [
 
 const notifySteps = [
   'Запустите WOODLED Студию с домашнего экрана — иконкой, не из Safari.',
-  'Войдите в профиль и откройте раздел уведомлений.',
-  'Нажмите <strong>«Разрешить»</strong> во всплывающем окне. Если оно не появилось — обновите iOS до 16.4 или новее.',
+  'Нажмите кнопку <strong>«Разрешить уведомления»</strong> ниже.',
+  'В системном окне нажмите <strong>«Разрешить»</strong>. Если оно не появилось — обновите iOS до 16.4 или новее.',
 ]
 </script>
 
@@ -104,8 +104,23 @@ const notifySteps = [
       fontFamily: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif`,
       fontWeight: 500,
       paddingBottom: '64px',
+      position: 'relative',
+      overflow: 'hidden',
     }"
   >
+    <!-- Фирменный точечный фон, один в один как на лендинге (lp/App.vue) -->
+    <div
+      :style="{
+        position: 'fixed',
+        inset: 0,
+        backgroundImage:
+          'radial-gradient(circle at center, rgba(122, 88, 60, 0.12) 1.0px, transparent 1.5px)',
+        backgroundSize: '16px 16px',
+        opacity: 1,
+        pointerEvents: 'none',
+        zIndex: 0,
+      }"
+    />
     <!-- Хедер: лого + ссылка на главную -->
     <header
       :style="{
@@ -175,11 +190,13 @@ const notifySteps = [
               fontWeight: 700,
               lineHeight: 1.1,
               letterSpacing: '-0.025em',
-              margin: '0 0 16px',
+              margin: '0 0 24px',
               color: '#F5EBE0',
             }"
           >
-            Как пользоваться WOODLED&nbsp;Студией на айфоне
+            <span :style="{ display: 'block' }">Как пользоваться</span>
+            <span :style="{ display: 'block' }">WOODLED&nbsp;Студия</span>
+            <span :style="{ display: 'block' }">на iPhone</span>
           </h1>
           <p
             :style="{
@@ -191,8 +208,7 @@ const notifySteps = [
             }"
           >
             Это веб-приложение — устанавливать из App&nbsp;Store ничего не нужно.
-            Добавьте ярлык на домашний экран и пользуйтесь как обычным приложением:
-            офлайн-кэш, полноэкранный режим, иконка на спрингборде.
+            Добавьте ярлык на домашний экран и пользуйтесь как обычным приложением.
           </p>
 
           <div
@@ -202,6 +218,9 @@ const notifySteps = [
               gap: '12px',
             }"
           >
+            <!-- Кнопка «Добавить на iPhone» — стиль primary CTA лендинга:
+                 медный градиент, белый текст, без border. Иконка
+                 layout-grid (домашний экран). -->
             <a
               href="#install"
               :style="{
@@ -209,18 +228,26 @@ const notifySteps = [
                 alignItems: 'center',
                 gap: '10px',
                 padding: '14px 22px',
-                background: 'rgba(245, 235, 224, 0.12)',
-                color: '#F5EBE0',
-                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${PAGE.rose} 0%, ${PAGE.roseLight} 50%, ${PAGE.rose} 100%)`,
+                color: '#FFFFFF',
+                borderRadius: '14px',
                 textDecoration: 'none',
                 fontSize: '15px',
-                fontWeight: 600,
-                border: '1px solid rgba(245, 235, 224, 0.18)',
+                fontWeight: 700,
+                border: 'none',
+                boxShadow: '0 10px 24px rgba(154, 100, 64, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
               }"
             >
-              <span :style="{ fontSize: '18px' }"></span>
-              Добавить на айфон
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="7" height="7" x="3" y="3" rx="1"/>
+                <rect width="7" height="7" x="14" y="3" rx="1"/>
+                <rect width="7" height="7" x="14" y="14" rx="1"/>
+                <rect width="7" height="7" x="3" y="14" rx="1"/>
+              </svg>
+              Добавить на iPhone
             </a>
+            <!-- Кнопка «Уведомления» — тот же стиль, иконка bell-plus -->
             <a
               href="#notify"
               :style="{
@@ -228,16 +255,23 @@ const notifySteps = [
                 alignItems: 'center',
                 gap: '10px',
                 padding: '14px 22px',
-                background: 'rgba(245, 235, 224, 0.06)',
-                color: '#F5EBE0',
-                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${PAGE.rose} 0%, ${PAGE.roseLight} 50%, ${PAGE.rose} 100%)`,
+                color: '#FFFFFF',
+                borderRadius: '14px',
                 textDecoration: 'none',
                 fontSize: '15px',
-                fontWeight: 600,
-                border: '1px solid rgba(245, 235, 224, 0.12)',
+                fontWeight: 700,
+                border: 'none',
+                boxShadow: '0 10px 24px rgba(154, 100, 64, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
               }"
             >
-              <span :style="{ fontSize: '18px' }">🔔</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                <path d="M15 8h6"/>
+                <path d="M18 5v6"/>
+                <path d="M20.002 14.464a9 9 0 0 0 .738.863A1 1 0 0 1 20 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 8.75-5.332"/>
+              </svg>
               Уведомления
             </a>
           </div>
@@ -527,7 +561,7 @@ const notifySteps = [
               • unsupported / null      — кнопка скрыта, ничего не пугаем
           -->
           <li
-            v-if="pushState && pushState.kind !== 'unsupported'"
+            v-if="pushState && pushState.kind !== 'unsupported' && pushState.kind !== 'no-vapid-key'"
             :style="{
               marginTop: '4px',
               paddingLeft: '52px',
@@ -618,22 +652,6 @@ const notifySteps = [
               запрос разрешения.
             </div>
 
-            <div
-              v-else-if="pushState.kind === 'no-vapid-key'"
-              :style="{
-                fontSize: '13px',
-                lineHeight: 1.5,
-                color: PAGE.textDim,
-                maxWidth: '440px',
-                background: 'rgba(0, 0, 0, 0.04)',
-                padding: '10px 14px',
-                borderRadius: '10px',
-              }"
-            >
-              <strong>Разработчику.</strong> Не задан VAPID-ключ —
-              отредактируйте <code>DEFAULT_VAPID_PUBLIC_KEY</code>
-              в <code>.vitepress/lp/pwa-push.ts</code>.
-            </div>
           </li>
         </ol>
       </div>

@@ -385,7 +385,19 @@ function onGalleryGiftClick() {
     <StickyBar v-if="stickyVisible" @share="cfg.showShare.value = true" @buy="cfg.showBuy.value = true" />
   </template>
 
-  <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'block' }">
+  <!-- SoundButton сдвигается вниз на высоту PWA-баннера. Когда банера нет
+       (стандарт) — --wl-banner-h = 0px, кнопка в обычной позиции top:6.
+       Transition top — синхронно с slide-анимацией банера 360ms. -->
+  <div
+    :style="{
+      position: 'fixed',
+      top: 'calc(6px + var(--wl-banner-h, 0px))',
+      right: '16px',
+      zIndex: 90,
+      transition: 'top 360ms cubic-bezier(0.4, 0, 0.2, 1)',
+      display: anyModalOpen ? 'none' : 'block',
+    }"
+  >
     <SoundButton />
   </div>
   <Toast :msg="cfg.fb.value" :icon="cfg.fbIcon.value" @done="cfg.clearFB" />

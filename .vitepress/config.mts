@@ -25,12 +25,14 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#13110E' }],
     // Full-screen app pages: dark base + hide default chrome from the first paint
     // (kills the white flash and the "WOODLED" nav bar blink between routes).
-    // Цвет — T.bg (#13110E), чтобы первый paint совпадал с темой кастомайзера.
+    // Цвет — T.bg (#13110E). ВАЖНО: !important всем контейнерам, иначе
+    // на медленной загрузке встроенный VitePress CSS вкатывает белый фон
+    // до того как наша тема приедет — пользователь видит white flash.
     // Здесь же — keyframes для boot-loader, чтобы он начинал крутиться до
     // загрузки Vue-бандла.
     ['style', {}, `
-      html, body { background: #13110E; }
-      #app, .Layout, .VPContent { background: #13110E; }
+      html, body { background: #13110E !important; margin: 0; }
+      #app, .Layout, .VPContent, .VPPage, .vp-doc { background: #13110E !important; }
       .VPNav, .VPLocalNav, .VPBackToTop, .VPFooter, .VPSidebar { display: none !important; }
       .VPContent { padding: 0 !important; }
       @keyframes wlBootSpin { to { transform: rotate(360deg); } }
@@ -51,17 +53,26 @@ export default defineConfig({
     //   clear()           — плавно убрать оверлей (Vue зовёт после mount)
     ['script', {}, `
       (function () {
-        var rootEl = null, textEl = null, timers = [];
+        var rootEl = null, textEl = null, timers = [], pendingShow = null;
         function build(initialText) {
           if (document.getElementById('wl-boot')) return;
           rootEl = document.createElement('div');
           rootEl.id = 'wl-boot';
-          rootEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;color:#8B8075;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;z-index:99998;text-align:center;background:#13110E;opacity:0;transition:opacity .25s ease';
+          // z-index максимум, opacity сразу 1, фон жёстко #13110E — чтобы
+          // не было борьбы с VitePress slot-ами и белого мига.
+          rootEl.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:24px;color:#8B8075;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;z-index:2147483647;text-align:center;background:#13110E;opacity:1';
           rootEl.innerHTML = '<div style="width:28px;height:28px;border:2px solid #2E2921;border-top-color:#A89878;border-radius:50%;animation:wlBootSpin 1s linear infinite"></div><div id="wl-boot-text" style="font-size:14px;line-height:1.5;max-width:280px;font-weight:500"></div>';
           textEl = rootEl.querySelector('#wl-boot-text');
           if (initialText) textEl.textContent = initialText;
           document.body.appendChild(rootEl);
-          requestAnimationFrame(function () { rootEl.style.opacity = '1'; });
+        }
+        // Поллим body. На медленных каналах DOMContentLoaded приходит
+        // позже, чем нам хотелось бы; пока body нет — просто ждём по 16мс.
+        function whenBody(cb) {
+          if (document.body) { cb(); return; }
+          var iv = setInterval(function () {
+            if (document.body) { clearInterval(iv); cb(); }
+          }, 16);
         }
         function clearTimers() {
           for (var i = 0; i < timers.length; i++) clearTimeout(timers[i]);
@@ -69,18 +80,21 @@ export default defineConfig({
         }
         var Boot = {
           show: function (text, hints) {
-            // Если уже визуально активен — просто перебиваем текст и
-            // обновляем таймеры подсказок.
+            // Если уже визуально активен — перебиваем текст и таймеры.
             clearTimers();
-            if (!rootEl) build(text || '');
-            else if (textEl && text) textEl.textContent = text;
-            if (hints && hints.length) {
-              for (var i = 0; i < hints.length; i++) (function (h) {
-                timers.push(setTimeout(function () {
-                  if (textEl) textEl.textContent = h.text;
-                }, h.at));
-              })(hints[i]);
-            }
+            var doShow = function () {
+              if (!rootEl) build(text || '');
+              else if (textEl && text) textEl.textContent = text;
+              if (hints && hints.length) {
+                for (var i = 0; i < hints.length; i++) (function (h) {
+                  timers.push(setTimeout(function () {
+                    if (textEl) textEl.textContent = h.text;
+                  }, h.at));
+                })(hints[i]);
+              }
+            };
+            if (document.body) doShow();
+            else whenBody(doShow);
           },
           setText: function (text) {
             if (textEl) textEl.textContent = text;
@@ -89,28 +103,25 @@ export default defineConfig({
             clearTimers();
             if (rootEl && rootEl.parentNode) {
               var el = rootEl;
+              el.style.transition = 'opacity .3s ease';
               el.style.opacity = '0';
               setTimeout(function () {
                 if (el && el.parentNode) el.parentNode.removeChild(el);
-              }, 300);
+              }, 320);
               rootEl = null; textEl = null;
             }
           },
         };
         window.__wlBoot = Boot;
-        // Сценарий первого старта — стартует через 0.5с, чтобы быстрая
-        // загрузка не мигала.
-        function startInitial() {
-          timers.push(setTimeout(function () {
-            Boot.show('Загружаем лес WOODLED…', [
-              { at: 8000,  text: 'Чуть дольше обычного. С VPN такое бывает — подождите минуту.' },
-              { at: 20000, text: 'Не загружается? Проверьте интернет и обновите страницу.' },
-            ]);
-          }, 500));
-        }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', startInitial);
-        } else { startInitial(); }
+        // Сценарий первого старта — показываем СРАЗУ, без 500мс delay.
+        // Иначе на медленной загрузке (VPN) пользователь успевает увидеть
+        // 0.5с белого/чёрного экрана прежде чем появится спиннер.
+        // Подсказки про VPN — на 6с и 18с (раньше, чем при reload, потому
+        // что первая загрузка PWA реально может занять и 30с).
+        Boot.show('Загружаем лес WOODLED…', [
+          { at: 6000,  text: 'Чуть дольше обычного. С VPN такое бывает — подождите.' },
+          { at: 18000, text: 'Не загружается? Проверьте интернет и обновите страницу.' },
+        ]);
       })();
     `],
   ],

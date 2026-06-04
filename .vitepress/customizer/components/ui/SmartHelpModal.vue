@@ -165,7 +165,7 @@ const helpStatuses = [
             }"
             @click="$emit('close')"
           >
-            Понятно
+            Супер!
           </button>
         </div>
       </div>

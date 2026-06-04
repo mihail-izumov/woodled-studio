@@ -16,6 +16,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { T, WCOL } from '../theme/tokens'
 import { MD, FAMILIES, fxNav, fxTitle, fxLine, fxSizeChip, SIZE_WORD, type Fixture, type ModelId } from '../data/catalog'
+import { pastEnding } from '../engine/i18n'
 import { MATS, BOWLS as ALL_BOWLS, BTEMPS, DEF_OPT, OPT_PRICE, WOOD_TIPS, OPT_TIPS, type Wood, type Bowl } from '../data/materials'
 import { getBright } from '../data/moods'
 import { buildSizeRecommendation, type AreaFit, type SizeCandidate } from '../engine/autosize'
@@ -365,7 +366,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         </div>
 
         <div :style="{background:T.red+'14',border:`1px solid ${T.red}33`,borderRadius:'10px',padding:'14px',marginTop:'12px'}">
-          <div :style="{fontSize:'12px',color:T.textSec,marginBottom:'10px',lineHeight:1.5}">Светильник будет удалён из комнаты. Настройки не сохранятся — при повторном добавлении нужно будет собрать заново.</div>
+          <div :style="{fontSize:'12px',color:T.textSec,marginBottom:'10px',lineHeight:1.5}">{{ fxTitle(build.m) }} будет удалён{{ pastEnding(MD[build.m].type) }} из комнаты. Настройки не сохранятся — при повторном добавлении нужно будет собрать заново.</div>
           <button :style="{width:'100%',padding:'10px',background:'none',border:`1px solid ${T.red}44`,borderRadius:'8px',color:T.red,cursor:'pointer',fontSize:'17px',fontWeight:600}" @click="showDeleteConfirm=true">Удалить светильник</button>
         </div>
       </template>
@@ -427,7 +428,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <div v-if="showDeleteConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}" @click.self="showDeleteConfirm=false">
       <div :style="{width:'100%',maxWidth:'340px',background:T.bg,borderRadius:'16px',border:`1px solid ${T.border}`,padding:'24px 20px',textAlign:'center'}">
         <div :style="{fontSize:'16px',fontWeight:700,color:T.text,marginBottom:'8px'}">Удалить светильник?</div>
-        <div :style="{fontSize:'13px',color:T.textSec,lineHeight:1.5,marginBottom:'20px'}">{{ fxTitle(build.m) }} будет удалён из комнаты. Все настройки потеряются.</div>
+        <div :style="{fontSize:'13px',color:T.textSec,lineHeight:1.5,marginBottom:'20px'}">{{ fxTitle(build.m) }} будет удалён{{ pastEnding(MD[build.m].type) }} из комнаты. Все настройки потеряются.</div>
         <div :style="{display:'flex',gap:'8px'}">
           <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:`1px solid ${T.border}`,background:T.card,color:T.textSec,cursor:'pointer',fontSize:'13px',fontWeight:600}" @click="showDeleteConfirm=false">Отмена</button>
           <button :style="{flex:1,padding:'12px',borderRadius:'10px',border:'none',background:T.red,color:'#fff',cursor:'pointer',fontSize:'13px',fontWeight:700}" @click="showDeleteConfirm=false;emit('delete')">Удалить</button>

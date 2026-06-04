@@ -18,7 +18,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { T, Z } from '../theme/tokens'
 import { ALL_ZONES, type Fixture, type ZoneId } from '../data/catalog'
 import { autoMood, type Mood } from '../data/moods'
-import { getRT, ROOM_PREP, type Room, type ZoneLimits } from '../data/rooms'
+import { getRT, ROOM_PREP, ROOM_ACC, type Room, type ZoneLimits } from '../data/rooms'
 import {
   baseLm, fxLm, fxLamps, getArea, furnPct as furnPctFn,
 } from '../engine/brightness'
@@ -548,7 +548,7 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
     <Modal v-if="confirmDel" @close="confirmDel = false">
       <div :style="{ padding: '20px', textAlign: 'center' }">
         <div :style="{ color: T.text, fontSize: '14px', marginBottom: '16px' }">
-          Удалить {{ props.room.customName || rt.name }}?
+          Удалить {{ props.room.customName || ROOM_ACC[rt.id] }}?
         </div>
         <div :style="{ display: 'flex', gap: '8px' }">
           <button

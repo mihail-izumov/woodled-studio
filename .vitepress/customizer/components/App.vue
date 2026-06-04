@@ -24,6 +24,7 @@ import OnboardingLink from './OnboardingLink.vue'
 import PromoBlock from './PromoBlock.vue'
 import RoomCard from './RoomCard.vue'
 import SoundButton from './SoundButton.vue'
+import ReloadButton from './ReloadButton.vue'
 import StickyBar from './StickyBar.vue'
 import Footer from './Footer.vue'
 import TypePicker from './TypePicker.vue'
@@ -186,6 +187,10 @@ function onSaveShareLink() { cfg.showShare.value = true }
 
 const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value)
 
+/* Главный экран (список комнат): нет открытого светильника, нет активной комнаты,
+   приветствие уже показано. На вложенных экранах reload-кнопку не показываем. */
+const isHome = computed<boolean>(() => !activeFxData.value && !activeRoom.value && cfg.welcomeSeen.value)
+
 watch(() => [cfg.active.value, cfg.activeFx.value, cfg.welcomeSeen.value, cfg.showBuy.value], () => { nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' })) })
 
 const preloaderDone = ref(false)
@@ -342,18 +347,31 @@ function onGalleryGiftClick() {
     <StickyBar v-if="stickyVisible" @share="cfg.showShare.value = true" @buy="cfg.showBuy.value = true" />
   </template>
 
-  <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'block' }">
+  <div :style="{ position: 'fixed', top: '6px', right: '16px', zIndex: 90, display: anyModalOpen ? 'none' : 'flex', gap: '8px', alignItems: 'center' }">
+    <ReloadButton v-if="isHome" />
     <SoundButton />
   </div>
   <Toast :msg="cfg.fb.value" :icon="cfg.fbIcon.value" @done="cfg.clearFB" />
 </template>
 
 <style>
-html, body {
+/* Единый фон страницы (десктоп): и body, и контейнеры VitePress
+   (Layout/Content) — всё одного цвета. Иначе на широком экране видно
+   три полосы — фон сайта, центральная колонка 560px и нижняя плашка
+   StickyBar. */
+:root {
+  --vp-c-bg: #13110E;
+  --vp-c-bg-alt: #13110E;
+  --vp-c-bg-elv: #13110E;
+  --vp-c-bg-soft: #13110E;
+}
+html, body,
+.Layout, .VPContent, .VPPage, .vp-doc {
   background: #13110E !important;
   margin: 0;
   padding: 0;
 }
+.VPContent { padding: 0 !important; }
 input, textarea, select {
   font-size: 16px !important;
   touch-action: manipulation;

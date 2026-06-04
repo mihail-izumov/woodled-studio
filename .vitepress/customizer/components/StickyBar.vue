@@ -38,14 +38,19 @@ const roomColors = computed<string[]>(() =>
   <div :style="{
     position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: Z.stickyBar,
   }">
+    <!-- Градиент-затухание над плашкой — на всю ширину, чтобы на десктопе
+         не было «трёх цветов» (фон сайта · колонка контента · полоса стики). -->
     <div :style="{
       height: '32px',
       background: `linear-gradient(to bottom, transparent, ${T.bg})`,
     }" />
-    <div :style="{
-      background: T.bg, padding: '8px 16px 16px',
-      maxWidth: '560px', margin: '0 auto',
-    }">
+    <!-- Сама плашка — фон T.bg тоже на всю ширину; внутри контейнер 560px
+         центрирует кнопки. -->
+    <div :style="{ background: T.bg }">
+      <div :style="{
+        padding: '8px 16px 16px',
+        maxWidth: '560px', margin: '0 auto',
+      }">
       <div :style="{ display: 'flex', gap: '10px' }">
         <!-- Поделиться: pill, без обводки, чуть светлее фона -->
         <button :style="{
@@ -86,6 +91,7 @@ const roomColors = computed<string[]>(() =>
             </button>
           </GradientRing>
         </div>
+      </div>
       </div>
     </div>
   </div>

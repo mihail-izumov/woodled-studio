@@ -176,6 +176,21 @@ export const ROOM_PREP: Record<RoomTypeId, string> = {
   stairs: 'на Лестнице',
 }
 
+/**
+ * ROOM_ACC — винительный падеж для подтверждений: «Удалить Гостиную?».
+ * Для пользовательских имён комнат — фолбэк на исходное name.
+ */
+export const ROOM_ACC: Record<RoomTypeId, string> = {
+  living: 'Гостиную',
+  kitchen: 'Кухню',
+  bedroom: 'Спальню',
+  kids: 'Детскую',
+  office: 'Кабинет',
+  hallway: 'Коридор',
+  bathroom: 'Ванную',
+  stairs: 'Лестницу',
+}
+
 /* ──────────────── Стартовый набор ──────────────── */
 
 export const STARTER_ROOM_TYPES: readonly RoomTypeId[] = [

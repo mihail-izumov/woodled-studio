@@ -19,6 +19,9 @@ import { PAGE } from './tokens'
 import { getPushState, enablePush, disablePush, type PushState } from './pwa-push'
 
 const ICON_URL = '/woodled-studio/apple-touch-icon.png'
+const HERO_IMG = '/woodled-studio/app/hero.jpg'
+const INSTALL_IMG = '/woodled-studio/app/alerts.jpg'
+const NOTIFY_IMG = '/woodled-studio/app/notify.jpg'
 const APP_URL = '/woodled-studio/customizer'
 const router = useRouter()
 
@@ -316,29 +319,24 @@ const notifySteps = [
           </div>
         </div>
 
-        <!-- Картинка Hero — рекомендуемый размер 1200×900px PNG, 4:3.
-             Сейчас плейсхолдер: сплошной тёплый фон + иконка по центру.
-             При замене на реальный скрин — просто заменить img.src. -->
+        <!-- Hero-картинка. См. public/app/hero.jpg. -->
         <div
           :style="{
             position: 'relative',
             aspectRatio: '4 / 3',
             background: 'linear-gradient(135deg, #2A1F18 0%, #3A2A1C 100%)',
             borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             overflow: 'hidden',
           }"
         >
           <img
-            :src="ICON_URL"
-            alt="WOODLED"
+            :src="HERO_IMG"
+            alt="WOODLED как приложение"
             :style="{
-              width: '120px',
-              height: '120px',
-              borderRadius: '24px',
-              boxShadow: '0 18px 48px rgba(0, 0, 0, 0.35)',
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
             }"
           />
         </div>
@@ -379,22 +377,25 @@ const notifySteps = [
         }"
       >
         <!-- Скрин Safari «Поделиться → На экран Домой».
-             Рекомендуемый размер 750×1000px PNG, 3:4. -->
+             См. public/app/alerts.jpg. -->
         <div
           :style="{
             aspectRatio: '3 / 4',
             background: PAGE.pearl,
             borderRadius: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: PAGE.textDim,
-            fontSize: '14px',
-            fontWeight: 500,
             overflow: 'hidden',
           }"
         >
-          скрин Safari — кнопка «Поделиться»
+          <img
+            :src="INSTALL_IMG"
+            alt="Добавить на домашний экран"
+            :style="{
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }"
+          />
         </div>
 
         <ol
@@ -492,22 +493,25 @@ const notifySteps = [
         }"
       >
         <!-- Скрин системного запроса разрешения уведомлений.
-             Рекомендуемый размер 750×1000px PNG, 3:4. -->
+             См. public/app/notify.jpg. -->
         <div
           :style="{
             aspectRatio: '3 / 4',
             background: PAGE.pearl,
             borderRadius: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: PAGE.textDim,
-            fontSize: '14px',
-            fontWeight: 500,
             overflow: 'hidden',
           }"
         >
-          скрин — запрос разрешения
+          <img
+            :src="NOTIFY_IMG"
+            alt="Разрешите уведомления"
+            :style="{
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }"
+          />
         </div>
 
         <ol

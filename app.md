@@ -22,10 +22,10 @@ head:
       content: Добавьте веб-приложение WOODLED на домашний экран айфона и включите уведомления.
   - - meta
     - property: og:url
-      content: https://mihail-izumov.github.io/woodled-studio/app
+      content: https://woodled-studio.ru/app
   - - meta
     - property: og:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.png
+      content: https://woodled-studio.ru/og-cover.png
 ---
 
 <script setup>

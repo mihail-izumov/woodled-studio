@@ -18,16 +18,16 @@ const emit = defineEmits<{
 const btnRef = ref<HTMLElement | null>(null)
 
 /**
- * Cross-domain navigation (the configurator lives on runscale.ru) means a
- * truly seamless transition isn't possible — the browser has to actually
- * load a different page. The next best thing: fade the LP under a full-bleed
- * overlay that matches the page palette, parked on the same rotor spinner
- * used elsewhere on the site. To the user it reads as "loading", not as
- * "page froze and then jumped".
+ * Inter-page navigation (the configurator is a separate VitePress page)
+ * means a truly seamless transition isn't possible — the browser has to
+ * actually load a different page. The next best thing: fade the LP under
+ * a full-bleed overlay that matches the page palette, parked on the same
+ * rotor spinner used elsewhere on the site. To the user it reads as
+ * "loading", not as "page froze and then jumped".
  *
  * Timing: 350ms fade-in, then 350ms more before redirect (~700ms total).
  * Short enough to stay snappy, long enough to mask the white flash of the
- * cross-domain navigation.
+ * full-page navigation.
  */
 const isTransitioning = ref(false)
 
@@ -52,7 +52,7 @@ function handleClick() {
   // Переход сразу: затемнение обеспечивает глобальный PageFade на самой
   // странице онбординга (+ её листовой splash). Собственный персиковый
   // оверлей больше не нужен — убираем дубль.
-  window.location.href = '/woodled-studio/onboarding'
+  window.location.href = '/onboarding'
 }
 </script>
 

@@ -7,20 +7,20 @@ export default defineConfig({
 
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
-    ['link', { rel: 'icon', type: 'image/png', href: '/woodled-studio/apple-touch-icon.png' }],
+    ['link', { rel: 'icon', type: 'image/png', href: '/apple-touch-icon.png' }],
     // Preload иконки: PWAInstallBanner и AppPage используют apple-touch-icon
     // в первой отрисовке. Без preload браузер тянет её после CSS/JS-бандла,
     // и пользователь видит, как иконка появляется частями. Preload даёт ей
     // приоритет в очереди загрузки.
-    ['link', { rel: 'preload', as: 'image', href: '/woodled-studio/apple-touch-icon.png', fetchpriority: 'high' }],
+    ['link', { rel: 'preload', as: 'image', href: '/apple-touch-icon.png', fetchpriority: 'high' }],
     // PWA-манифест. Нужен, чтобы iOS 16.4+ согласился пускать Web Push в
     // standalone-режиме. На Android/Chrome — это же ключ к Add-to-Home prompt.
-    ['link', { rel: 'manifest', href: '/woodled-studio/manifest.webmanifest' }],
+    ['link', { rel: 'manifest', href: '/manifest.webmanifest' }],
     // iOS home-screen icon. sizes указывать обязательно (иначе iOS иногда
     // молча отказывается грузить), и желательно дублировать на /apple-touch-icon.png
     // в корне — некоторые версии Safari дёргают именно этот путь.
-    ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/woodled-studio/apple-touch-icon.png' }],
-    ['link', { rel: 'apple-touch-icon-precomposed', sizes: '180x180', href: '/woodled-studio/apple-touch-icon.png' }],
+    ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }],
+    ['link', { rel: 'apple-touch-icon-precomposed', sizes: '180x180', href: '/apple-touch-icon.png' }],
     // iOS standalone mode (когда добавлено на экран Домой):
     //   • capable=yes  — запускать без Safari-хрома
     //   • title        — подпись под иконкой на спрингборде
@@ -297,7 +297,7 @@ export default defineConfig({
       })();
     `],
     // Регистрация Service Worker. Лежит в /public/sw.js, в проде доступен
-    // по /woodled-studio/sw.js. Scope тот же — это даёт PWA-режим (офлайн,
+    // по /sw.js. Scope тот же — это даёт PWA-режим (офлайн,
     // push) для всего сайта, не только лендинга. На dev-сервере (npm run
     // docs:dev) тоже работает — Vite раздаёт public/ как есть.
     //
@@ -307,14 +307,14 @@ export default defineConfig({
     ['script', {}, `
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/woodled-studio/sw.js', { scope: '/woodled-studio/' })
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .catch(function (e) { /* dev/HTTP — ignore */ });
         });
       }
     `],
   ],
 
-  base: '/woodled-studio/',
+  base: '/',
   cleanUrls: true,
   appearance: false,
   outDir: '.vitepress/dist',

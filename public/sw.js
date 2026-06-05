@@ -15,7 +15,7 @@
  * пока что фронт умеет только подписаться и сохранить subscription.
  */
 
-const BASE = '/woodled-studio/'
+const BASE = '/'
 
 self.addEventListener('install', (event) => {
   self.skipWaiting()

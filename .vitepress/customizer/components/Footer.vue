@@ -20,7 +20,7 @@
 import { ref, nextTick } from 'vue'
 import { T } from '../theme/tokens'
 
-const WOODLED_LOGO_URL = '/woodled-studio/customizer/woodled-logo.svg'
+const WOODLED_LOGO_URL = '/customizer/woodled-logo.svg'
 const RUNSCALE_LOGO_URL = 'https://runscale.ru/runscale_logo_2026_2.svg'
 
 // brightness(0) → чёрный силуэт, далее точная тонировка в T.neutral (#A89878)

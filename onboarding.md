@@ -22,10 +22,10 @@ head:
       content: Как работает свет WOODLED — познакомьтесь с философией и соберите свой лес света
   - - meta
     - property: og:url
-      content: https://mihail-izumov.github.io/woodled-studio/onboarding
+      content: https://woodled-studio.ru/onboarding
   - - meta
     - property: og:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.jpg
+      content: https://woodled-studio.ru/og-cover.jpg
   - - meta
     - property: og:image:width
       content: "1200"
@@ -46,7 +46,7 @@ head:
       content: Как работает свет WOODLED — познакомьтесь с философией и соберите свой лес света
   - - meta
     - name: twitter:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.jpg
+      content: https://woodled-studio.ru/og-cover.jpg
 ---
 
 <script setup>
@@ -74,7 +74,7 @@ onUnmounted(() => {
 })
 
 function goNext() {
-  window.location.href = '/woodled-studio/customizer'
+  window.location.href = '/customizer'
 }
 </script>
 

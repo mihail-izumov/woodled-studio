@@ -16,7 +16,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { T } from '../theme/tokens'
 
-const AUDIO_SRC = '/woodled-studio/onboarding/forest-soundscape.mp3'
+const AUDIO_SRC = '/onboarding/forest-soundscape.mp3'
 
 const MIN_LOADING_MS = 1000
 

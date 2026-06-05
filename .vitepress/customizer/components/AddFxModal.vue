@@ -136,7 +136,7 @@ const PHOTO_MAP: Record<string, string> = {
 function collectionPhotos(g: Group): [string, string] {
   const key = g.family ?? g.models[0]
   const prefix = PHOTO_MAP[key] ?? key
-  const base = '/woodled-studio/customizer/collections/'
+  const base = '/customizer/collections/'
   return [`${base}${prefix}_1.jpg`, `${base}${prefix}_2.jpg`]
 }
 

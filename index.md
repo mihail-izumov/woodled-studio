@@ -22,10 +22,10 @@ head:
       content: WOODLED Студия — Ваше идеальное пространство для света.
   - - meta
     - property: og:url
-      content: https://mihail-izumov.github.io/woodled-studio/
+      content: https://woodled-studio.ru/
   - - meta
     - property: og:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.png
+      content: https://woodled-studio.ru/og-cover.png
   - - meta
     - property: og:image:width
       content: "1200"
@@ -46,7 +46,7 @@ head:
       content: WOODLED Студия — Ваше идеальное пространство для света.
   - - meta
     - name: twitter:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.png
+      content: https://woodled-studio.ru/og-cover.png
 ---
 
 <script setup>

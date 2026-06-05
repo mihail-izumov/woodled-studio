@@ -22,10 +22,10 @@ head:
       content: Соберите свой лес света WOODLED — дизайнерские светильники из дерева для каждой комнаты
   - - meta
     - property: og:url
-      content: https://mihail-izumov.github.io/woodled-studio/customizer
+      content: https://woodled-studio.ru/customizer
   - - meta
     - property: og:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.jpg
+      content: https://woodled-studio.ru/og-cover.jpg
   - - meta
     - property: og:image:width
       content: "1200"
@@ -46,7 +46,7 @@ head:
       content: Соберите свой лес света WOODLED — дизайнерские светильники из дерева для каждой комнаты
   - - meta
     - name: twitter:image
-      content: https://mihail-izumov.github.io/woodled-studio/og-cover.jpg
+      content: https://woodled-studio.ru/og-cover.jpg
 ---
 
 <script setup>

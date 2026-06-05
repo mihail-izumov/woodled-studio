@@ -34,7 +34,7 @@ const LEAF_ICONS: Record<Wood, string> = {
 const LEAF_H: Record<Wood, number> = { oak: 90, walnut: 90, black: 66 }
 
 const ROOM_DISPLAY_ORDER: readonly RoomTypeId[] = ['bedroom', 'living', 'kids', 'office', 'kitchen', 'hallway', 'bathroom', 'stairs'] as const
-const LOGO_URL = '/woodled-studio/customizer/woodled-logo.svg'
+const LOGO_URL = '/customizer/woodled-logo.svg'
 
 interface PillRoom { type: RoomTypeId; name: string; trees: Wood[]; tint: string }
 interface TplCard { id: string; areaLabel: string; rooms: PillRoom[]; woodCounts: Record<Wood, number>; totalTrees: number }
@@ -92,7 +92,7 @@ const SECTION_LABEL = 'Живой дом WOODLED'
     </div>
 
     <!-- batch11 #8 v5: title 15/600, subtitle 13, убрано «4 главы —» -->
-    <a href="/woodled-studio/onboarding" :style="onboardingLinkStyle()">
+    <a href="/onboarding" :style="onboardingLinkStyle()">
       <div :style="{ flex: 1 }">
         <div :style="{ fontSize: '15px', fontWeight: 600, color: T.text, marginBottom: '2px', lineHeight: 1.2 }">Как рождается свет</div>
         <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.45 }">От ламели до теней на стене</div>

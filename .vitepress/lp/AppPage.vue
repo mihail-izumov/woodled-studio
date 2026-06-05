@@ -17,11 +17,11 @@ import { onMounted, ref } from 'vue'
 import { PAGE } from './tokens'
 import { getPushState, enablePush, disablePush, type PushState } from './pwa-push'
 
-const ICON_URL = '/woodled-studio/apple-touch-icon.png'
-const HERO_IMG = '/woodled-studio/app/hero.jpg'
-const INSTALL_IMG = '/woodled-studio/app/notify.jpg'  // Safari «Поделиться → На экран Домой»
-const NOTIFY_IMG = '/woodled-studio/app/alerts.jpg'   // системный запрос разрешения уведомлений
-const APP_URL = '/woodled-studio/customizer'
+const ICON_URL = '/apple-touch-icon.png'
+const HERO_IMG = '/app/hero.jpg'
+const INSTALL_IMG = '/app/notify.jpg'  // Safari «Поделиться → На экран Домой»
+const NOTIFY_IMG = '/app/alerts.jpg'   // системный запрос разрешения уведомлений
+const APP_URL = '/customizer'
 
 // Состояние push-подписки: пересчитывается на mount и после действий
 // пользователя. Хранится как объект PushState — рендеримся по `.kind`.
@@ -209,7 +209,7 @@ const notifySteps = [
       }"
     >
       <a
-        href="/woodled-studio/"
+        href="/"
         :style="{
           fontFamily: `'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif`,
           fontSize: 'clamp(20px, 4vw, 28px)',

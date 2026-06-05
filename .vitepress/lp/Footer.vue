@@ -20,7 +20,7 @@ import { PAGE } from './tokens'
  * with the line above).
  */
 
-const WOODLED_LOGO_URL = '/woodled-studio/customizer/woodled-logo.svg'
+const WOODLED_LOGO_URL = '/customizer/woodled-logo.svg'
 const RUNSCALE_LOGO_URL = 'https://runscale.ru/runscale_logo_2026_2.svg'
 
 const expanded = ref(false)

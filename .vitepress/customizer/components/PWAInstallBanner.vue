@@ -34,8 +34,8 @@
  */
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
-const ICON_URL = '/woodled-studio/apple-touch-icon.png'
-const APP_URL = '/woodled-studio/app'
+const ICON_URL = '/apple-touch-icon.png'
+const APP_URL = '/app'
 const BANNER_H = 64 // px — высота банера, передаётся в CSS-переменную
 
 /**

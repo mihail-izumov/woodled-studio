@@ -120,6 +120,49 @@ function groupByModel(fx: Fixture[]): FxGroup[] {
   return [...map.values()].sort((a, b) => b.lm - a.lm)
 }
 
+/**
+ * Группировка ТОЛЬКО для текста «Где свет» — type+chip+zone, без wood/btemp.
+ *
+ * Карточка «Где свет» оперирует физическим распределением света: «торшер»,
+ * «пара бра», «настольная». Бренд, дерево и температура для этого текста
+ * неважны, поэтому группа сливается шире чем у `groupByModel`.
+ *
+ * Пример: 2 кастомных торшера (один с дубовым tint @2700K, другой с латунным
+ * @4000K) в `groupByModel` остаются разными группами → «торшер и торшер
+ * подсвечивают…». С `groupByKindZone` они сливаются → «два торшера…».
+ *
+ * Другие карточки (Дерево, Оттенок света) продолжают использовать
+ * `groupByModel` — там wood/btemp как раз содержательны.
+ */
+function groupByKindZone(fx: Fixture[]): FxGroup[] {
+  const map = new Map<string, FxGroup>()
+  for (const f of fx) {
+    const m = MD[f.m]
+    if (!m) continue
+    const q = f.q ?? 1
+    const lm = fixtureLm(f)
+    const zone = (f.zone ?? 'ceiling') as ZoneId
+    const key = `${m.type}|${m.chip || ''}|${zone}`
+    const existing = map.get(key)
+    if (existing) {
+      existing.count += q
+      existing.lm += lm
+    } else {
+      map.set(key, {
+        modelId: f.m,
+        kind: m.type,
+        size: m.chip || '',
+        count: q,
+        lm,
+        wood: (f.wood ?? 'oak') as Wood,
+        btemp: f.opts?.btemp ?? f.custom?.btemp ?? DEF_OPT.btemp,
+        zone,
+      })
+    }
+  }
+  return [...map.values()].sort((a, b) => b.lm - a.lm)
+}
+
 /** «огромная люстра» / «два торшера» / «пара бра» / «настольная» — именительный. */
 function fxNameNom(modelId: ModelId, count: number): string {
   const m = MD[modelId]
@@ -286,7 +329,10 @@ function whereCard(_rt: RoomType, room: Room, seed: number): KnobCard | null {
   if (total <= 0) return null
 
   const place = scenePlace(fx)
-  const groups = groupByModel(fx)
+  // Для текста «Где свет» используем максимально объединяющую группировку
+  // (только по type+chip+zone) — иначе кастомы с разным wood/btemp плодят
+  // дубли «торшер, торшер» вместо «два торшера».
+  const groups = groupByKindZone(fx)
 
   /* Топовая зона + % для чипа */
   const litZones = ALL_ZONES.map((z) => ({ z, lm: zoneLm(fx, z.id) }))

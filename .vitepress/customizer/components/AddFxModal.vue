@@ -353,30 +353,22 @@ function cardPhase(idx: number): number {
               background: g.type === 'custom' ? T.cardAlt : T.card,
               boxSizing: 'border-box',
             }">
-              <!-- Custom-карточка: тёмный фон + большой плюс + подпись -->
+              <!-- Custom-карточка: только большой плюс по центру, без подписи. -->
               <div v-if="g.type === 'custom'" :style="{
                 position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: '14px', padding: '16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }">
                 <span :style="{
-                  width: '68px', height: '68px', borderRadius: '50%',
+                  width: '72px', height: '72px', borderRadius: '50%',
                   background: T.neutral + '22',
                   border: `1.5px solid ${T.neutral}55`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" :stroke="T.neutral" stroke-width="2.6" stroke-linecap="round">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" :stroke="T.neutral" stroke-width="2.6" stroke-linecap="round">
                     <path d="M12 5v14" />
                     <path d="M5 12h14" />
                   </svg>
                 </span>
-                <div :style="{
-                  fontSize: '13px', fontWeight: 500, color: T.textSec,
-                  textAlign: 'center', lineHeight: 1.4, maxWidth: '160px',
-                }">
-                  Если светильник<br>не WOODLED
-                </div>
               </div>
 
               <template v-else>
@@ -463,12 +455,14 @@ function cardPhase(idx: number): number {
         <div v-if="groups.length > 1" :style="{ flexShrink: 0, width: '12px' }" />
       </div>
 
-      <!-- Cancel -->
+      <!-- Cancel: заливка чуть светлее фона модалки, без обводки, 17px/600. -->
       <div :style="{ padding: '0 24px 18px' }">
         <button :style="{
-          width: '100%', padding: '12px', background: 'none',
-          border: `1px solid ${T.border}`, borderRadius: '10px',
-          cursor: 'pointer', color: T.textSec, fontSize: '13px',
+          width: '100%', padding: '14px',
+          background: 'rgba(255,255,255,0.06)',
+          border: 'none', borderRadius: '12px',
+          cursor: 'pointer', color: T.text,
+          fontSize: '17px', fontWeight: 600, fontFamily: 'inherit',
         }" @click="emit('close')">
           Отмена
         </button>

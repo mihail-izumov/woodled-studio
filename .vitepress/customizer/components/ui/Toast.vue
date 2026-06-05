@@ -57,7 +57,10 @@ onUnmounted(clearTimer)
       fontSize: '13px',
       fontWeight: 600,
       zIndex: Z.toast,
-      maxWidth: '85%',
+      // calc(100vw - 32px) даёт максимально доступную ширину при 16px-отступах
+      // по бокам. Короткие сообщения вмещаются в одну строку; длинные перенесутся
+      // только когда не помещаются физически.
+      maxWidth: 'calc(100vw - 32px)',
       textAlign: 'center',
       boxShadow: '0 4px 20px rgba(0,0,0,.4)',
       display: 'flex',

@@ -16,7 +16,7 @@
  *   lmPer × lamps × body × ambient   (q учитывает движок; diff отсутствует у кастома)
  */
 
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { T } from '../theme/tokens'
 import type { Fixture, CustomSpec, FxType, ZoneId } from '../data/catalog'
 import NavHeader from './ui/NavHeader.vue'
@@ -221,7 +221,30 @@ const pasteState = ref<'' | 'ok' | 'fail'>('')
 const copyState = ref<'' | 'ok' | 'fail'>('')
 const showDelConfirm = ref(false)
 const showLeaveConfirm = ref(false)
+const showHugeLmConfirm = ref(false)
 const urlInputEl = ref<HTMLInputElement | null>(null)
+
+/**
+ * Порог «подозрительно много люмен» — лампы выше этого почти не встречаются
+ * в быту (E27 25Вт ≈ 2500 лм, мощные LED-светильники 30Вт ≈ 3300 лм).
+ * 10000 на одну лампу — это либо опечатка, либо профессиональный свет.
+ */
+const HUGE_LM_THRESHOLD = 10000
+
+/* Палитра цвета: fade-маски по краям как в ForestMood. */
+const tintScrollEl = ref<HTMLDivElement | null>(null)
+const tintAtStart = ref(true)
+const tintAtEnd = ref(false)
+function onTintScroll() {
+  const el = tintScrollEl.value
+  if (!el) return
+  tintAtStart.value = el.scrollLeft <= 2
+  tintAtEnd.value = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2
+}
+onMounted(() => {
+  // Первичная проверка — если контент шире контейнера, правая маска видна.
+  nextTick(onTintScroll)
+})
 
 /* ──────────────── Вычисленные значения ──────────────── */
 
@@ -394,6 +417,16 @@ async function copyUrl() {
 
 function handleSave() {
   if (!canSave.value) return
+  /* Если пользователь ввёл люмены вручную и число выглядит подозрительно
+     большим — спрашиваем подтверждение (страховка от опечатки). */
+  if (manualLm.value && customLm.value >= HUGE_LM_THRESHOLD) {
+    showHugeLmConfirm.value = true
+    return
+  }
+  doSave()
+}
+
+function doSave() {
   const spec = buildSpec()
   const nextFx: Fixture = {
     ...props.item,
@@ -422,7 +455,9 @@ function tryClose() {
 }
 function onLeaveSave() {
   showLeaveConfirm.value = false
-  handleSave()
+  /* Из LeaveConfirm пользователь сознательно идёт сохранять — не дёргаем
+     ещё один confirm про большие люмены (один таноз в потоке). */
+  doSave()
 }
 function onLeaveDiscard() {
   showLeaveConfirm.value = false
@@ -483,9 +518,12 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
       </template>
     </NavHeader>
 
-    <!-- Плашка «Есть несохранённые изменения» — sticky над контентом -->
+    <!-- Плашка «Есть несохранённые изменения» — только в режиме редактирования.
+         Для нового (provisional) светильника она не нужна: алгоритм сохранения
+         тот же (sticky-кнопка «Добавить» + confirm на back), но визуальная
+         плашка-«предупреждение» вводит в заблуждение — нечего «не сохранять». -->
     <div
-      v-if="isDirty"
+      v-if="isDirty && !props.isProvisional"
       :style="{
         position: 'sticky', top: '44px', zIndex: 9,
         background: accent, color: T.bg,
@@ -695,12 +733,12 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
             transform: 'translateY(-50%)',
             display: 'flex', alignItems: 'center', gap: '4px',
           }">
-            <!-- Копировать: иконка-only. Disabled если url пустой. -->
+            <!-- Копировать: иконка-only, такая же высота как у «Вставить» (32px). -->
             <button
               :disabled="!url"
               :title="copyState === 'ok' ? 'Скопировано' : 'Скопировать'"
               :style="{
-                width: '34px', height: '32px',
+                height: '32px', width: '36px', padding: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 border: 'none', borderRadius: '8px',
                 background: copyState === 'ok' ? T.green
@@ -710,6 +748,7 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
                        : url ? T.neutral : T.textDim,
                 cursor: url ? 'pointer' : 'not-allowed',
                 transition: 'all .2s', fontFamily: 'inherit',
+                boxSizing: 'border-box',
               }"
               @click="copyUrl"
             >
@@ -721,16 +760,19 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </button>
-            <!-- Вставить: текстовая кнопка -->
+            <!-- Вставить: высота 32px, padding-горизонталь 14px → визуально одинаково с copy. -->
             <button
               :style="{
-                padding: '7px 14px', border: 'none', borderRadius: '8px',
+                height: '32px', padding: '0 14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none', borderRadius: '8px',
                 background: pasteState === 'ok' ? T.green
                           : pasteState === 'fail' ? T.red + '88'
                           : T.neutral + '33',
                 color: (pasteState === 'ok' || pasteState === 'fail') ? T.bg : T.neutral,
                 fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                 transition: 'all .2s', fontFamily: 'inherit',
+                boxSizing: 'border-box',
               }"
               @click="pasteUrl"
             >{{ pasteState === 'ok' ? 'вставлено' : pasteState === 'fail' ? 'зажмите' : 'Вставить' }}</button>
@@ -997,7 +1039,7 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
         </div>
       </div>
 
-      <!-- Цвет светильника -->
+      <!-- Цвет светильника: горизонтальный скролл с fade-out по краям как в ForestMood. -->
       <div :style="{ marginBottom: '14px' }">
         <div :style="{
           display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
@@ -1006,32 +1048,52 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
           <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Цвет светильника</span>
           <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">{{ tintObj.label }}</span>
         </div>
-        <div class="customfx-tint-row" :style="{
-          display: 'flex', gap: '12px',
-          padding: '6px 2px 10px',
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-        }">
-          <button
-            v-for="t in TINTS" :key="t.id"
-            :title="t.label"
+        <div :style="{ position: 'relative' }">
+          <div
+            ref="tintScrollEl"
+            class="customfx-tint-row"
             :style="{
-              flexShrink: 0,
-              width: '44px', height: '44px', borderRadius: '50%', padding: 0,
-              border: tintId === t.id ? `2px solid ${T.text}` : '2px solid transparent',
-              background: 'transparent', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex', gap: '12px',
+              padding: '6px 2px 10px',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
             }"
-            @click="tintId = t.id"
+            @scroll="onTintScroll"
           >
-            <span :style="{
-              width: '36px', height: '36px', borderRadius: '50%',
-              display: 'inline-block', flexShrink: 0,
-              background: orbBg(t.hex),
-              border: orbBorder(t.hex),
-              boxShadow: 'inset 0 -1px 2px rgba(0,0,0,0.22), inset 0 1px 1px rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.4)',
-            }" />
-          </button>
+            <button
+              v-for="t in TINTS" :key="t.id"
+              :title="t.label"
+              :style="{
+                flexShrink: 0,
+                width: '44px', height: '44px', borderRadius: '50%', padding: 0,
+                border: tintId === t.id ? `2px solid ${T.text}` : '2px solid transparent',
+                background: 'transparent', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }"
+              @click="tintId = t.id"
+            >
+              <span :style="{
+                width: '36px', height: '36px', borderRadius: '50%',
+                display: 'inline-block', flexShrink: 0,
+                background: orbBg(t.hex),
+                border: orbBorder(t.hex),
+                boxShadow: 'inset 0 -1px 2px rgba(0,0,0,0.22), inset 0 1px 1px rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.4)',
+              }" />
+            </button>
+          </div>
+          <!-- Fade-маски: слева — когда есть прокрученный контент, справа — когда есть ещё ниже. -->
+          <div aria-hidden="true" :style="{
+            position: 'absolute', left: 0, top: 0, bottom: 0, width: '28px',
+            pointerEvents: 'none',
+            opacity: tintAtStart ? 0 : 1, transition: 'opacity .2s',
+            background: `linear-gradient(90deg, ${T.bg} 0%, ${T.bg}cc 40%, ${T.bg}00 100%)`,
+          }" />
+          <div aria-hidden="true" :style="{
+            position: 'absolute', right: 0, top: 0, bottom: 0, width: '28px',
+            pointerEvents: 'none',
+            opacity: tintAtEnd ? 0 : 1, transition: 'opacity .2s',
+            background: `linear-gradient(270deg, ${T.bg} 0%, ${T.bg}cc 40%, ${T.bg}00 100%)`,
+          }" />
         </div>
       </div>
 
@@ -1190,6 +1252,51 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
       @discard="onLeaveDiscard"
       @cancel="showLeaveConfirm = false"
     />
+
+    <!-- Подтверждение очень большой яркости (страховка от опечатки) -->
+    <div
+      v-if="showHugeLmConfirm"
+      :style="{
+        position: 'fixed', inset: 0, zIndex: 70,
+        background: 'rgba(0,0,0,0.7)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px',
+      }"
+      @click.self="showHugeLmConfirm = false"
+    >
+      <div :style="{
+        width: '100%', maxWidth: '340px',
+        background: T.bg, borderRadius: '16px',
+        border: `1px solid ${T.border}`,
+        padding: '24px 20px', textAlign: 'center',
+      }">
+        <div :style="{ fontSize: '17px', fontWeight: 700, color: T.text, marginBottom: '10px' }">
+          {{ customLm.toLocaleString('ru-RU') }} лм — точно?
+        </div>
+        <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.5, marginBottom: '20px' }">
+          Это очень много для одной лампы — обычные домашние редко выше 2500 лм. Проверьте, не лишний ли ноль.
+        </div>
+        <div :style="{ display: 'flex', gap: '8px' }">
+          <button
+            :style="{
+              flex: 1, padding: '12px', borderRadius: '10px',
+              border: `1px solid ${T.border}`, background: T.card,
+              color: T.text, cursor: 'pointer',
+              fontSize: '14px', fontWeight: 600, fontFamily: 'inherit',
+            }"
+            @click="showHugeLmConfirm = false"
+          >Поправлю</button>
+          <button
+            :style="{
+              flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
+              background: T.text, color: T.bg, cursor: 'pointer',
+              fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+            }"
+            @click="showHugeLmConfirm = false; doSave()"
+          >Да, столько</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

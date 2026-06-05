@@ -20,8 +20,8 @@ import { getPushState, enablePush, disablePush, type PushState } from './pwa-pus
 
 const ICON_URL = '/woodled-studio/apple-touch-icon.png'
 const HERO_IMG = '/woodled-studio/app/hero.jpg'
-const INSTALL_IMG = '/woodled-studio/app/alerts.jpg'
-const NOTIFY_IMG = '/woodled-studio/app/notify.jpg'
+const INSTALL_IMG = '/woodled-studio/app/notify.jpg'  // Safari «Поделиться → На экран Домой»
+const NOTIFY_IMG = '/woodled-studio/app/alerts.jpg'   // системный запрос разрешения уведомлений
 const APP_URL = '/woodled-studio/customizer'
 const router = useRouter()
 
@@ -29,6 +29,38 @@ const router = useRouter()
 // пользователя. Хранится как объект PushState — рендеримся по `.kind`.
 const pushState = ref<PushState | null>(null)
 const pushBusy = ref(false)
+
+// Локальный overlay-preloader. Держит экран тёмным пока все три картинки
+// /app/hero.jpg, alerts.jpg, notify.jpg не загрузятся (или не истёк MAX_WAIT).
+// Это критично потому что страница без картинок выглядит как набор пустых
+// плейсхолдер-блоков — не хочется чтобы пользователь видел «полусобранную»
+// страницу. Boot-loader из config.mts здесь не сработает (он только в
+// standalone PWA), PageFade слишком короткий (1200мс).
+const assetsReady = ref(false)
+const assetsHidden = ref(false)  // полное удаление из DOM после fade-out
+const MAX_WAIT_MS = 6000          // safety: если CDN упал — не показываем чёрный экран бесконечно
+
+function preloadImage(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = () => resolve()  // даже если 404 — снимаем overlay, не зависаем
+    img.src = url
+  })
+}
+
+async function waitForAssets() {
+  const all = Promise.all([
+    preloadImage(HERO_IMG),
+    preloadImage(INSTALL_IMG),
+    preloadImage(NOTIFY_IMG),
+  ])
+  const timeout = new Promise<void>((r) => setTimeout(r, MAX_WAIT_MS))
+  await Promise.race([all, timeout])
+  assetsReady.value = true
+  // удалить overlay из DOM после fade-анимации (400мс)
+  setTimeout(() => { assetsHidden.value = true }, 450)
+}
 
 /**
  * Возврат «В приложение». Всегда уходим на /customizer через VitePress
@@ -83,14 +115,19 @@ onMounted(() => {
   // зависает с подсказкой «С VPN такое бывает».
   ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
 
-  // Anchor-навигация: если пришли с #install / #notify — плавный скролл
-  const hash = window.location.hash
-  if (hash) {
-    requestAnimationFrame(() => {
-      const el = document.querySelector(hash)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }
+  // Запустить локальный overlay-preloader (ждёт загрузки 3 картинок)
+  waitForAssets().then(() => {
+    // Якорная навигация только ПОСЛЕ загрузки картинок —
+    // иначе scrollIntoView ловит ещё пустые блоки.
+    const hash = window.location.hash
+    if (hash) {
+      requestAnimationFrame(() => {
+        const el = document.querySelector(hash)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  })
+
   // Подтянуть состояние push (поддержка/разрешение/подписка)
   refreshPush()
 })
@@ -122,6 +159,36 @@ const notifySteps = [
 </script>
 
 <template>
+  <!-- Overlay-preloader: чёрный экран со спиннером, держится пока 3
+       картинки не загрузятся (или 6с safety). Без него пользователь
+       видел бы недособранные плейсхолдеры. -->
+  <div
+    v-if="!assetsHidden"
+    :style="{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 2147483646,
+      background: '#0A0908',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: assetsReady ? 0 : 1,
+      transition: 'opacity 400ms ease',
+      pointerEvents: assetsReady ? 'none' : 'auto',
+    }"
+  >
+    <div
+      :style="{
+        width: '36px',
+        height: '36px',
+        border: '2px solid rgba(245, 235, 224, 0.16)',
+        borderTopColor: '#E0C882',
+        borderRadius: '50%',
+        animation: 'appPagePreloaderSpin 1s linear infinite',
+      }"
+    />
+  </div>
+
   <div
     class="app-page-root"
     :style="{
@@ -693,6 +760,14 @@ const notifySteps = [
     </div><!-- /контентный слой z-index 1 -->
   </div>
 </template>
+
+<style>
+/* Глобальный (не scoped) — иначе Vue хеширует имя keyframes,
+   а inline-style animation:'appPagePreloaderSpin ...' уже не находит его. */
+@keyframes appPagePreloaderSpin {
+  to { transform: rotate(360deg); }
+}
+</style>
 
 <style scoped>
 .app-page-root :deep(strong) {

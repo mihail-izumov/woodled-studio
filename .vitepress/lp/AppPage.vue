@@ -14,7 +14,6 @@
  * подставит реальные позже.
  */
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vitepress'
 import { PAGE } from './tokens'
 import { getPushState, enablePush, disablePush, type PushState } from './pwa-push'
 
@@ -23,7 +22,6 @@ const HERO_IMG = '/woodled-studio/app/hero.jpg'
 const INSTALL_IMG = '/woodled-studio/app/notify.jpg'  // Safari «Поделиться → На экран Домой»
 const NOTIFY_IMG = '/woodled-studio/app/alerts.jpg'   // системный запрос разрешения уведомлений
 const APP_URL = '/woodled-studio/customizer'
-const router = useRouter()
 
 // Состояние push-подписки: пересчитывается на mount и после действий
 // пользователя. Хранится как объект PushState — рендеримся по `.kind`.
@@ -73,21 +71,14 @@ async function waitForAssets() {
 }
 
 /**
- * Возврат «В приложение». Всегда уходим на /customizer через VitePress
- * SPA-навигацию (плавно, без перезагрузки).
- *
- * Раньше пробовал history.back если referrer был из конфигуратора. Это
- * ломалось якорными переходами #install/#notify в Hero: каждый клик по
- * якорю добавляет запись в history, и back() возвращал на /app сам —
- * визуально это выглядело как «странная перезагрузка той же страницы».
+ * Возврат «В приложение». Простой переход через href — без useRouter,
+ * потому что импорт `vitepress` в setup на direct open может конфликтовать
+ * с порядком инициализации (виден баг с пропадающим Hero-контентом).
+ * Обычный <a> работает одинаково и из SPA, и при cold start.
  *
  * Состояние конфигуратора живёт в localStorage (см. store/configurator)
  * — оно автоматически восстановится при заходе на /customizer.
  */
-function goToApp(e: Event) {
-  e.preventDefault()
-  router.go(APP_URL)
-}
 
 async function refreshPush() {
   pushState.value = await getPushState()
@@ -169,36 +160,8 @@ const notifySteps = [
 </script>
 
 <template>
-  <!-- Overlay-preloader: чёрный экран со спиннером, держится пока 3
-       картинки не загрузятся (или 6с safety). Без него пользователь
-       видел бы недособранные плейсхолдеры. -->
-  <div
-    v-if="!assetsHidden"
-    :style="{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 2147483646,
-      background: '#0A0908',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      opacity: assetsReady ? 0 : 1,
-      transition: 'opacity 400ms ease',
-      pointerEvents: assetsReady ? 'none' : 'auto',
-    }"
-  >
-    <div
-      :style="{
-        width: '36px',
-        height: '36px',
-        border: '2px solid rgba(245, 235, 224, 0.16)',
-        borderTopColor: '#E0C882',
-        borderRadius: '50%',
-        animation: 'appPagePreloaderSpin 1s linear infinite',
-      }"
-    />
-  </div>
-
+  <!-- Overlay-preloader временно отключён — диагностика бага с пропадающим
+       Hero-контентом. См. историю коммитов про /app preloader. -->
   <div
     class="app-page-root"
     :style="{
@@ -260,7 +223,6 @@ const notifySteps = [
       </a>
       <a
         :href="APP_URL"
-        @click="goToApp"
         :style="{
           fontSize: '14px',
           color: PAGE.textSec,

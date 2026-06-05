@@ -2,25 +2,25 @@
 /**
  * CustomFxEditor.vue — Страница «Другой бренд» (не WOODLED).
  *
- * Параллель FxEditor.vue: тот же NavHeader сверху, тот же sticky-bottom,
- * та же модалка «Удалить?» и LeaveConfirmModal при выходе с правками.
- * Mobile-first, инлайн-стили (no CSS classes кроме псевдо).
- *
- * Поля формы → CustomSpec (data/catalog.ts). При save отдаём Fixture
- * c обновлённой custom-спекой. Регистрацию в MD/FX_FACTORS делает
- * store.updateFixture / store.addFixture через registerCustom().
+ * v2 — выровнен под паттерны FxEditor:
+ *   - iOS large-title: заголовок в NavHeader появляется только когда
+ *     крупное имя страницы уехало за пределы вьюпорта (IntersectionObserver).
+ *   - Кнопки «Добавить»/«Сохранить» — inline в скролле (не sticky).
+ *   - Sticky-плашка «Есть несохранённые изменения» сверху + спотлайт-подсветка
+ *     кнопки при тапе по плашке (готовый код из FxEditor: .fx-save-glow,
+ *     overlay z-index 48, кнопка z-index 49).
+ *   - Блок «Удалить» — ПОД кнопкой Сохранить.
+ *   - LeaveConfirmModal на выходе с правками.
  *
  * Расчёт яркости совпадает с brightness.ts/fxLm:
- *   lmPer × lamps × body × ambient
- * (diff и q учитывает движок; здесь q=1, diff=отсутствует у кастома).
+ *   lmPer × lamps × body × ambient   (q учитывает движок; diff отсутствует у кастома)
  */
 
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { T, Z } from '../theme/tokens'
+import { T } from '../theme/tokens'
 import type { Fixture, CustomSpec, FxType, ZoneId } from '../data/catalog'
 import NavHeader from './ui/NavHeader.vue'
 import LeaveConfirmModal from './ui/LeaveConfirmModal.vue'
-import { useConfigurator } from '../store/configurator'
 
 /* ──────────────── Props/Emits ──────────────── */
 
@@ -47,31 +47,30 @@ const emit = defineEmits<{
   feedback: [msg: string]
 }>()
 
-const cfg = useConfigurator()
-
-/* ──────────────── Справочники (синхронны с sandbox-прототипом) ──────────────── */
+/* ──────────────── Справочники ──────────────── */
 
 const NAME_MAX = 16
 const BRAND_MAX = 18
-const EMPTY_BRAND = 'Свой'
+/** Пустой бренд — НЕ показываем плашку в карточке зоны (см. catalog.ts/fxLine). */
+const EMPTY_BRAND = ''
 
 const TINTS = [
-  { id: 'oak',       label: 'Дуб',           hex: '#C4A46C', nearestWood: 'oak'    },
-  { id: 'walnut',    label: 'Орех',          hex: '#8B6242', nearestWood: 'walnut' },
-  { id: 'black_oak', label: 'Чёрный дуб',    hex: '#5A4E42', nearestWood: 'black'  },
-  { id: 'brass',     label: 'Латунь',        hex: '#B8945A', nearestWood: 'oak'    },
-  { id: 'white',     label: 'Белый',         hex: '#F0EBE0', nearestWood: 'oak'    },
-  { id: 'chrome',    label: 'Хром',          hex: '#C9CDD2', nearestWood: 'oak'    },
-  { id: 'nickel',    label: 'Никель',        hex: '#9CA0A4', nearestWood: 'black'  },
-  { id: 'bronze',    label: 'Бронза',        hex: '#4A3528', nearestWood: 'walnut' },
-  { id: 'graphite',  label: 'Графит',        hex: '#3A3736', nearestWood: 'black'  },
-  { id: 'warm_gray', label: 'Тёплый серый',  hex: '#8A7E70', nearestWood: 'walnut' },
+  { id: 'oak',       label: 'Дуб',          hex: '#C4A46C', nearestWood: 'oak'    },
+  { id: 'walnut',    label: 'Орех',         hex: '#8B6242', nearestWood: 'walnut' },
+  { id: 'black_oak', label: 'Чёрный дуб',   hex: '#5A4E42', nearestWood: 'black'  },
+  { id: 'brass',     label: 'Латунь',       hex: '#B8945A', nearestWood: 'oak'    },
+  { id: 'white',     label: 'Белый',        hex: '#F0EBE0', nearestWood: 'oak'    },
+  { id: 'chrome',    label: 'Хром',         hex: '#C9CDD2', nearestWood: 'oak'    },
+  { id: 'nickel',    label: 'Никель',       hex: '#9CA0A4', nearestWood: 'black'  },
+  { id: 'bronze',    label: 'Бронза',       hex: '#4A3528', nearestWood: 'walnut' },
+  { id: 'graphite',  label: 'Графит',       hex: '#3A3736', nearestWood: 'black'  },
+  { id: 'warm_gray', label: 'Тёплый серый', hex: '#8A7E70', nearestWood: 'walnut' },
 ] as const
 
 interface FxTypeOpt { id: FxType; label: string; zone: ZoneId | null }
 const FX_TYPES: readonly FxTypeOpt[] = [
   { id: 'люстра',     label: 'Люстра',     zone: 'ceiling' },
-  { id: 'спот',       label: 'Спот',       zone: null }, // потолок/стена — выбирается
+  { id: 'спот',       label: 'Спот',       zone: null },
   { id: 'бра',        label: 'Бра',        zone: 'wall' },
   { id: 'настольная', label: 'Настольная', zone: 'table' },
   { id: 'торшер',     label: 'Торшер',     zone: 'floor' },
@@ -251,7 +250,6 @@ function autoName(): string {
 }
 
 const displayName = computed(() => name.value.trim() || autoName())
-const displayBrand = computed(() => brand.value.trim() || EMPTY_BRAND)
 const canSave = computed(() => lmPer.value > 0 && effectiveLamps.value >= 1)
 
 /* Зона, в которую светильник попадёт (тип → зона; спот → пользователь). */
@@ -291,6 +289,34 @@ const isDirty = computed(() =>
   props.isProvisional || currentSpecJson.value !== initialSpecSnapshot,
 )
 
+/* ──────────────── iOS large-title (как в FxEditor) ──────────────── */
+
+const plateEl = ref<HTMLDivElement | null>(null)
+const plateScrolledOut = ref(false)
+let plateObserver: IntersectionObserver | null = null
+watch(plateEl, (el) => {
+  plateObserver?.disconnect(); plateObserver = null
+  if (!el) { plateScrolledOut.value = false; return }
+  plateObserver = new IntersectionObserver(
+    ([entry]) => { plateScrolledOut.value = !entry.isIntersecting },
+    { rootMargin: '-44px 0px 0px 0px', threshold: 0 },
+  )
+  plateObserver.observe(el)
+})
+const navTitleVisible = computed(() => plateScrolledOut.value)
+
+/* ──────────────── Плашка несохранённых + спотлайт ──────────────── */
+
+const saveBtnEl = ref<HTMLButtonElement | null>(null)
+const highlightSave = ref(false)
+let highlightTimer: ReturnType<typeof setTimeout> | null = null
+function scrollToSave() {
+  saveBtnEl.value?.scrollIntoView({ behavior: 'auto', block: 'center' })
+  highlightSave.value = true
+  if (highlightTimer) clearTimeout(highlightTimer)
+  highlightTimer = setTimeout(() => { highlightSave.value = false }, 2000)
+}
+
 /* ──────────────── Действия ──────────────── */
 
 async function pasteUrl() {
@@ -311,7 +337,6 @@ async function pasteUrl() {
 function handleSave() {
   if (!canSave.value) return
   const spec = buildSpec()
-  // m обновит store через registerCustom — здесь оставляем существующий.
   const nextFx: Fixture = {
     ...props.item,
     custom: spec,
@@ -329,6 +354,8 @@ function handleDeleteConfirmed() {
 }
 
 function tryClose() {
+  /* Провизорный новый — всегда спрашиваем (паттерн FxEditor): иначе юзер
+     уйдёт думая что «добавил». isDirty уже включает provisional. */
   if (isDirty.value) {
     showLeaveConfirm.value = true
     return
@@ -343,21 +370,6 @@ function onLeaveDiscard() {
   showLeaveConfirm.value = false
   emit('close')
 }
-
-/* ──────────────── Лок скролла + StickyBar/SoundButton ──────────────── */
-
-let prevOverflow = ''
-let prevHtmlOverflow = ''
-onMounted(() => {
-  prevOverflow = document.body.style.overflow
-  prevHtmlOverflow = document.documentElement.style.overflow
-  document.body.style.overflow = 'hidden'
-  document.documentElement.style.overflow = 'hidden'
-})
-onUnmounted(() => {
-  document.body.style.overflow = prevOverflow
-  document.documentElement.style.overflow = prevHtmlOverflow
-})
 
 /* ──────────────── Динамика: фоллбэк мощности при смене цоколя ──────────────── */
 
@@ -384,172 +396,98 @@ function metersWord(n: number): string {
   return 'метров'
 }
 
+onUnmounted(() => {
+  if (highlightTimer) clearTimeout(highlightTimer)
+  plateObserver?.disconnect()
+})
+
 const accent = computed(() => props.roomTint || T.neutral)
+const EMPTY_BRAND_CONST = EMPTY_BRAND
 </script>
 
 <template>
   <div :style="{
-    position: 'fixed', inset: 0, zIndex: Z.fxPage,
+    position: 'fixed', inset: 0,
     background: T.bg, color: T.text,
-    display: 'flex', flexDirection: 'column',
-    overflow: 'hidden',
+    overflow: showLeaveConfirm ? 'hidden' : 'auto',
   }">
-    <!-- NavHeader -->
+    <!-- NavHeader: title только когда плашка с большим именем ушла за вьюпорт -->
     <NavHeader
-      :title="displayName"
+      :title="''"
       :back="props.backLabel"
       @back="tryClose"
-    />
+    >
+      <template #title>
+        <span :style="{
+          opacity: navTitleVisible ? 1 : 0,
+          transition: 'opacity .2s ease',
+        }">{{ displayName }}</span>
+      </template>
+    </NavHeader>
 
-    <!-- Превью карточки в комнате (mini ZoneCard row) -->
-    <div :style="{
-      flexShrink: 0,
-      padding: '10px 16px',
-      background: T.cardAlt,
-      borderBottom: `1px solid ${T.border}`,
-    }">
-      <div :style="{
-        fontSize: '10px', color: T.textDim, marginBottom: '6px',
-        textTransform: 'uppercase', letterSpacing: '0.5px',
-      }">
-        так будет выглядеть в комнате
-      </div>
-      <div :style="{
+    <!-- Плашка «Есть несохранённые изменения» — sticky над контентом -->
+    <div
+      v-if="isDirty"
+      :style="{
+        position: 'sticky', top: '44px', zIndex: 9,
+        background: accent, color: T.bg,
+        padding: '10px 16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: '10px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+      }"
+    >
+      <span :style="{
         display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '8px 10px', borderRadius: '10px',
-        background: 'rgba(255,255,255,0.04)',
+        flex: 1, minWidth: 0,
       }">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{ flexShrink: 0 }">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
         <span :style="{
-          width: '14px', height: '14px', borderRadius: '50%',
-          flexShrink: 0, display: 'inline-block',
-          background: orbBg(tintObj.hex),
-          border: orbBorder(tintObj.hex),
-          boxShadow: 'inset 0 -1px 2px rgba(0,0,0,0.22), inset 0 1px 1px rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.4)',
-        }" />
-        <span :style="{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          lineHeight: 1.15, minWidth: 0,
-        }">
-          <span :style="{
-            fontSize: '14px', fontWeight: 600, color: T.text,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }">{{ FX_TYPES.find((t) => t.id === type)?.label }}</span>
-          <span :style="{
-            fontSize: '10px', fontWeight: 700, color: accent,
-            textTransform: 'uppercase', letterSpacing: '0.6px',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }">{{ displayBrand }}</span>
-        </span>
-        <span v-if="showSize" :style="{
-          padding: '2px 8px', borderRadius: '6px',
-          background: accent + '22',
-          fontSize: '11px', fontWeight: 600, color: accent,
-        }">{{ size }}</span>
-      </div>
+          fontSize: '13px', fontWeight: 600,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }">Есть несохранённые изменения</span>
+      </span>
+      <span
+        :style="{
+          display: 'flex', alignItems: 'center', gap: '5px',
+          flexShrink: 0, background: T.text, color: T.bg,
+          padding: '6px 12px', borderRadius: '8px',
+          fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+        }"
+        @click="scrollToSave"
+      >
+        {{ props.isProvisional ? 'Добавить' : 'Сохранить' }}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <polyline points="19 12 12 19 5 12" />
+        </svg>
+      </span>
     </div>
 
-    <!-- Scroll body -->
-    <div class="customfx-scroll" :style="{
-      flex: 1, overflowY: 'auto',
-      padding: '14px 16px 16px',
-      WebkitOverflowScrolling: 'touch',
-      maxWidth: '560px', width: '100%',
-      margin: '0 auto',
+    <!-- Главный контейнер -->
+    <div :style="{
+      maxWidth: '480px', margin: '0 auto',
+      padding: '16px 20px',
+      fontFamily: `'Segoe UI', system-ui, sans-serif`,
+      color: T.text, boxSizing: 'border-box',
     }">
-      <!-- Вводная (ToV: спокойно, по делу) -->
-      <div :style="{
-        padding: '10px 12px', marginBottom: '14px',
-        background: T.neutral + '11',
-        border: `1px solid ${T.neutral}33`,
-        borderRadius: '10px',
-        fontSize: '12px', color: T.textSec, lineHeight: 1.4,
+
+      <!-- iOS large title (плашка с именем — observer определяет когда показать title в NavHeader) -->
+      <div ref="plateEl" :style="{
+        marginBottom: '14px',
+        padding: '14px 4px 8px',
       }">
-        Учтём в общей яркости комнаты.
-      </div>
-
-      <!-- Название -->
-      <div :style="{ marginBottom: '14px' }">
         <div :style="{
-          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          marginBottom: '8px', padding: '0 2px',
-        }">
-          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Название</span>
-          <span :style="{ fontSize: '11px', color: T.textDim }">{{ name.length }}/{{ NAME_MAX }}</span>
-        </div>
-        <input
-          v-model="name"
-          :maxlength="NAME_MAX"
-          :placeholder="autoName()"
-          :style="{
-            width: '100%', padding: '12px 14px',
-            background: T.cardAlt, border: `1px solid ${T.border}`,
-            borderRadius: '12px', color: T.text, fontSize: '16px',
-            outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-          }"
-        />
+          fontSize: '24px', fontWeight: 700, color: T.text,
+          lineHeight: 1.2, marginBottom: '2px',
+        }">{{ displayName }}</div>
       </div>
 
-      <!-- Где посмотреть -->
-      <div :style="{ marginBottom: '14px' }">
-        <div :style="{
-          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          marginBottom: '8px', padding: '0 2px',
-        }">
-          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Где посмотреть</span>
-          <span :style="{ fontSize: '11px', color: T.textDim }">опц.</span>
-        </div>
-        <div :style="{ position: 'relative' }">
-          <input
-            v-model="url"
-            type="url"
-            placeholder="https://..."
-            :style="{
-              width: '100%', padding: '12px 88px 12px 14px',
-              background: T.cardAlt, border: `1px solid ${T.border}`,
-              borderRadius: '12px', color: T.text, fontSize: '16px',
-              outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-            }"
-          />
-          <button
-            :style="{
-              position: 'absolute', right: '6px', top: '50%',
-              transform: 'translateY(-50%)',
-              padding: '7px 14px', border: 'none', borderRadius: '8px',
-              background: pasteState === 'ok' ? T.green
-                        : pasteState === 'fail' ? T.red + '88'
-                        : T.neutral + '33',
-              color: (pasteState === 'ok' || pasteState === 'fail') ? T.bg : T.neutral,
-              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-              transition: 'all .2s', fontFamily: 'inherit',
-            }"
-            @click="pasteUrl"
-          >{{ pasteState === 'ok' ? 'вставлено' : pasteState === 'fail' ? 'нет доступа' : 'Вставить' }}</button>
-        </div>
-      </div>
-
-      <!-- Бренд -->
-      <div :style="{ marginBottom: '14px' }">
-        <div :style="{
-          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          marginBottom: '8px', padding: '0 2px',
-        }">
-          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Бренд</span>
-          <span :style="{ fontSize: '11px', color: T.textDim }">опц.</span>
-        </div>
-        <input
-          v-model="brand"
-          :maxlength="BRAND_MAX"
-          placeholder="IKEA, Vitra, Lightstar..."
-          :style="{
-            width: '100%', padding: '12px 14px',
-            background: T.cardAlt, border: `1px solid ${T.border}`,
-            borderRadius: '12px', color: T.text, fontSize: '16px',
-            outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-          }"
-        />
-      </div>
-
-      <!-- Тип -->
+      <!-- Тип — НАД названием, первое поле -->
       <div :style="{ marginBottom: '14px' }">
         <div :style="{ marginBottom: '8px', padding: '0 2px' }">
           <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Тип</span>
@@ -623,6 +561,89 @@ const accent = computed(() => props.roomTint || T.neutral)
             }"
             @click="size = opt.id"
           >{{ opt.label }}</button>
+        </div>
+      </div>
+
+      <!-- Название -->
+      <div :style="{ marginBottom: '14px' }">
+        <div :style="{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          marginBottom: '8px', padding: '0 2px',
+        }">
+          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Название</span>
+          <span :style="{ fontSize: '11px', color: T.textDim }">{{ name.length }}/{{ NAME_MAX }}</span>
+        </div>
+        <input
+          v-model="name"
+          :maxlength="NAME_MAX"
+          :placeholder="autoName()"
+          :style="{
+            width: '100%', padding: '12px 14px',
+            background: T.cardAlt, border: `1px solid ${T.border}`,
+            borderRadius: '12px', color: T.text, fontSize: '16px',
+            outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+          }"
+        />
+      </div>
+
+      <!-- Бренд (UPPERCASE) -->
+      <div :style="{ marginBottom: '14px' }">
+        <div :style="{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          marginBottom: '8px', padding: '0 2px',
+        }">
+          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Бренд</span>
+          <span :style="{ fontSize: '11px', color: T.textDim }">опц.</span>
+        </div>
+        <input
+          v-model="brand"
+          :maxlength="BRAND_MAX"
+          placeholder="GAUSS, FERON, NAVIGATOR..."
+          :style="{
+            width: '100%', padding: '12px 14px',
+            background: T.cardAlt, border: `1px solid ${T.border}`,
+            borderRadius: '12px', color: T.text, fontSize: '16px',
+            textTransform: 'uppercase',
+            outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+          }"
+        />
+      </div>
+
+      <!-- Где посмотреть -->
+      <div :style="{ marginBottom: '14px' }">
+        <div :style="{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          marginBottom: '8px', padding: '0 2px',
+        }">
+          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Где посмотреть</span>
+          <span :style="{ fontSize: '11px', color: T.textDim }">опц.</span>
+        </div>
+        <div :style="{ position: 'relative' }">
+          <input
+            v-model="url"
+            type="url"
+            placeholder="https://..."
+            :style="{
+              width: '100%', padding: '12px 88px 12px 14px',
+              background: T.cardAlt, border: `1px solid ${T.border}`,
+              borderRadius: '12px', color: T.text, fontSize: '16px',
+              outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+            }"
+          />
+          <button
+            :style="{
+              position: 'absolute', right: '6px', top: '50%',
+              transform: 'translateY(-50%)',
+              padding: '7px 14px', border: 'none', borderRadius: '8px',
+              background: pasteState === 'ok' ? T.green
+                        : pasteState === 'fail' ? T.red + '88'
+                        : T.neutral + '33',
+              color: (pasteState === 'ok' || pasteState === 'fail') ? T.bg : T.neutral,
+              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+              transition: 'all .2s', fontFamily: 'inherit',
+            }"
+            @click="pasteUrl"
+          >{{ pasteState === 'ok' ? 'вставлено' : pasteState === 'fail' ? 'нет доступа' : 'Вставить' }}</button>
         </div>
       </div>
 
@@ -709,7 +730,7 @@ const accent = computed(() => props.roomTint || T.neutral)
           <span
             :style="{
               cursor: 'pointer', color: T.neutral,
-              textDecoration: 'underline', fontSize: '11px',
+              fontSize: '13px', fontWeight: 600,
             }"
             @click="manualLm = !manualLm"
           >{{ manualLm ? '← по мощности' : 'знаю люмены →' }}</span>
@@ -892,7 +913,7 @@ const accent = computed(() => props.roomTint || T.neutral)
           marginBottom: '8px', padding: '0 2px',
         }">
           <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">Цвет светильника</span>
-          <span :style="{ fontSize: '11px', color: T.textDim }">{{ tintObj.label }}</span>
+          <span :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">{{ tintObj.label }}</span>
         </div>
         <div class="customfx-tint-row" :style="{
           display: 'flex', gap: '12px',
@@ -958,6 +979,7 @@ const accent = computed(() => props.roomTint || T.neutral)
         background: T.neutral + '11',
         border: `1px solid ${T.neutral}33`,
         borderRadius: '12px',
+        marginBottom: '20px',
       }">
         <div :style="{
           fontSize: '11px', fontWeight: 600, color: T.neutral,
@@ -976,10 +998,29 @@ const accent = computed(() => props.roomTint || T.neutral)
         </div>
       </div>
 
-      <!-- Удалить — большая outline-кнопка в красной плашке (паттерн FxEditor) -->
+      <!-- Кнопка Сохранить/Добавить — inline, не sticky (паттерн FxEditor) -->
+      <button
+        ref="saveBtnEl"
+        :class="{ 'fx-save-glow': highlightSave }"
+        :disabled="!canSave"
+        :style="{
+          position: 'relative', zIndex: highlightSave ? 49 : 'auto',
+          width: '100%', padding: '14px',
+          background: canSave ? T.text : T.border,
+          color: canSave ? T.bg : T.textDim,
+          border: 'none', borderRadius: '10px',
+          cursor: canSave ? 'pointer' : 'not-allowed',
+          fontSize: '17px', fontWeight: 600,
+          marginBottom: '20px', fontFamily: 'inherit',
+        }"
+        @click="handleSave"
+      >{{ props.isProvisional ? 'Добавить' : 'Сохранить' }}</button>
+
+      <!-- Удалить — ПОД кнопкой Сохранить (паттерн FxEditor) -->
       <div v-if="!props.isProvisional" :style="{
         background: T.red + '14', border: `1px solid ${T.red}33`,
-        borderRadius: '10px', padding: '14px', marginTop: '16px',
+        borderRadius: '10px', padding: '14px', marginTop: '12px',
+        marginBottom: '40px',
       }">
         <div :style="{ fontSize: '12px', color: T.textSec, marginBottom: '10px', lineHeight: 1.5 }">
           «{{ displayName }}» будет удалён из комнаты. Настройки не сохранятся — при повторном добавлении нужно будет ввести заново.
@@ -996,27 +1037,14 @@ const accent = computed(() => props.roomTint || T.neutral)
       </div>
     </div>
 
-    <!-- Sticky bottom — одна кнопка (как у FxEditor через StickyBar) -->
+    <!-- Спотлайт-затемнение при тапе по плашке «Сохранить» (кнопка всплывает выше) -->
     <div :style="{
-      flexShrink: 0,
-      padding: '12px 16px 18px',
-      borderTop: `1px solid ${T.border}`,
-      background: T.bg,
-    }">
-      <div :style="{ maxWidth: '560px', margin: '0 auto' }">
-        <button
-          :disabled="!canSave"
-          :style="{
-            width: '100%', padding: '14px', border: 'none',
-            background: canSave ? T.text : T.border,
-            color: canSave ? T.bg : T.textDim,
-            borderRadius: '10px', fontSize: '15px', fontWeight: 700,
-            cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
-          }"
-          @click="handleSave"
-        >{{ props.isProvisional ? 'Добавить' : 'Сохранить' }}</button>
-      </div>
-    </div>
+      position: 'fixed', inset: 0, zIndex: 48,
+      background: 'rgba(0,0,0,0.55)',
+      pointerEvents: 'none',
+      opacity: highlightSave ? 1 : 0,
+      transition: 'opacity .45s ease',
+    }" />
 
     <!-- Подтверждение удаления -->
     <div
@@ -1063,9 +1091,9 @@ const accent = computed(() => props.roomTint || T.neutral)
       </div>
     </div>
 
-    <!-- Leave-confirm: на выходе с правками / провизорный -->
     <LeaveConfirmModal
       v-if="showLeaveConfirm"
+      :title="props.isProvisional ? 'Светильник\nне добавлен' : 'Изменения\nне сохранятся'"
       :save-label="props.isProvisional ? 'Добавить' : 'Сохранить'"
       @save="onLeaveSave"
       @discard="onLeaveDiscard"
@@ -1075,8 +1103,12 @@ const accent = computed(() => props.roomTint || T.neutral)
 </template>
 
 <style scoped>
-.customfx-scroll::-webkit-scrollbar { width: 4px; }
-.customfx-scroll::-webkit-scrollbar-thumb { background: #2E2921; border-radius: 2px; }
+/* Спотлайт-подсветка кнопки «Сохранить» (готовый код из FxEditor) */
+.fx-save-glow { animation: fxSavePulse 0.9s ease-in-out infinite; }
+@keyframes fxSavePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255,255,255,0.18), 0 0 22px rgba(255,255,255,0.25); }
+  50%      { box-shadow: 0 0 0 5px rgba(255,255,255,0.30), 0 0 34px rgba(255,255,255,0.45); }
+}
 .customfx-tint-row::-webkit-scrollbar { height: 4px; }
 .customfx-tint-row::-webkit-scrollbar-thumb { background: #2E2921; border-radius: 2px; }
 </style>

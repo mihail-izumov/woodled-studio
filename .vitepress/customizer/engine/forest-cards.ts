@@ -73,7 +73,14 @@ function fixtureLm(f: Fixture): number {
   return Math.round(m.lmPer * l * q * k.body * diff * k.ambient)
 }
 
-/** Группировка по модели + дерево + температура — отдельная группа для разных параметров. */
+/**
+ * Группировка по модели + дерево + температура — отдельная группа для разных параметров.
+ *
+ * Кастомы (другой бренд) группируем по type+chip+zone — у каждого f.m уникальный
+ * хеш, и без этой нормализации текст карточки «Где свет» получает «торшер,
+ * торшер, торшер» вместо «три торшера». Бренд/название для группировки не
+ * важны — текст карточки оперирует только типом+размером.
+ */
 function groupByModel(fx: Fixture[]): FxGroup[] {
   const map = new Map<string, FxGroup>()
   for (const f of fx) {
@@ -84,7 +91,10 @@ function groupByModel(fx: Fixture[]): FxGroup[] {
     const wood = (f.wood ?? 'oak') as Wood
     const btemp = f.opts?.btemp ?? DEF_OPT.btemp
     const zone = (f.zone ?? 'ceiling') as ZoneId
-    const key = `${f.m}|${wood}|${btemp}|${zone}`
+    // Для кастомов нормализуем ключ по type+chip — иначе разные бренды
+    // одного типа становятся разными группами в тексте.
+    const groupId = f.custom ? `custom:${m.type}|${m.chip || ''}` : f.m
+    const key = `${groupId}|${wood}|${btemp}|${zone}`
     const existing = map.get(key)
     if (existing) {
       existing.count += q

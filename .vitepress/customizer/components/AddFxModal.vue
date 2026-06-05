@@ -351,7 +351,6 @@ function cardPhase(idx: number): number {
               width: '100%', aspectRatio: '3 / 4', borderRadius: '14px',
               overflow: 'hidden', position: 'relative',
               background: g.type === 'custom' ? T.cardAlt : T.card,
-              border: g.type === 'custom' ? `1px dashed ${T.neutral}44` : 'none',
               boxSizing: 'border-box',
             }">
               <!-- Custom-карточка: тёмный фон + большой плюс + подпись -->
@@ -376,7 +375,7 @@ function cardPhase(idx: number): number {
                   fontSize: '13px', fontWeight: 500, color: T.textSec,
                   textAlign: 'center', lineHeight: 1.4, maxWidth: '160px',
                 }">
-                  Если светильник не из каталога WOODLED
+                  Если светильник<br>не WOODLED
                 </div>
               </div>
 
@@ -453,6 +452,12 @@ function cardPhase(idx: number): number {
             }">
               {{ sqRange(g.models) }}
             </span>
+            <!-- Заглушка-высота для custom-карточки, чтобы выровняться с WOODLED-карточками. -->
+            <span v-else-if="g.type === 'custom'" :style="{
+              display: 'inline-block', padding: '3px 12px',
+              fontSize: '12px', fontWeight: 600, color: 'transparent',
+              border: '1px solid transparent',
+            }">·</span>
           </div>
         </button>
         <div v-if="groups.length > 1" :style="{ flexShrink: 0, width: '12px' }" />

@@ -58,10 +58,12 @@ export function registerCustom(spec: CustomSpec): ModelId {
   const letter = spec.type === 'люстра' ? (sizeLetter[spec.chip] ?? '') : ''
 
   const model: Model = {
-    name: spec.name || spec.brand || 'Свой',
+    // name — артикульное (не показывается в UI); пусто допустимо.
+    name: spec.name || spec.brand || '',
     letter,
     type: spec.type,
-    collection: spec.brand || 'Свой',
+    // collection → fxLine (UPPERCASE-плашка). Пустая строка = не показывать.
+    collection: spec.brand || '',
     chip: spec.chip || '',
     titleFull: spec.chip || '',
     lamps: spec.lamps,

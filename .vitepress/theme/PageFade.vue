@@ -28,7 +28,11 @@ onMounted(() => {
   // для общего вызова clear(). Раньше его делал только customizer/App.vue
   // — на лендинге, /app, /onboarding и /gallery-tagger preloader висел
   // вечно и через 6с показывал «С VPN такое бывает».
-  ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
+  // Без TS-аннотации: <script> в этом файле без lang="ts", babel-парсер
+  // VitePress на CI не понимает `as unknown as {...}` — упадёт билд.
+  if (window.__wlBoot && typeof window.__wlBoot.clear === 'function') {
+    window.__wlBoot.clear()
+  }
 })
 
 if (typeof window !== 'undefined') {

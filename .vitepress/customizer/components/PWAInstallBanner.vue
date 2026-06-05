@@ -38,6 +38,20 @@ const ICON_URL = '/woodled-studio/apple-touch-icon.png'
 const APP_URL = '/woodled-studio/app'
 const BANNER_H = 64 // px — высота банера, передаётся в CSS-переменную
 
+/**
+ * Module-level флаг «пользователь закрыл баннер в этой сессии». Живёт пока
+ * страница в памяти — при reload модуль перегружается и флаг сбрасывается.
+ *
+ * Это нужно потому что в App.vue PWAInstallBanner рендерится через v-if
+ * только на главной экране без модалок. При уходе в BuyModal/RoomDetail и
+ * возврате компонент перемонтируется, локальный `mounted = ref(false)`
+ * сбрасывается → onMounted ставит mounted=true → баннер возвращается.
+ *
+ * Module-level переменная переживает unmount/remount компонента, но не
+ * перезагрузку страницы — это и есть желаемое поведение.
+ */
+let dismissedInSession = false
+
 const visible = ref(false)
 const mounted = ref(false)
 
@@ -82,7 +96,9 @@ function setBannerVar(h: number) {
 function dismiss(e: Event) {
   e.stopPropagation()
   e.preventDefault()
-  // Ничего не сохраняем — при перезагрузке баннер появится снова
+  // Запоминаем в module-level переменной: при возврате на главную банер не
+  // покажется. Очистится только полным reload страницы (модуль перегружается).
+  dismissedInSession = true
   visible.value = false
   setBannerVar(0)
   setTimeout(() => { mounted.value = false }, 360)
@@ -90,6 +106,7 @@ function dismiss(e: Event) {
 
 onMounted(() => {
   if (typeof window === 'undefined') return
+  if (dismissedInSession) return  // пользователь уже закрыл в этой сессии
   if (isStandalone()) return     // уже PWA — баннер не нужен
   if (isInAppBrowser()) return   // Telegram/Instagram/etc — добавить нельзя
 

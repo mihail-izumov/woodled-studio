@@ -13,9 +13,12 @@ export default defineConfig({
     // и пользователь видит, как иконка появляется частями. Preload даёт ей
     // приоритет в очереди загрузки.
     ['link', { rel: 'preload', as: 'image', href: '/apple-touch-icon.png', fetchpriority: 'high' }],
-    // PWA-манифест. Нужен, чтобы iOS 16.4+ согласился пускать Web Push в
-    // standalone-режиме. На Android/Chrome — это же ключ к Add-to-Home prompt.
-    ['link', { rel: 'manifest', href: '/manifest.webmanifest' }],
+    // PWA-манифест подключается ДИНАМИЧЕСКИ через transformHead ниже:
+    //   • на /customizer → manifest-customizer.webmanifest (start_url=/customizer)
+    //   • везде иначе    → manifest.webmanifest (start_url=/)
+    // Это нужно, чтобы «Добавить на экран Домой» из кастомайзера
+    // открывал PWA сразу в кастомайзере, а не сваливался на главную.
+    // В head глобально не подключаем — иначе будет два link rel=manifest.
     // iOS home-screen icon. sizes указывать обязательно (иначе iOS иногда
     // молча отказывается грузить), и желательно дублировать на /apple-touch-icon.png
     // в корне — некоторые версии Safari дёргают именно этот путь.
@@ -323,5 +326,18 @@ export default defineConfig({
     siteTitle: 'WOODLED',
     nav: [],
     sidebar: {},
+  },
+
+  // Per-page PWA-манифест. iOS Safari читает <link rel="manifest"> в
+  // момент тапа «Поделиться → На экран Домой» и берёт оттуда start_url.
+  // Без этого PWA всегда запускается с корня (/), даже если иконку
+  // создали из /customizer. Здесь подмешиваем нужный manifest в head
+  // на сборке в зависимости от страницы.
+  transformHead({ pageData }) {
+    const isCustomizer = pageData.relativePath === 'customizer.md'
+    const href = isCustomizer
+      ? '/manifest-customizer.webmanifest'
+      : '/manifest.webmanifest'
+    return [['link', { rel: 'manifest', href }]]
   },
 })

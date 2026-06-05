@@ -1,0 +1,26 @@
+{
+  "name": "WOODLED Студия",
+  "short_name": "WOODLED",
+  "description": "Конфигуратор света WOODLED — соберите свой лес света в доме.",
+  "start_url": "/customizer",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#13110E",
+  "theme_color": "#13110E",
+  "lang": "ru-RU",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

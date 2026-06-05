@@ -54,6 +54,4 @@ onUnmounted(() => {
 })
 </script>
 
-<ClientOnly>
-  <AppPage />
-</ClientOnly>
+<AppPage />

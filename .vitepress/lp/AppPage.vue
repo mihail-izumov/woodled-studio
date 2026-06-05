@@ -36,8 +36,14 @@ const pushBusy = ref(false)
 // плейсхолдер-блоков — не хочется чтобы пользователь видел «полусобранную»
 // страницу. Boot-loader из config.mts здесь не сработает (он только в
 // standalone PWA), PageFade слишком короткий (1200мс).
-const assetsReady = ref(false)
-const assetsHidden = ref(false)  // полное удаление из DOM после fade-out
+//
+// SSR-safe: оба ref'а ВЫКЛЮЧЕНЫ изначально (assetsHidden=true), чтобы
+// SSR-снапшот рендерил страницу БЕЗ overlay'я. Это убирает hydration
+// mismatch (когда client после mount ставил overlay поверх уже видимого
+// контента и пользователь видел чёрный экран после первого кадра).
+// На client mount overlay включается и сам же гасится.
+const assetsReady = ref(true)
+const assetsHidden = ref(true)
 const MAX_WAIT_MS = 6000          // safety: если CDN упал — не показываем чёрный экран бесконечно
 
 function preloadImage(url: string): Promise<void> {
@@ -50,6 +56,10 @@ function preloadImage(url: string): Promise<void> {
 }
 
 async function waitForAssets() {
+  // Включаем overlay (на client, после mount). Если картинки уже в кэше
+  // — Promise.race резолвится почти мгновенно и overlay фейдается.
+  assetsHidden.value = false
+  assetsReady.value = false
   const all = Promise.all([
     preloadImage(HERO_IMG),
     preloadImage(INSTALL_IMG),

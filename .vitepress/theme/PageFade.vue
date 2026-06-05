@@ -22,6 +22,13 @@ let shownAt = 0
 onMounted(() => {
   shownAt = Date.now()
   window.setTimeout(() => { active.value = false }, MIN_BLACK_MS)
+
+  // Закрыть inline boot-preloader из config.mts. PageFade — layout-slot,
+  // монтируется на ВСЕХ страницах VitePress, поэтому это надёжное место
+  // для общего вызова clear(). Раньше его делал только customizer/App.vue
+  // — на лендинге, /app, /onboarding и /gallery-tagger preloader висел
+  // вечно и через 6с показывал «С VPN такое бывает».
+  ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
 })
 
 if (typeof window !== 'undefined') {

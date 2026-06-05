@@ -29,6 +29,7 @@
 - `NAMING_SPEC.md` — как формируется подпись светильника (тип + чип, без `collection`/`name`).
 - `WOODLED_цвет_стен.md` — отделка стен: пресеты + свой HEX, автоклассификация по relative luminance (BT.709), пороги, влияние на UF, UI в `RoomSettings`, swatch в карточке настроения, share/persist.
 - `WOODLED_шаринг.md` — сериализация состояния в URL-хеш: карта полей `Room`/`Fixture` ↔ `PackedRoom`/`PackedFixture`, дефолты, правило «новое поле в модели → ключ в share.ts», roundtrip-проверка.
+- `WOODLED_прелоадеры.md` — три слоя preloader'а (inline boot-loader из `config.mts`, Vue `Preloader.vue`, `PageFade.vue`). Матрица: что показывается на десктопе / iOS / PWA / при медленном интернете / при reload. Правила синхронизации (`__wlBoot.clear()`, `__wlBranded`, флаг `cleared` против race-condition).
 
 **Рационал и голос:**
 - `WOODLED_рационал_и_архитектура.md` — почему норма «честная» (UF×MF), архитектура `ratio`.

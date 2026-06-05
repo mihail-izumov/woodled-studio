@@ -16,6 +16,8 @@
 | `WOODLED_цвет_стен.md` | Подсистема цвета стен: пресеты `light/medium/dark`, свой HEX, автоклассификация по relative luminance (BT.709), пороги, влияние на норму, UI в `RoomSettings`, swatch в карточке настроения, share/persist. | Перед правкой `engine/wall-color.ts`, `engine/brightness.ts` (UF), `engine/forest-cards.ts` (wallsCard), `RoomSettings.vue` (HEX-input), `ForestMood.vue` (swatch). |
 | `WOODLED_шаринг.md` | Сериализация состояния в URL-хеш: формат v2 (lz-string), карта полей `Room`/`Fixture` → `PackedRoom`/`PackedFixture`, дефолты при unpack, правило «добавил поле в Room/Fixture → обнови share.ts», roundtrip-проверка. | Перед правкой `engine/share.ts`. **Обязательно** перед добавлением/переименованием поля в `data/rooms.ts`, `data/catalog.ts`, `data/materials.ts`. |
 
+| `WOODLED_прелоадеры.md` | Спека всех трёх preloader'ов (inline boot-loader, Vue Preloader.vue, PageFade). Матрица контекстов десктоп/PWA/iOS, поведение на медленном интернете, грабли с standalone-детектом и `__wlBoot.clear()`. | Перед правкой `config.mts` head-блока, `Preloader.vue`, `PageFade.vue`, `ReloadButton.vue` или любого `__wlBoot.clear()` в onMounted. |
+
 ### 📐 Рационал и архитектура (для понимания «почему так»)
 
 | Файл | Назначение |

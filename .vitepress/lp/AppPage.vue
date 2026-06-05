@@ -14,11 +14,13 @@
  * подставит реальные позже.
  */
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vitepress'
 import { PAGE } from './tokens'
 import { getPushState, enablePush, disablePush, type PushState } from './pwa-push'
 
 const ICON_URL = '/woodled-studio/apple-touch-icon.png'
-const APP_FALLBACK_URL = '/woodled-studio/customizer'
+const APP_URL = '/woodled-studio/customizer'
+const router = useRouter()
 
 // Состояние push-подписки: пересчитывается на mount и после действий
 // пользователя. Хранится как объект PushState — рендеримся по `.kind`.
@@ -26,21 +28,20 @@ const pushState = ref<PushState | null>(null)
 const pushBusy = ref(false)
 
 /**
- * Возврат «В приложение». Если пользователь пришёл сюда из конфигуратора
- * — делаем history.back, чтобы сохранилось его состояние (открытая комната,
- * незавершённая сборка). Если открыл /app напрямую (по ссылке, закладке) —
- * простой переход на /customizer.
+ * Возврат «В приложение». Всегда уходим на /customizer через VitePress
+ * SPA-навигацию (плавно, без перезагрузки).
+ *
+ * Раньше пробовал history.back если referrer был из конфигуратора. Это
+ * ломалось якорными переходами #install/#notify в Hero: каждый клик по
+ * якорю добавляет запись в history, и back() возвращал на /app сам —
+ * визуально это выглядело как «странная перезагрузка той же страницы».
+ *
+ * Состояние конфигуратора живёт в localStorage (см. store/configurator)
+ * — оно автоматически восстановится при заходе на /customizer.
  */
-function goBackToApp(e: Event) {
-  if (typeof window === 'undefined') return
-  const ref = document.referrer
-  const sameOrigin = ref && new URL(ref, window.location.href).origin === window.location.origin
-  const fromCustomizer = sameOrigin && /\/woodled-studio\//.test(ref) && !/\/app\/?$/.test(ref)
-  if (fromCustomizer && window.history.length > 1) {
-    e.preventDefault()
-    window.history.back()
-  }
-  // иначе — обычный переход по href (fallback)
+function goToApp(e: Event) {
+  e.preventDefault()
+  router.go(APP_URL)
 }
 
 async function refreshPush() {
@@ -178,8 +179,8 @@ const notifySteps = [
         WOODLED&nbsp;Студия
       </a>
       <a
-        :href="APP_FALLBACK_URL"
-        @click="goBackToApp"
+        :href="APP_URL"
+        @click="goToApp"
         :style="{
           fontSize: '14px',
           color: PAGE.textSec,

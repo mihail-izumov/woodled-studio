@@ -49,6 +49,10 @@ onBeforeUnmount(() => {
 // component <style> blocks, so we add the link tag once on mount.
 let fontLink: HTMLLinkElement | null = null
 onMounted(() => {
+  // Закрыть boot-preloader (inline-script из config.mts). Иначе на
+  // лендинге он висит и через 6с показывает «С VPN такое бывает».
+  ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
+
   const href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'
   if (!document.querySelector(`link[href="${href}"]`)) {
     fontLink = document.createElement('link')

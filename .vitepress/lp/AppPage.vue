@@ -75,6 +75,10 @@ async function onDisablePush() {
 // dismiss в localStorage, чтобы не отвлекать его при возвращении.
 onMounted(() => {
   if (typeof window === 'undefined') return
+  // Закрыть boot-preloader (inline-script из config.mts). Без этого
+  // зависает с подсказкой «С VPN такое бывает».
+  ;(window as unknown as { __wlBoot?: { clear: () => void } }).__wlBoot?.clear()
+
   // Anchor-навигация: если пришли с #install / #notify — плавный скролл
   const hash = window.location.hash
   if (hash) {

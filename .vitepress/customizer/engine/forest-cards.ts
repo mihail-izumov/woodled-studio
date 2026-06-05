@@ -142,7 +142,13 @@ function groupByKindZone(fx: Fixture[]): FxGroup[] {
     const q = f.q ?? 1
     const lm = fixtureLm(f)
     const zone = (f.zone ?? 'ceiling') as ZoneId
-    const key = `${m.type}|${m.chip || ''}|${zone}`
+    /* Для люстр размер (chip) содержательно идёт в текст («средняя люстра»),
+       поэтому он входит в ключ группы. Для остальных типов fxNameNom chip НЕ
+       показывает — `floor_lamp` (тренога) и `floor_lamp_s` (стойка) оба
+       рендерятся как просто «торшер». Если их не сливать в одну группу,
+       текст карточки получает «торшер, торшер». То же для бра гор./верт. */
+    const chipKey = m.type === 'люстра' ? (m.chip || '') : ''
+    const key = `${m.type}|${chipKey}|${zone}`
     const existing = map.get(key)
     if (existing) {
       existing.count += q

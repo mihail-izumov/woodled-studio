@@ -138,32 +138,35 @@ const PLACE_DIST: Record<ForestPlace, number> = { glade: 2, grove: 1, thicket: 0
 /* ──────────────── Построение контекста ──────────────── */
 
 export function buildStoryContext(rooms: Room[], name: string): StoryContext {
-  const filledRooms = rooms.filter((r) => r.fixtures.length > 0)
+  /* Story («Мой Лес») — это рассказ про WOODLED-дом. Все агрегаты в нём
+     считаются ТОЛЬКО по WOODLED-светильникам: яркость, плотность, лампы,
+     породы, цоколи, температура. Кастомы (другие бренды) живут в карточке
+     комнаты для расчёта яркости, но в «лес» не входят и здесь скрыты. */
+  const woodledOnly = (fxs: Fixture[]) => fxs.filter((f) => !f.custom)
 
-  const totalLm = rooms.reduce((s, r) => s + fxLm(r.fixtures), 0)
-  // Лампы и цоколи (слайд 8) считаем только по WOODLED — у кастомов другие
-  // цоколи и LED-модули, в одну упаковку не положишь.
-  const totalLamps = rooms.reduce(
-    (s, r) => s + fxLamps(r.fixtures.filter((f) => !f.custom)),
-    0,
-  )
-  const totalArea = rooms.reduce((s, r) => {
+  /* Комнаты, где есть хотя бы один WOODLED-светильник. Если в комнате только
+     кастомы — для Story это «пустая» комната (леса там нет). */
+  const filledRooms = rooms.filter((r) => woodledOnly(r.fixtures).length > 0)
+
+  const totalLm = rooms.reduce((s, r) => s + fxLm(woodledOnly(r.fixtures)), 0)
+  const totalLamps = rooms.reduce((s, r) => s + fxLamps(woodledOnly(r.fixtures)), 0)
+  const totalArea = filledRooms.reduce((s, r) => {
     const rt = getRT(r.typeId)
     return s + getArea(rt, r)
   }, 0)
-  // «Деревья» — это только WOODLED-светильники (кастомы не из дерева).
+  // «Деревья» — только WOODLED-светильники.
   const totalTrees = rooms.reduce(
-    (s, r) => s + r.fixtures.reduce((a, f) => a + (f.custom ? 0 : (f.q ?? 1)), 0),
+    (s, r) => s + woodledOnly(r.fixtures).reduce((a, f) => a + (f.q ?? 1), 0),
     0,
   )
 
-  const allFx = rooms.flatMap((r) => r.fixtures)
-  const allWoods = woodNames(allFx)
+  // Все WOODLED-светильники по всему дому — для дальнейших агрегатов.
+  const ownFx = rooms.flatMap((r) => woodledOnly(r.fixtures))
+  const allWoods = woodNames(ownFx)
   const lmPerM2 = totalArea > 0 ? Math.round(totalLm / totalArea) : 0
 
-  /* Доминирующее дерево по точкам. Кастомные светильники (другие бренды)
-     не считаем — лес собирается только из WOODLED-пород. */
-  const ownFx = allFx.filter((f) => !f.custom)
+  /* Доминирующее дерево по точкам. Только WOODLED — кастомы выше уже
+     отфильтрованы при формировании `ownFx`. */
   const woodCounts: Record<string, number> = {}
   for (const f of ownFx) {
     const w = f.wood ?? 'oak'
@@ -224,9 +227,11 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
     if (best) contrastPair = { soft: best.soft, bright: best.bright }
   }
 
-  /* zoneShare — доля каждой зоны в общем доме. */
+  /* zoneShare — доля каждой зоны в общем доме (только по WOODLED).
+     Если кастомы попадут в числитель, проценты не суммируются в 100% (totalLm
+     это только WOODLED), и слайд «Где живёт свет» начинает врать. */
   const zoneShare = (zid: 'ceiling' | 'wall' | 'floor' | 'table'): number => {
-    const lm = rooms.reduce((s, r) => s + zoneLm(r.fixtures, zid), 0)
+    const lm = rooms.reduce((s, r) => s + zoneLm(woodledOnly(r.fixtures), zid), 0)
     return totalLm > 0 ? Math.round((lm / totalLm) * 100) : 0
   }
 
@@ -399,10 +404,14 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
 
   /* ═══ Фаза 1: Что вы построили ═══ */
 
-  /* Слайд 1 · Интро */
+  /* Слайд 1 · Интро. Eyebrow «Освещение в доме WOODLED» подсвечивает что
+     Story рассказывает про WOODLED-лес (другие бренды сюда не входят).
+     bigSub=true делает имя дома крупным акцентом под мелким eyebrow.
+     Цифры «N деревьев в M комнатах» переехали на слайд 2 «Ваш лес». */
   slides.push({
-    title: ctx.name,
-    sub: `${ctx.totalTrees} ${tw(ctx.totalTrees)} в ${ctx.filledRooms.length} ${rw(ctx.filledRooms.length)}`,
+    title: 'Освещение в доме WOODLED',
+    sub: ctx.name,
+    bigSub: true,
     iconKey: 'house',
     color: T.neutral,
   })

@@ -187,11 +187,10 @@ export function forestScene(rt: RoomType, room: Room): ForestScene {
 
   const ratio = ratioOf(baseLm(rt, room), fxLm(fx))
   const s1 = `${LEAD[place]}, ${BRIGHT_WARM[brightLevel(ratio)][tempWarmth(fx)]}.`
-  /* Дерево и мебель — две разные мысли. Раньше склеивались через запятую
-     («Орех с дубом, у пола держится мягкая тень») — читалось как одно
-     предложение и сбивало. Теперь разделяем точкой: первое — про породу,
-     второе — про мебель/тени, у каждой свой capFirst. */
-  const s2 = `${cap(woodPhrase(order))}. ${cap(furnPhrase(furnPct(room.furniture)))}.`
+  /* Имя породы убрано из легенды — оно уже есть в имени сцены
+     («Ореховая роща»), повторять «Орех с дубом» избыточно. В легенде
+     оставляем только фразу про мебель/тени. */
+  const s2 = `${cap(furnPhrase(furnPct(room.furniture)))}.`
 
   return { name, legend: `${s1} ${s2}`, place, wood }
 }

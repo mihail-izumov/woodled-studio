@@ -39,18 +39,26 @@ const APP_URL = '/woodled-studio/app'
 const BANNER_H = 64 // px — высота банера, передаётся в CSS-переменную
 
 /**
- * Module-level флаг «пользователь закрыл баннер в этой сессии». Живёт пока
- * страница в памяти — при reload модуль перегружается и флаг сбрасывается.
+ * Флаг «пользователь закрыл баннер» хранится в `document.body.dataset` —
+ * это переживает:
+ *   • unmount/remount компонента (v-if в App.vue при уходе/возврате на главную)
+ *   • Vite HMR перезагрузку модуля (module-level let тут сбрасывается)
+ * И сбрасывается только полным reload страницы (тогда body создаётся заново).
  *
- * Это нужно потому что в App.vue PWAInstallBanner рендерится через v-if
- * только на главной экране без модалок. При уходе в BuyModal/RoomDetail и
- * возврате компонент перемонтируется, локальный `mounted = ref(false)`
- * сбрасывается → onMounted ставит mounted=true → баннер возвращается.
- *
- * Module-level переменная переживает unmount/remount компонента, но не
- * перезагрузку страницы — это и есть желаемое поведение.
+ * Module-level let НЕ годится: в dev-режиме Vite пересоздаёт модуль при
+ * правках любого vue-файла, и баннер возвращается, хотя пользователь его
+ * закрыл. body.dataset переживает HMR и даёт прод-консистентное поведение
+ * сразу в dev.
  */
-let dismissedInSession = false
+const DISMISS_ATTR = 'wlBannerDismissed'
+function isBannerDismissed(): boolean {
+  if (typeof document === 'undefined') return false
+  return document.body.dataset[DISMISS_ATTR] === '1'
+}
+function markBannerDismissed() {
+  if (typeof document === 'undefined') return
+  document.body.dataset[DISMISS_ATTR] = '1'
+}
 
 const visible = ref(false)
 const mounted = ref(false)
@@ -96,9 +104,9 @@ function setBannerVar(h: number) {
 function dismiss(e: Event) {
   e.stopPropagation()
   e.preventDefault()
-  // Запоминаем в module-level переменной: при возврате на главную банер не
-  // покажется. Очистится только полным reload страницы (модуль перегружается).
-  dismissedInSession = true
+  // Помечаем в body.dataset — при возврате на главную (remount компонента)
+  // и при HMR баннер не появится. Очистится только reload страницы.
+  markBannerDismissed()
   visible.value = false
   setBannerVar(0)
   setTimeout(() => { mounted.value = false }, 360)
@@ -106,7 +114,7 @@ function dismiss(e: Event) {
 
 onMounted(() => {
   if (typeof window === 'undefined') return
-  if (dismissedInSession) return  // пользователь уже закрыл в этой сессии
+  if (isBannerDismissed()) return // пользователь уже закрыл в этой сессии
   if (isStandalone()) return     // уже PWA — баннер не нужен
   if (isInAppBrowser()) return   // Telegram/Instagram/etc — добавить нельзя
 
@@ -125,32 +133,36 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <a
+  <!-- Внешний контейнер — sticky-обёртка. Сам &lt;a&gt; БЕЗ крестика,
+       чтобы промахи по кнопке закрытия не вели на /app. Крестик —
+       отдельный &lt;button&gt; абсолютно поверх. -->
+  <div
     v-if="mounted"
-    :href="APP_URL"
     :style="{
       position: 'sticky',
       top: 0,
-      // z-index 100 — выше SoundButton (90); сам банер «толкает» его
-      // вниз через --wl-banner-h, поэтому пересечения нет.
       zIndex: 100,
+      transform: visible ? 'translateY(0)' : 'translateY(-100%)',
+      transition: 'transform 360ms cubic-bezier(0.4, 0, 0.2, 1)',
+      width: '100%',
+    }"
+  >
+  <a
+    :href="APP_URL"
+    :style="{
+      position: 'relative',
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
       paddingLeft: '14px',
-      paddingRight: '14px',
+      // Справа резервируем место под 44px hit-area крестика.
+      paddingRight: '52px',
       paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
       paddingBottom: '10px',
-      // Тёплый медный градиент в стиле WOODLED-CTA — нарядно и
-      // контрастно к тёмному фону сайта.
       background: 'linear-gradient(135deg, #C9A47A 0%, #E4C99A 50%, #B58C5C 100%)',
       color: '#1A1410',
       textDecoration: 'none',
-      // Только внешняя тень — никакого inset white, иначе виден тонкий
-      // светлый кант сверху как артефакт.
       boxShadow: '0 6px 20px rgba(0, 0, 0, 0.28)',
-      transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-      transition: 'transform 360ms cubic-bezier(0.4, 0, 0.2, 1)',
       boxSizing: 'border-box',
       width: '100%',
     }"
@@ -207,32 +219,49 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Крестик закрытия — намеренно бледный. Светлый полупрозрачный
-         фон, мягкая иконка. Не хочется, чтобы он визуально перетягивал
-         внимание с CTA «Подробнее» — он там для тех, кому реально
-         мешает баннер, а не как первичное действие. -->
-    <button
-      type="button"
-      aria-label="Закрыть"
-      @click="dismiss"
+  </a>
+
+  <!-- Крестик — отдельный &lt;button&gt; ВНЕ &lt;a&gt;, абсолютно
+       поверх правого края. Hit-area 44×44 (iOS HIG) — палец не
+       промахивается на ссылку. Визуально круг 28×28 в центре hit-area. -->
+  <button
+    type="button"
+    aria-label="Закрыть"
+    @click="dismiss"
+    :style="{
+      position: 'absolute',
+      top: 'calc(env(safe-area-inset-top, 0px) + (64px - 44px) / 2)',
+      right: '4px',
+      width: '44px',
+      height: '44px',
+      padding: 0,
+      border: 'none',
+      background: 'transparent',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      // z-index выше &lt;a&gt; чтобы клик уходил в button (не в ссылку).
+      zIndex: 1,
+    }"
+  >
+    <!-- Визуальный круг 28×28 внутри hit-area — выглядит ровно как раньше. -->
+    <span
       :style="{
         width: '28px',
         height: '28px',
         borderRadius: '50%',
-        border: 'none',
         background: 'rgba(255, 250, 240, 0.28)',
         color: 'rgba(26, 20, 16, 0.55)',
-        flexShrink: 0,
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
-        padding: 0,
       }"
     >
       <svg width="12" height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
       </svg>
-    </button>
-  </a>
+    </span>
+  </button>
+  </div>
 </template>

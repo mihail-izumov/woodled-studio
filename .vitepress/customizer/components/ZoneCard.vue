@@ -210,10 +210,21 @@ function orbStyle(it: Fixture | { wood: Wood; custom?: { tint?: { hex?: string }
       :style="{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', width: '100%', minHeight: '44px', boxSizing: 'border-box', padding: '8px 8px 8px 11px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, marginTop: '8px' }"
       @click="emit('open')"
     >
+      <!-- Пипсы: первые `limit` — в цвете комнаты, лишние (used > limit) —
+           красные. Раньше рендерили ровно `limit` точек, и при превышении
+           UI скрывал реальный count. Теперь видно «3 точки при лимите 2». -->
       <span :style="{ display: 'flex', gap: '5px', flexWrap: 'wrap' }">
         <span
-          v-for="i in limit" :key="i"
-          :style="{ width: '9px', height: '9px', borderRadius: '50%', background: i <= used ? accent : 'transparent', border: `1.5px solid ${i <= used ? accent : accent + '66'}` }"
+          v-for="i in Math.max(limit, used)" :key="i"
+          :style="{
+            width: '9px', height: '9px', borderRadius: '50%',
+            background: i <= used ? (i > limit ? T.red : accent) : 'transparent',
+            border: `1.5px solid ${
+              i <= used
+                ? (i > limit ? T.red : accent)
+                : (i > limit ? T.red + '66' : accent + '66')
+            }`,
+          }"
         />
       </span>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" :stroke="accent" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>

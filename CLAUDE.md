@@ -88,7 +88,10 @@
 - `ZoneFixturesModal.vue` — белая модалка деталей зоны (отдельный компонент, дизайн правится тут).
 - `AddFxModal.vue` — выбор коллекции/модели для добавления. `RoomSettings.vue` — параметры комнаты
   (заголовок «Параметры комнаты», эталон паттерна «скрыть StickyBar + lock scroll», см. ниже).
+  **Последняя карточка слайдера = «Другой бренд»** (плюс по центру, без подписи), `emit('addCustom', zone)` вместо `emit('add', fx)` → `RoomDetail.addCustomFx()` создаёт placeholder, регистрирует кастом в MD, открывает `CustomFxEditor`.
 - `FxEditor.vue` — страница светильника (см. «Поток добавления светильника» ниже). Сравнивает `getBright(...).name` со строками «Темно/Полусвет/Светло/Ярко/Праздник» — при переименовании статусов синхронизировать.
+- **`CustomFxEditor.vue`** — параллельная страница для светильников другого бренда (не WOODLED). Открывается из `App.vue` через `v-if="activeFxData.fx.custom"` вместо обычного `FxEditor`. Свой набор полей (название/бренд/тип/цвет/источник света/мощность/корпус/температура). Паттерны как у FxEditor: NavHeader iOS large-title (через `IntersectionObserver` на `plateEl`), sticky-плашка «несохранённые изменения» (ТОЛЬКО при редактировании, для нового provisional её нет), спотлайт-кнопка `scrollToSave`, LeaveConfirmModal на back. Полная тех. спека — `WOODLED_кастомные_светильники_тех.md`.
+- **`BuyModal.vue`** (он же «Мой Лес», открывается из StickyBar) — каталог заказа. Заголовок «Освещение в доме WOODLED». Фильтрует кастомов из списка через хелперы `woodledFx(r)` / `woodledEntries(r)` — кастомов нельзя заказать по WOODLED, у них цена 0₽. `woodledEntries` возвращает `{fx, idx}` с ОРИГИНАЛЬНЫМИ индексами из `r.fixtures` (нужно для discount/openFx).
 - **`StoryModal.vue`** — модалка «Посмотрите на свой лес», 8 слайдов про дом целиком. На лесных сценах (не на старых mood). Слайд 3 — «Три места леса» (поляна/роща/чаща), слайд 4 — карта дома с именами `scene.name`, слайд 5 — контраст по `place`, слайд 8 — лампы + цоколи. Тексты собираются `engine/story-engine.ts` (`buildStorySlides`, `buildStoryContext`). Story НЕ дублирует ForestMood: ForestMood — про комнату с конкретикой, Story — верхнеуровневый взгляд на дом.
 - `ui/SmartHelpModal.vue` — модалка «WOODLED Smart» (открывается из `ForestMood` и `FxEditor`). 5 секций: норма / отдача / шкала / «выбери за меня» / как пользоваться. Кнопка закрытия — «Супер!».
 - `ui/NavHeader.vue` — единый sticky-хедер по iOS HIG: высота **44px**, кнопка «назад» белая 17px (стрелка 24px),
@@ -140,6 +143,28 @@
   а не по пустому `done:[]` — иначе сохранённый несобранный светильник ошибочно «весь Готово».
 - **Тост сохранения** (`App.onFxSave`): новый → «{Модель} в {Комнате}» (склонение `roomPrepName`),
   правки существующего → «Изменения сохранены». Оба с чёрным чекмарком (`showFB(msg,'check')`).
+
+## Поток добавления для другого бренда (CustomFxEditor) — параллельный
+Те же провизорность и тост-логика что у WOODLED, но через другой компонент и другую форму.
+- **Вход:** `+` в ZoneCard → AddFxModal → последняя карточка «Другой бренд» → `emit('addCustom', zone)`
+  → `RoomDetail.addCustomFx(zone)` создаёт `Fixture` с дефолтным `CustomSpec` (зависит от зоны),
+  `registerCustom()` синхронно записывает запись в `MD`/`FX_FACTORS`, `emit('update')` + `openFx(roomId, idx, isNew=true)`.
+- **Роутер:** `App.vue` через `v-if="activeFxData.fx.custom"` рендерит `CustomFxEditor` вместо
+  `FxEditor`. Тот же `fxIsProvisional` / `onFxSave` / `onFxDelete` / `onFxClose` обработчик.
+- **Поля формы:** название (16 chars) · бренд (12 chars, UPPERCASE, пусто → плашка `fxLine` скрыта в
+  ZoneCard) · ссылка («Где посмотреть» с copy/paste кнопками, paste с fallback на `<input>.focus()`) ·
+  тип (FxType dropdown) · спот → «Где крепится» (ceiling/wall) · люстра → размер · источник света
+  (E27/E14/GX53/GU10/G9/LED/TAPE) · мощность по типу источника · корпус (open/shade/lamella → body) ·
+  цвет 10 пресетов (3 WOODLED + латунь/белый/хром/никель/бронза/графит/тёплый серый) · оттенок света.
+- **Превью «В комнату пойдёт»:** `lmPer × lamps × body × ambient` — ровно та же формула что у
+  `engine/brightness.ts/fxLm` (diff кастома = 1, q = 1). Цифра в превью идентична той что сдвинет
+  бейдж яркости в RoomDetail.
+- **`isDirty` + плашка:** sticky-плашка «Есть несохранённые изменения» показывается ТОЛЬКО при
+  `isDirty && !isProvisional` (для нового добавления она лишняя — нечего «не сохранять»). Сравнение
+  spec идёт через `stripInputs()` — поле `inputs` (UI-state для reopen) не учитывается, чтобы
+  reopen существующего fixture не помечал его dirty=true ложно.
+- **Подтверждение больших люмен:** если manual lm ≥ 10 000 — модалка «{N} лм — точно?» перед save
+  (страховка от опечатки). Из LeaveConfirm идёт мимо confirm'а — один таноз в потоке.
 
 ## Конвенции
 - **Стили — инлайном** через `:style="{}"` (объекты), почти без CSS-классов. Скоуп-стили — только
@@ -195,6 +220,35 @@
   опции `materials.ts` поедут в ссылку без правок share.ts.
 - **Sticky-плашки:** `NavHeader` 44px (z 10), плашка «несохранённые изменения» — `sticky top:44` (z 9).
   Клик «сохранить» вешать на саму кнопку-пилюлю, а не на всю плашку (иначе промах при тапе по «назад»).
+- **Кастомные светильники (`Fixture.custom`)** — другой бренд хранится в самой Fixture, при загрузке
+  регистрируется в `MD`/`FX_FACTORS` через `engine/custom-registry.ts/registerCustom()`. **Регистрация
+  должна происходить ДО первого рендера** с этим fixture: 5 точек — `store.addFixture`,
+  `store.updateFixture`, `store.updateRoom`, `store.restorePersistedState`, `store.loadFromHash` +
+  синхронный вызов в `RoomDetail.addCustomFx()` перед `emit('update')`. Иначе `MD[fx.m] === undefined`
+  → crash. Полная спека — `WOODLED_кастомные_светильники_тех.md`.
+- **«Лес» = только WOODLED.** В 5 местах фильтруем `f.custom`-out: `forest.ts/woodOrder`,
+  `forest-cards.ts/woodCard`, `story-engine.ts` (dominantWood/totalTrees/totalLamps/sceneMap.woods/
+  lampsByCap/avgKelvin), `RoomCard.vue/tally`, `BuyModal.vue/woodledFx`. Кастомы участвуют в общей
+  яркости (`fxLm`/`zoneLm`) но не в смысловом слое «леса».
+- **`groupByKindZone` для «Где свет» — chip только у люстр.** В `forest-cards.ts` отдельный хелпер
+  для карточки whereCard: ключ `${type}|${chip}|${zone}` где chip входит ТОЛЬКО для type='люстра'.
+  Иначе `floor_lamp` (chip='тренога') + `floor_lamp_s` (chip='стойка') = две группы → текст «торшер,
+  торшер». То же для бра гор./верт. и спотов разных подтипов. Остальные карточки (Дерево, Оттенок)
+  продолжают использовать `groupByModel` где wood/btemp/chip содержательны.
+- **`btemp` кастомов лежит в `f.custom.btemp`, а не `f.opts.btemp`** — все чтения температуры через
+  chain `f.opts?.btemp ?? f.custom?.btemp ?? DEF_OPT.btemp` (`forest.ts/tempWarmth`,
+  `forest-cards.ts/groupByModel`). Иначе кастом 2700K читался как 4000K и ломал «Оттенок» в ForestMood.
+- **Module-level `let` сбрасывается при Vite HMR.** Если фича требует «помнить состояние в сессии до
+  reload страницы» (как `PWAInstallBanner.dismissedInSession`), храни флаг в `document.body.dataset` —
+  переживает HMR-перезагрузку модуля, очищается только полным reload. Прецедент: при HMR-обновлении
+  любого vue-файла модуль баннера пересоздавался, dismissed-флаг сбрасывался, баннер возвращался.
+- **Кликабельный родительский `<a>` ест промахи по дочернему `<button>`.** Если внутри ссылки стоит
+  кнопка-крестик (как у `PWAInstallBanner`), палец, чуть промазавший мимо иконки, попадает на ссылку
+  и навигирует. Решение: вынести кнопку из `<a>` через `position:absolute` с touch-area ≥44×44
+  (iOS HIG), визуально внутри 28×28 круг. См. `PWAInstallBanner.vue`.
+- **SoundButton разный top для главной/остальных** — `App.vue` через `isHome` computed:
+  `isHome ? 'calc(20px + var(--wl-banner-h, 0px))' : '6px'`. На главной — в линию с бейджем
+  «WOODLED Студия» (с учётом PWA-баннера); на FxEditor/CustomFxEditor/RoomDetail — в центре NavHeader.
 
 ## Как давать задачи (для скорости)
 Называй конкретный экран/компонент, прикладывай скриншот, формулируй цель (а не только пиксели).

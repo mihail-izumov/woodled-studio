@@ -129,12 +129,17 @@ Roundtrip:
 
 ## Группировка кастомов в карточках «Где свет»
 
-`groupByModel` в `forest-cards.ts`:
+**Два хелпера:** `groupByModel` (общий, используется в карточках Дерево/Оттенок где wood/btemp/chip содержательны) и `groupByKindZone` (ТОЛЬКО для whereCard — текста «Где свет»).
+
+В `groupByKindZone`:
 
 ```ts
-// Для кастомов нормализуем ключ по type+chip (не по f.m):
-const groupId = f.custom ? `custom:${m.type}|${m.chip || ''}` : f.m
-const key = `${groupId}|${wood}|${btemp}|${zone}`
+// chip входит в ключ ТОЛЬКО для type='люстра' (где «средняя/большая» содержательны).
+// Для торшеров/бра/спотов chip не показывается в fxNameNom — иначе
+// floor_lamp (chip='тренога') + floor_lamp_s (chip='стойка') = 2 группы
+// → текст «торшер, торшер» вместо «два торшера».
+const chipKey = m.type === 'люстра' ? (m.chip || '') : ''
+const key = `${m.type}|${chipKey}|${zone}`  // НЕ по f.m
 ```
 
 Без этого два кастомных торшера (с разными hash-id) попадают в разные группы → текст карточки получался «торшер, торшер подсвечивают комнату» вместо «два торшера».
@@ -191,13 +196,15 @@ const btemp = f.opts?.btemp ?? f.custom?.btemp ?? DEF_OPT.btemp
 | `components/AddFxModal.vue` | последняя карточка слайдера |
 | `components/CustomFxEditor.vue` | НОВЫЙ — страница по паттернам FxEditor |
 | `components/RoomDetail.vue` | `addCustomFx(zone)` создаёт placeholder, регистрирует, открывает |
-| `components/App.vue` | роутер `v-if="fx.custom"` → CustomFxEditor |
+| `components/App.vue` | роутер `v-if="fx.custom"` → CustomFxEditor; `isHome` computed для SoundButton/PWAInstallBanner |
+| `components/BuyModal.vue` | заголовок «Освещение в доме WOODLED»; фильтр кастомов через `woodledFx(r)` / `woodledEntries(r)` |
+| `components/PWAInstallBanner.vue` | `body.dataset.wlBannerDismissed` (переживает HMR), крестик вынесен из `<a>` с 44×44 hit-area |
 
 ---
 
 ## Edge cases (известные)
 
-- **BuyModal показывает «0 ₽» для кастома** — цена ноль (`p:{oak:0,walnut:0,black:0}`). Косметика. Можно скрыть строку для кастомов или показать «—». Не блокер.
+- **BuyModal цена 0 ₽** — фиксировано в ревью v3: кастомы исключены из списка заказа через `woodledFx/woodledEntries`, в списке не появляются, итоги считаются только по WOODLED. Если кастом единственный в комнате — комната вообще не показывается в Мой Лес.
 - **Смена `type` в форме не валидирует лимит новой зоны** — при изменении «бра» → «торшер» зона уезжает с `wall` на `floor`. Лимит не проверяется (аналогично у WOODLED где тип фиксирован).
 - **«Мёртвые» MD-записи** — после правки spec → новый id, старая остаётся в MD до перезагрузки. ~200 байт каждая. Refresh очищает.
 - **Legacy без `inputs`** — для сохранений до фикса бага. Восстановление мощности через приближение `lmPer / lmPerW`. Для ленты — дефолт 5×9.6м. После пересохранения inputs появляются.

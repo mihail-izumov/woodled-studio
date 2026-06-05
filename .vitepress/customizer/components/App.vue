@@ -37,6 +37,7 @@ import ShareModal from './ShareModal.vue'
 import ColorPickerModal from './ColorPickerModal.vue'
 import RoomDetail from './RoomDetail.vue'
 import FxEditor from './FxEditor.vue'
+import CustomFxEditor from './CustomFxEditor.vue'
 import MoodDetailModal from './MoodDetailModal.vue'
 import WelcomeScreen from './WelcomeScreen.vue'
 import Preloader from './Preloader.vue'
@@ -251,7 +252,21 @@ function onGalleryGiftClick() {
 
 <template>
   <template v-if="activeFxData">
-    <FxEditor :key="activeFxData.roomId + ':' + activeFxData.fxIdx" :item="activeFxData.fx" :def-wood="activeFxData.fx.wood ?? 'oak'" :back-label="fxBackLabel" :room-area="fxEditorRoomContext?.roomArea" :room-base-lm="fxEditorRoomContext?.roomBaseLm" :room-current-lm-without-this="fxEditorRoomContext?.roomCurrentLmWithoutThis" :room-name="fxEditorRoomContext?.roomName" :room-tint="fxEditorRoomContext?.roomTint" :is-provisional="fxIsProvisional" @save="onFxSave" @delete="onFxDelete" @close="onFxClose" @feedback="cfg.showFB" />
+    <!-- Кастомный светильник (другой бренд) — отдельная страница с другой формой. -->
+    <CustomFxEditor
+      v-if="activeFxData.fx.custom"
+      :key="activeFxData.roomId + ':' + activeFxData.fxIdx + ':custom'"
+      :item="activeFxData.fx"
+      :back-label="fxBackLabel"
+      :room-name="fxEditorRoomContext?.roomName"
+      :room-tint="fxEditorRoomContext?.roomTint"
+      :is-provisional="fxIsProvisional"
+      @save="onFxSave"
+      @delete="onFxDelete"
+      @close="onFxClose"
+      @feedback="cfg.showFB"
+    />
+    <FxEditor v-else :key="activeFxData.roomId + ':' + activeFxData.fxIdx" :item="activeFxData.fx" :def-wood="activeFxData.fx.wood ?? 'oak'" :back-label="fxBackLabel" :room-area="fxEditorRoomContext?.roomArea" :room-base-lm="fxEditorRoomContext?.roomBaseLm" :room-current-lm-without-this="fxEditorRoomContext?.roomCurrentLmWithoutThis" :room-name="fxEditorRoomContext?.roomName" :room-tint="fxEditorRoomContext?.roomTint" :is-provisional="fxIsProvisional" @save="onFxSave" @delete="onFxDelete" @close="onFxClose" @feedback="cfg.showFB" />
   </template>
 
   <template v-else-if="activeRoom">

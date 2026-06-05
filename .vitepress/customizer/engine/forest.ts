@@ -65,11 +65,14 @@ function scenePlace(fx: Fixture[]): ForestPlace {
 
 /* ──────────────── Дерево: доминанта (+ вторичное для смеси) ──────────────── */
 
-/** Порядок деревьев по присутствию: число светильников, при равенстве — по люменам. */
+/** Порядок деревьев по присутствию: число светильников, при равенстве — по люменам.
+ *  Кастомные светильники (другой бренд) в «лес» не входят — это смысловой слой
+ *  только про WOODLED-породы. См. обсуждение в чате с продуктом. */
 function woodOrder(fx: Fixture[]): Wood[] {
+  const own = fx.filter((f) => !f.custom)
   const byQ: Partial<Record<Wood, number>> = {}
   const byLm: Partial<Record<Wood, number>> = {}
-  for (const f of fx) {
+  for (const f of own) {
     byQ[f.wood] = (byQ[f.wood] ?? 0) + (f.q ?? 1)
     byLm[f.wood] = (byLm[f.wood] ?? 0) + fxLm([f])
   }
@@ -165,8 +168,19 @@ export function forestScene(rt: RoomType, room: Room): ForestScene {
   const fx = room.fixtures
   if (fx.length === 0) return EMPTY_SCENE
 
+  // Лес = только WOODLED. Если все светильники в комнате — другие бренды,
+  // сцены нет (нет дерева, по которому строить имя/легенду).
   const order = woodOrder(fx)
-  const wood = order[0] ?? 'oak'
+  if (order.length === 0) {
+    return {
+      name: '—',
+      legend: 'В комнате только светильники других брендов — лес собирается из WOODLED.',
+      place: scenePlace(fx),
+      wood: 'oak',
+    }
+  }
+
+  const wood = order[0]
   const place = scenePlace(fx)
   const name = `${PORODA[wood]} ${PLACE_RU[place]}`
 

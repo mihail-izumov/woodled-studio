@@ -16,6 +16,7 @@ import type { Fixture } from '../data/catalog'
 import type { Mood } from '../data/moods'
 import { TEMPLATES, allStepsForModel, type TemplateRoom } from '../data/templates'
 import { decodeState, readHashState } from '../engine/share'
+import { registerAllCustoms, registerCustom } from '../engine/custom-registry'
 import { ROOM_TINTS } from '../theme/tokens'
 
 /* ──────────────── Счётчик ID ──────────────── */
@@ -101,6 +102,9 @@ function restorePersistedState(): boolean {
     name.value = data.name ?? 'Живой Дом'
     // Нормализуем q>1 → отдельные q:1 для старых сохранений.
     const normalized = normalizeRoomsQ1(data.rooms as Room[])
+    // Кастомные светильники регистрируем в MD до первого рендера —
+    // иначе MD[fx.m] вернёт undefined и движок упадёт.
+    registerAllCustoms(normalized)
     rooms.splice(0, rooms.length, ...normalized)
     for (const r of data.rooms) {
       const num = parseInt(String(r.id ?? '').replace('r', '') || '0')
@@ -204,6 +208,15 @@ function removeRoom(id: string) {
 function updateRoom(next: Room) {
   const idx = rooms.findIndex((r) => r.id === next.id)
   if (idx === -1) return
+  // Перерегистрируем кастомы из новой версии комнаты — иначе при правке
+  // через emit('update') (например, добавление кастома в RoomDetail)
+  // MD может не содержать запись и любой следующий рендер упадёт.
+  for (const fx of next.fixtures) {
+    if (fx.custom) {
+      const id = registerCustom(fx.custom)
+      if (fx.m !== id) fx.m = id
+    }
+  }
   rooms[idx] = next
   persistState()
 }
@@ -228,6 +241,13 @@ function addFixture(roomId: string, fx: Fixture): boolean {
 
   if (current >= limit) return false
 
+  // Регистрируем кастомную модель в MD до того как реактивный слой
+  // увидит fixture (иначе ZoneCard/RoomDetail упадут на MD[fx.m] = undefined).
+  if (fx.custom) {
+    const id = registerCustom(fx.custom)
+    if (fx.m !== id) fx.m = id
+  }
+
   room.fixtures.push(fx)
   persistState()
   return true
@@ -243,6 +263,12 @@ function removeFixture(roomId: string, idx: number) {
 function updateFixture(roomId: string, idx: number, next: Fixture) {
   const room = rooms.find((r) => r.id === roomId)
   if (!room) return
+  // При обновлении кастома спека могла измениться → перерегистрируем
+  // (customIdFor вернёт новый id, если поля поменялись).
+  if (next.custom) {
+    const id = registerCustom(next.custom)
+    if (next.m !== id) next.m = id
+  }
   room.fixtures[idx] = next
   persistState()
 }
@@ -264,7 +290,10 @@ function loadFromHash(): boolean {
   if (!decoded) return false
   if (decoded.name) name.value = decoded.name
   // Нормализуем q>1 → q:1 на случай старого формата ссылки.
-  rooms.splice(0, rooms.length, ...normalizeRoomsQ1(decoded.rooms))
+  const normalized = normalizeRoomsQ1(decoded.rooms)
+  // Регистрируем кастомные светильники из ссылки до первого рендера.
+  registerAllCustoms(normalized)
+  rooms.splice(0, rooms.length, ...normalized)
   persistState()
   return true
 }

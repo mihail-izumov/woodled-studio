@@ -71,12 +71,13 @@ const darkCc = computed(() => mix(cc.value, T.bg, 0.5))
 const roomName = computed(() => props.room.customName || rt.value.name)
 const needsFade = computed(() => roomName.value.length > 14)
 
-/* ─── Тэлли по дереву ─── */
+/* ─── Тэлли по дереву (только WOODLED; кастомы другого бренда не считаем) ─── */
 const WOOD_ORDER: Wood[] = ['oak', 'walnut', 'black']
 const tally = computed(() => {
   const counts: Record<Wood, number> = { oak: 0, walnut: 0, black: 0 }
   let total = 0
   for (const it of props.room.fixtures) {
+    if (it.custom) continue
     const wood = (it.wood ?? 'oak') as Wood
     const q = it.q ?? 1
     counts[wood] += q

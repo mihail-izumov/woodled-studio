@@ -79,8 +79,27 @@ function onRow(it: ZoneFxRow) {
   // Клик по строке открывает страницу именно этого светильника.
   emit('edit', it._idx)
 }
-function orbStyle(wood: Wood, size = 15) {
-  const color = WCOL[wood]
+/**
+ * Шар с учётом кастомного оттенка: для WOODLED — WCOL[wood], для кастома —
+ * `fx.custom.tint.hex` (10 пресетов: латунь/хром/никель/бронза/...).
+ * Лёгкая обводка для очень тёмных и очень светлых, чтобы не сливалось с фоном.
+ */
+function orbStyle(it: Fixture | { wood: Wood; custom?: { tint?: { hex?: string } } }, size = 15) {
+  const customHex = (it as { custom?: { tint?: { hex?: string } } }).custom?.tint?.hex
+  const color = customHex || WCOL[(it as { wood: Wood }).wood]
+  // Относительная яркость для лёгкой обводки
+  const c = color.replace('#', '')
+  const r = parseInt(c.slice(0, 2), 16)
+  const g = parseInt(c.slice(2, 4), 16)
+  const b = parseInt(c.slice(4, 6), 16)
+  const lin = [r, g, b].map((v) => {
+    const x = v / 255
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)
+  })
+  const L = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+  const border = L < 0.18 ? '1px solid rgba(19,17,14,0.55)'
+                : L > 0.75 ? '1px solid rgba(0,0,0,0.18)'
+                : 'none'
   return {
     width: size + 'px',
     height: size + 'px',
@@ -88,7 +107,7 @@ function orbStyle(wood: Wood, size = 15) {
     display: 'inline-block',
     flexShrink: 0,
     background: `radial-gradient(circle at 32% 26%, rgba(255,255,255,0.55), transparent 42%), radial-gradient(circle at 70% 78%, rgba(0,0,0,0.22), transparent 60%), ${color}`,
-    border: wood === 'black' ? '1px solid rgba(19,17,14,0.55)' : 'none',
+    border,
     boxShadow:
       'inset 0 -1px 2px rgba(0,0,0,0.22), inset 0 1px 1px rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.4)',
   }
@@ -161,7 +180,7 @@ function orbStyle(wood: Wood, size = 15) {
         :style="{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', padding: '6px 7px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }"
         @click="onRow(it)"
       >
-        <span :style="orbStyle(it.wood, 12)" />
+        <span :style="orbStyle(it, 12)" />
         <span :style="{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.15 }">
           <span :style="{ fontSize: '14px', fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">
             {{ fxType(it.m) }}

@@ -29,7 +29,12 @@ interface Props {
   roomName?: string
 }
 const props = withDefaults(defineProps<Props>(), { roomFixtures: () => [], roomName: '' })
-const emit = defineEmits<{ add: [fx: Fixture]; close: [] }>()
+const emit = defineEmits<{
+  add: [fx: Fixture]
+  /** Выбор «Другой бренд» — открыть CustomFxEditor с этой зоной. */
+  addCustom: [zone: ZoneId]
+  close: []
+}>()
 
 /* ──────────── Склонение: «Уже в Гостиной» ──────────── */
 
@@ -46,7 +51,7 @@ function inRoom(name: string): string {
 /* ──────────── Группы (как раньше, но упрощённые) ──────────── */
 
 interface Group {
-  type: 'family' | 'single'
+  type: 'family' | 'single' | 'custom'
   family?: FamilyId
   name: string
   models: ModelId[]
@@ -79,6 +84,9 @@ const groups = computed<Group[]>(() => {
       out.push({ type: 'single', name: fxTitle(mid) || m.collection, models: [mid] })
     }
   }
+  // Последняя карточка слайдера — «Другой бренд» (не из каталога WOODLED).
+  // Открывает CustomFxEditor с зоной из «+» — без выбора модели.
+  out.push({ type: 'custom', name: 'Другой бренд', models: [] })
   return out
 })
 
@@ -95,6 +103,8 @@ const addedFamilies = computed(() => {
 })
 
 function isAdded(g: Group): boolean {
+  // Карточку «Другой бренд» можно нажимать всегда — каждый кастом уникальный.
+  if (g.type === 'custom') return false
   if (g.family) return addedFamilies.value.has(g.family)
   return addedFamilies.value.has(g.models[0])
 }
@@ -137,6 +147,11 @@ const selected = ref<number | null>(null)
 function handleSelect(idx: number) {
   const g = groups.value[idx]
   if (isAdded(g)) return
+  // «Другой бренд» — не показываем «Выбрать», открываем редактор сразу.
+  if (g.type === 'custom') {
+    emit('addCustom', props.zone)
+    return
+  }
   selected.value = selected.value === idx ? null : idx
 }
 
@@ -146,6 +161,10 @@ function doAdd() {
 }
 
 function confirmAdd(g: Group) {
+  if (g.type === 'custom') {
+    emit('addCustom', props.zone)
+    return
+  }
   let mid: ModelId
   if (g.models.length === 1) {
     mid = g.models[0]
@@ -208,6 +227,7 @@ function isReady(g: Group): boolean {
  */
 function preloadGroupPhotos(groupList: Group[]) {
   for (const g of groupList) {
+    if (g.type === 'custom') continue // у кастомной карточки нет фото
     const [src1, src2] = collectionPhotos(g)
     for (const src of [src1, src2]) {
       if (loadedPhotos.value.has(src)) continue
@@ -227,12 +247,11 @@ let cycleTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   cycleTimer = setInterval(() => {
-    let changed = false
     for (const g of groups.value) {
+      if (g.type === 'custom') continue // у кастомной карточки нет фото
       const key = g.family ?? g.models[0]
       if (photosLoaded(g) && !readyGroups.value.has(key)) {
         readyGroups.value = new Set([...readyGroups.value, key])
-        changed = true
       }
     }
   }, 5000)
@@ -331,35 +350,65 @@ function cardPhase(idx: number): number {
             <div :style="{
               width: '100%', aspectRatio: '3 / 4', borderRadius: '14px',
               overflow: 'hidden', position: 'relative',
-              background: T.card,
+              background: g.type === 'custom' ? T.cardAlt : T.card,
+              border: g.type === 'custom' ? `1px dashed ${T.neutral}44` : 'none',
+              boxSizing: 'border-box',
             }">
-              <!-- Loading: rotor animation -->
-              <div :style="{
+              <!-- Custom-карточка: тёмный фон + большой плюс + подпись -->
+              <div v-if="g.type === 'custom'" :style="{
                 position: 'absolute', inset: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: '#fff', zIndex: 2,
-                opacity: isReady(g) ? 0 : 1,
-                transition: 'opacity .6s ease',
-                pointerEvents: isReady(g) ? 'none' : 'auto',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: '14px', padding: '16px',
               }">
-                <div class="rotor-load" aria-hidden="true">
-                  <div v-for="j in 12" :key="j" class="rotor-load-l" :style="{'--rot': ((j-1)/12*360)+'deg', animationDelay: ((j-1)*30)+'ms'}" />
+                <span :style="{
+                  width: '68px', height: '68px', borderRadius: '50%',
+                  background: T.neutral + '22',
+                  border: `1.5px solid ${T.neutral}55`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" :stroke="T.neutral" stroke-width="2.6" stroke-linecap="round">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+                </span>
+                <div :style="{
+                  fontSize: '13px', fontWeight: 500, color: T.textSec,
+                  textAlign: 'center', lineHeight: 1.4, maxWidth: '160px',
+                }">
+                  Если светильник не из каталога WOODLED
                 </div>
               </div>
-              <!-- batch9 #7: hidden preload imgs УДАЛЕНЫ — заменены на JS new Image() -->
-              <!-- Visible photos -->
-              <img :src="collectionPhotos(g)[0]" alt="" :style="{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                objectFit: 'cover',
-                opacity: cardPhase(i) === 0 ? 1 : 0,
-                transition: 'opacity 1.2s ease-in-out',
-              }" />
-              <img :src="collectionPhotos(g)[1]" alt="" :style="{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                objectFit: 'cover',
-                opacity: cardPhase(i) === 1 ? 1 : 0,
-                transition: 'opacity 1.2s ease-in-out',
-              }" />
+
+              <template v-else>
+                <!-- Loading: rotor animation -->
+                <div :style="{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: '#fff', zIndex: 2,
+                  opacity: isReady(g) ? 0 : 1,
+                  transition: 'opacity .6s ease',
+                  pointerEvents: isReady(g) ? 'none' : 'auto',
+                }">
+                  <div class="rotor-load" aria-hidden="true">
+                    <div v-for="j in 12" :key="j" class="rotor-load-l" :style="{'--rot': ((j-1)/12*360)+'deg', animationDelay: ((j-1)*30)+'ms'}" />
+                  </div>
+                </div>
+                <!-- batch9 #7: hidden preload imgs УДАЛЕНЫ — заменены на JS new Image() -->
+                <!-- Visible photos -->
+                <img :src="collectionPhotos(g)[0]" alt="" :style="{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: 'cover',
+                  opacity: cardPhase(i) === 0 ? 1 : 0,
+                  transition: 'opacity 1.2s ease-in-out',
+                }" />
+                <img :src="collectionPhotos(g)[1]" alt="" :style="{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  objectFit: 'cover',
+                  opacity: cardPhase(i) === 1 ? 1 : 0,
+                  transition: 'opacity 1.2s ease-in-out',
+                }" />
+              </template>
             </div>
 
             <!-- Overlay: «Уже в ...» -->

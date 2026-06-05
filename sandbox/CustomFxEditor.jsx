@@ -1,0 +1,672 @@
+/**
+ * sandbox/CustomFxEditor.jsx — прототип страницы добавления / редактирования
+ * светильника другого бренда.
+ *
+ * v5:
+ *   - Палитра в один горизонтальный ряд (скролл). Зелёный/синий убраны →
+ *     заменены на «Графит» и «Тёплый серый» (нейтральные).
+ *   - «Цвет шара» → «Цвет светильника» (понятнее для пользователя).
+ *   - Технические хинты у полей убраны (только «опц.», без подробностей).
+ *   - Кнопки 1-в-1 как у FxEditor: «Удалить светильник» — большая outline
+ *     внутри красной плашки в самом низу; sticky bar снизу — одна кнопка
+ *     «Добавить» (для нового) / «Сохранить» (для существующего).
+ *   - Вводная плашка: «Учтём в общей яркости комнаты».
+ *   - Пустой бренд → «Свой» (временный default — см. обсуждение ToV).
+ *
+ * Standalone-демо есть рядом: sandbox/CustomFxEditor.html (открывается
+ * двойным кликом — встроенный React+Babel, без сборки).
+ */
+
+import React, { useState, useMemo } from 'react'
+
+const T = {
+  bg: '#13110E', card: '#1E1B16', cardAlt: '#1A1714',
+  border: '#2E2921',
+  text: '#E8E0D4', textSec: '#8B8075', textDim: '#5C544A',
+  neutral: '#A89878', green: '#7BA05B', red: '#B85C4C',
+}
+
+const NAME_MAX = 16
+const BRAND_MAX = 18
+const EMPTY_BRAND = 'Свой' // обсудить с ToV — варианты: Свой / Гость / Со стороны / Свет
+
+/* ──── Палитра цвета светильника ──── */
+const TINTS = [
+  { id: 'oak',       label: 'Дуб',           hex: '#C4A46C', nearestWood: 'oak'    },
+  { id: 'walnut',    label: 'Орех',          hex: '#8B6242', nearestWood: 'walnut' },
+  { id: 'black_oak', label: 'Чёрный дуб',    hex: '#5A4E42', nearestWood: 'black'  },
+  { id: 'brass',     label: 'Латунь',        hex: '#B8945A', nearestWood: 'oak'    },
+  { id: 'white',     label: 'Белый',         hex: '#F0EBE0', nearestWood: 'oak'    },
+  { id: 'chrome',    label: 'Хром',          hex: '#C9CDD2', nearestWood: 'oak'    },
+  { id: 'nickel',    label: 'Никель',        hex: '#9CA0A4', nearestWood: 'black'  },
+  { id: 'bronze',    label: 'Бронза',        hex: '#4A3528', nearestWood: 'walnut' },
+  { id: 'graphite',  label: 'Графит',        hex: '#3A3736', nearestWood: 'black'  },
+  { id: 'warm_gray', label: 'Тёплый серый',  hex: '#8A7E70', nearestWood: 'walnut' },
+]
+
+const FX_TYPES = [
+  { id: 'люстра',     label: 'Люстра',     zone: 'ceiling' },
+  { id: 'спот',       label: 'Спот',       zone: null },
+  { id: 'бра',        label: 'Бра',        zone: 'wall' },
+  { id: 'настольная', label: 'Настольная', zone: 'table' },
+  { id: 'торшер',     label: 'Торшер',     zone: 'floor' },
+]
+const SPOT_PLACES = [
+  { id: 'ceiling', label: 'Потолок' }, { id: 'wall', label: 'Стена' },
+]
+const SIZES = [
+  { id: 'малая',    label: 'Малая',    sqMin: 4,  sqMax: 8  },
+  { id: 'средняя',  label: 'Средняя',  sqMin: 8,  sqMax: 12 },
+  { id: 'большая',  label: 'Большая',  sqMin: 12, sqMax: 16 },
+  { id: 'огромная', label: 'Огромная', sqMin: 15, sqMax: 22 },
+]
+const SOCKETS = [
+  { id: 'E27',  label: 'E27 — груша / шар',    kind: 'bulb',
+    watts: [3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,20,22,25,28,30,35,40,50], lmPerW: 100 },
+  { id: 'E14',  label: 'E14 — миньон / свеча', kind: 'bulb',
+    watts: [3,4,5,6,7,8,9,10,11,12], lmPerW: 90 },
+  { id: 'GX53', label: 'GX53 — таблетка',      kind: 'bulb',
+    watts: [4,6,7,9,12,15,18], lmPerW: 85 },
+  { id: 'GU10', label: 'GU10 — споттер',       kind: 'bulb',
+    watts: [3,5,6,7,8,10,12], lmPerW: 70 },
+  { id: 'G9',   label: 'G9 — капсула',         kind: 'bulb',
+    watts: [2,3,4,5,6,7,9], lmPerW: 95 },
+  { id: 'LED',  label: 'Встроенный LED',       kind: 'led',
+    watts: [5,8,10,12,15,18,20,25,30,35,40,50,60,80,100], lmPerW: 110 },
+  { id: 'TAPE', label: 'LED-лента',            kind: 'tape',
+    wPerM: [4.8,7.2,9.6,14.4,19.2,24], lmPerW: 100 },
+]
+const TEMPS = [
+  { id: '2700', label: '2700K', hint: 'тёплый' },
+  { id: '3000', label: '3000K', hint: 'нейтр.' },
+  { id: '4000', label: '4000K', hint: 'дневной' },
+]
+const BODIES = [
+  { id: 'open',    label: 'Открытый', hint: 'без плафона', body: 1.0  },
+  { id: 'shade',   label: 'Абажур',   hint: 'ткань, шар',  body: 0.80 },
+  { id: 'lamella', label: 'Ламели',   hint: 'плотные',     body: 0.60 },
+]
+const AMBIENT_BY_TYPE = {
+  'люстра': 1.0, 'спот': 0.85, 'бра': 0.70, 'настольная': 0.55, 'торшер': 0.85,
+}
+
+function hexToRgb(h) {
+  const s = h.replace('#', '')
+  return { r: parseInt(s.slice(0,2),16), g: parseInt(s.slice(2,4),16), b: parseInt(s.slice(4,6),16) }
+}
+function relLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex)
+  const a = [r, g, b].map(v => {
+    const x = v / 255
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]
+}
+
+function Segment({ options, value, onChange, columns }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: columns ? `repeat(${columns}, 1fr)` : `repeat(${options.length}, 1fr)`,
+      gap: 4, padding: 3,
+      background: T.cardAlt, borderRadius: 12, border: `1px solid ${T.border}`,
+    }}>
+      {options.map(opt => {
+        const active = value === opt.id
+        return (
+          <button key={opt.id} onClick={() => onChange(opt.id)} style={{
+            padding: '9px 6px', border: 'none', borderRadius: 9,
+            background: active ? T.text : 'transparent',
+            color: active ? T.bg : T.textSec,
+            fontSize: 13, fontWeight: active ? 700 : 500,
+            cursor: 'pointer', transition: 'background .15s',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 1, lineHeight: 1.2,
+          }}>
+            <span>{opt.label}</span>
+            {opt.hint && <span style={{ fontSize: 10, opacity: active ? 0.7 : 0.55, fontWeight: 500 }}>{opt.hint}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function Dropdown({ value, options, onChange, format }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <select value={value}
+        onChange={e => onChange(format === 'number' ? parseFloat(e.target.value) : e.target.value)}
+        style={{
+          width: '100%', appearance: 'none', WebkitAppearance: 'none',
+          padding: '13px 38px 13px 14px',
+          background: T.cardAlt, border: `1px solid ${T.border}`,
+          borderRadius: 12, color: T.text, fontSize: 15, fontWeight: 600,
+          outline: 'none', fontFamily: 'inherit', cursor: 'pointer', boxSizing: 'border-box',
+        }}>
+        {options.map(opt => (
+          <option key={opt.id ?? opt} value={opt.id ?? opt} style={{ background: T.card, color: T.text }}>
+            {opt.label ?? opt}
+          </option>
+        ))}
+      </select>
+      <svg viewBox="0 0 12 8" style={{
+        position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+        width: 12, height: 8, pointerEvents: 'none',
+      }}>
+        <path d="M1 1 L6 6 L11 1" stroke={T.textSec} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </svg>
+    </div>
+  )
+}
+
+function Stepper({ value, min, max, onChange, suffix }) {
+  const stepBtn = (d) => ({
+    width: 36, height: 36, borderRadius: 9, border: 'none',
+    background: d ? T.border : T.text, color: d ? T.textDim : T.bg,
+    fontSize: 18, fontWeight: 700, cursor: d ? 'not-allowed' : 'pointer',
+  })
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '4px 4px 4px 16px',
+      background: T.cardAlt, borderRadius: 12, border: `1px solid ${T.border}`,
+    }}>
+      <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>
+        {value} {suffix && (<span style={{ color: T.textSec, fontWeight: 500, fontSize: 13 }}>{suffix(value)}</span>)}
+      </span>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} style={stepBtn(value <= min)}>−</button>
+        <button onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} style={stepBtn(value >= max)}>+</button>
+      </div>
+    </div>
+  )
+}
+
+function TextInput({ value, onChange, placeholder, type = 'text', maxLength, right }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <input type={type} value={value} maxLength={maxLength}
+        onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{
+          width: '100%', padding: right ? '12px 88px 12px 14px' : '12px 14px',
+          background: T.cardAlt, border: `1px solid ${T.border}`,
+          borderRadius: 12, color: T.text, fontSize: 15,
+          outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+        }}
+      />
+      {right}
+    </div>
+  )
+}
+
+function Section({ title, hint, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        marginBottom: 8, padding: '0 2px',
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{title}</span>
+        {hint && <span style={{ fontSize: 11, color: T.textDim }}>{hint}</span>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Orb({ hex, size = 20 }) {
+  const L = relLuminance(hex)
+  const border = L < 0.18 ? '1px solid rgba(19,17,14,0.55)'
+               : L > 0.75 ? '1px solid rgba(0,0,0,0.18)'
+                          : '1px solid rgba(255,255,255,0.06)'
+  return (
+    <span style={{
+      width: size, height: size, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
+      background: `radial-gradient(circle at 32% 26%, rgba(255,255,255,0.55), transparent 42%), radial-gradient(circle at 70% 78%, rgba(0,0,0,0.22), transparent 60%), ${hex}`,
+      border,
+      boxShadow: 'inset 0 -1px 2px rgba(0,0,0,0.22), inset 0 1px 1px rgba(255,255,255,0.18), 0 1px 3px rgba(0,0,0,0.4)',
+    }} />
+  )
+}
+
+export default function CustomFxEditor({
+  isNew = true,
+  roomName = 'Гостиная',
+  onSave, onDelete, onClose,
+  initial,
+}) {
+  const [name, setName]       = useState(initial?.name ?? '')
+  const [url, setUrl]         = useState(initial?.url ?? '')
+  const [brand, setBrand]     = useState(initial?.brand ?? '')
+  const [type, setType]       = useState(initial?.type ?? 'бра')
+  const [spotPlace, setSpot]  = useState(initial?.spot ?? 'ceiling')
+  const [size, setSize]       = useState(initial?.size ?? 'средняя')
+  const [source, setSource]   = useState(initial?.source ?? 'E14')
+  const [lamps, setLamps]     = useState(initial?.lamps ?? 2)
+  const [wattMap, setWattMap] = useState(initial?.wattMap ?? { E27: 11, E14: 9, GX53: 9, GU10: 7, G9: 5, LED: 20 })
+  const [tapeW, setTapeW]     = useState(initial?.tapeW ?? 9.6)
+  const [tapeLen, setTapeLen] = useState(initial?.tapeLen ?? 5)
+  const [manualLm, setManLm]  = useState(false)
+  const [customLm, setCustomLm] = useState(0)
+  const [temp, setTemp]       = useState(initial?.temp ?? '2700')
+  const [bodyId, setBody]     = useState(initial?.body ?? 'shade')
+  const [tintId, setTintId]   = useState(initial?.tint ?? 'oak')
+  const [pasteState, setPasteState] = useState('')
+  const [showDelConfirm, setShowDel] = useState(false)
+
+  const socketObj = SOCKETS.find(s => s.id === source)
+  const tintObj = TINTS.find(t => t.id === tintId) ?? TINTS[0]
+
+  const autoLm = useMemo(() => {
+    if (socketObj.kind === 'bulb') return Math.round(socketObj.lmPerW * (wattMap[source] ?? socketObj.watts[0]))
+    if (socketObj.kind === 'led')  return Math.round(socketObj.lmPerW * (wattMap.LED ?? 20))
+    if (socketObj.kind === 'tape') return Math.round(socketObj.lmPerW * tapeW * tapeLen)
+    return 0
+  }, [socketObj, wattMap, source, tapeW, tapeLen])
+
+  const lmPer = manualLm ? customLm : autoLm
+  const effectiveLamps = socketObj.kind === 'bulb' ? lamps : 1
+  const body = BODIES.find(b => b.id === bodyId)?.body ?? 1
+  const ambient = AMBIENT_BY_TYPE[type] ?? 1
+  const totalLm = Math.round(lmPer * effectiveLamps * body * ambient)
+
+  const showSize = type === 'люстра'
+  const showSpotPlace = type === 'спот'
+
+  function autoName() {
+    const tl = FX_TYPES.find(t => t.id === type)?.label || type
+    if (showSize) {
+      const sl = SIZES.find(s => s.id === size)?.label.toLowerCase()
+      return `${sl.charAt(0).toUpperCase()}${sl.slice(1)} ${tl.toLowerCase()}`
+    }
+    return tl
+  }
+  const displayName = name.trim() || autoName()
+  const displayBrand = brand.trim() || EMPTY_BRAND
+  const canSave = lmPer > 0 && effectiveLamps >= 1
+
+  async function pasteUrl() {
+    try {
+      const t = await navigator.clipboard.readText()
+      if (t) { setUrl(t.trim().slice(0, 500)); setPasteState('ok') }
+      else setPasteState('fail')
+    } catch { setPasteState('fail') }
+    setTimeout(() => setPasteState(''), 1400)
+  }
+  function setWatt(v) { setWattMap({ ...wattMap, [source]: v }) }
+
+  function handleSave() {
+    if (!canSave) return
+    onSave?.({
+      name: name.trim(), brand: brand.trim(), type,
+      zone: type === 'спот' ? spotPlace : FX_TYPES.find(t => t.id === type).zone,
+      chip: showSize ? size : '',
+      lamps: effectiveLamps, lmPer, body, ambient,
+      btemp: temp, url: url.trim() || undefined,
+      tint: { id: tintObj.id, hex: tintObj.hex },
+      wood: tintObj.nearestWood,
+      source: socketObj.kind,
+      socket: socketObj.kind === 'bulb' ? source : undefined,
+      sqMin: showSize ? SIZES.find(s => s.id === size).sqMin : undefined,
+      sqMax: showSize ? SIZES.find(s => s.id === size).sqMax : undefined,
+    })
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 60,
+      background: T.bg, color: T.text,
+      display: 'flex', flexDirection: 'column',
+      fontFamily: 'system-ui, -apple-system, "SF Pro Text", sans-serif',
+    }}>
+      {/* NavHeader */}
+      <div style={{
+        height: 44, flexShrink: 0,
+        background: T.bg, borderBottom: `1px solid ${T.border}`,
+        display: 'flex', alignItems: 'center', padding: '0 8px', position: 'relative',
+      }}>
+        <button onClick={onClose} style={{
+          display: 'flex', alignItems: 'center', gap: 2,
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: T.text, padding: '0 8px', fontFamily: 'inherit',
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+          <span style={{ fontSize: 17 }}>{roomName}</span>
+        </button>
+        <div style={{
+          position: 'absolute', left: '50%', top: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: 17, fontWeight: 600, color: T.text,
+          maxWidth: '50%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{displayName}</div>
+      </div>
+
+      {/* Превью карточки в комнате */}
+      <div style={{
+        flexShrink: 0, padding: '12px 20px',
+        background: T.cardAlt, borderBottom: `1px solid ${T.border}`,
+      }}>
+        <div style={{ fontSize: 10, color: T.textDim, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          так будет выглядеть в комнате
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 10px', borderRadius: 10,
+          background: 'rgba(255,255,255,0.04)',
+        }}>
+          <Orb hex={tintObj.hex} size={14} />
+          <span style={{ flex: 1, display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {FX_TYPES.find(t => t.id === type)?.label}
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: T.neutral, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              {displayBrand}
+            </span>
+          </span>
+          {showSize && (
+            <span style={{
+              padding: '2px 8px', borderRadius: 6, background: T.neutral + '22',
+              fontSize: 11, fontWeight: 600, color: T.neutral,
+            }}>{size}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Scroll body */}
+      <div style={{
+        flex: 1, overflowY: 'auto',
+        padding: '14px 20px 16px', WebkitOverflowScrolling: 'touch',
+      }}>
+        <div style={{
+          padding: '10px 12px', marginBottom: 14,
+          background: T.neutral + '11', border: `1px solid ${T.neutral}33`,
+          borderRadius: 10, fontSize: 12, color: T.textSec, lineHeight: 1.4,
+        }}>
+          Учтём в общей яркости комнаты.
+        </div>
+
+        <Section title="Название" hint={`${name.length}/${NAME_MAX}`}>
+          <TextInput value={name} onChange={setName} placeholder={autoName()} maxLength={NAME_MAX} />
+        </Section>
+
+        <Section title="Где посмотреть" hint="опц.">
+          <TextInput value={url} onChange={setUrl} placeholder="https://..." type="url"
+            right={
+              <button onClick={pasteUrl} style={{
+                position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                padding: '7px 14px', border: 'none', borderRadius: 8,
+                background: pasteState === 'ok' ? T.green
+                          : pasteState === 'fail' ? T.red + '88'
+                          : T.neutral + '33',
+                color: pasteState === 'ok' || pasteState === 'fail' ? T.bg : T.neutral,
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                transition: 'all .2s', fontFamily: 'inherit',
+              }}>
+                {pasteState === 'ok' ? 'вставлено' :
+                 pasteState === 'fail' ? 'нет доступа' : 'Вставить'}
+              </button>
+            }
+          />
+        </Section>
+
+        <Section title="Бренд" hint="опц.">
+          <TextInput value={brand} onChange={setBrand}
+            placeholder="IKEA, Vitra, Lightstar..." maxLength={BRAND_MAX} />
+        </Section>
+
+        <Section title="Тип">
+          <Dropdown value={type} options={FX_TYPES} onChange={setType} />
+        </Section>
+
+        {showSpotPlace && (
+          <Section title="Где крепится">
+            <Segment options={SPOT_PLACES} value={spotPlace} onChange={setSpot} columns={2} />
+          </Section>
+        )}
+
+        {showSize && (
+          <Section title="Размер">
+            <Segment options={SIZES} value={size} onChange={setSize} columns={4} />
+          </Section>
+        )}
+
+        <Section title="Источник света">
+          <Dropdown value={source} options={SOCKETS} onChange={setSource} />
+        </Section>
+
+        {socketObj.kind === 'bulb' && (
+          <Section title="Сколько ламп">
+            <Stepper value={lamps} min={1} max={12} onChange={setLamps}
+              suffix={n => n === 1 ? 'лампа' : n < 5 ? 'лампы' : 'ламп'} />
+          </Section>
+        )}
+
+        <Section
+          title={
+            socketObj.kind === 'bulb' ? 'Мощность лампы' :
+            socketObj.kind === 'led'  ? 'Мощность светильника' :
+                                        'Ватт на метр ленты'
+          }
+          hint={
+            <span onClick={() => setManLm(!manualLm)} style={{
+              cursor: 'pointer', color: T.neutral, textDecoration: 'underline',
+            }}>{manualLm ? '← по мощности' : 'знаю люмены →'}</span>
+          }
+        >
+          {!manualLm ? (
+            <>
+              {socketObj.kind === 'bulb' && (
+                <Dropdown value={wattMap[source] ?? socketObj.watts[0]}
+                  options={socketObj.watts.map(w => ({ id: w, label: `${w} Вт` }))}
+                  onChange={setWatt} format="number" />
+              )}
+              {socketObj.kind === 'led' && (
+                <Dropdown value={wattMap.LED ?? 20}
+                  options={socketObj.watts.map(w => ({ id: w, label: `${w} Вт` }))}
+                  onChange={(v) => setWattMap({ ...wattMap, LED: v })} format="number" />
+              )}
+              {socketObj.kind === 'tape' && (
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <Dropdown value={tapeW}
+                    options={socketObj.wPerM.map(w => ({ id: w, label: `${w} Вт/м` }))}
+                    onChange={setTapeW} format="number" />
+                  <Stepper value={tapeLen} min={1} max={30} onChange={setTapeLen}
+                    suffix={n => n === 1 ? 'метр' : n < 5 ? 'метра' : 'метров'} />
+                </div>
+              )}
+              <div style={{
+                marginTop: 8, padding: '8px 12px', background: T.cardAlt, borderRadius: 9,
+                fontSize: 12, color: T.textSec,
+                display: 'flex', justifyContent: 'space-between',
+              }}>
+                <span>
+                  ≈ {socketObj.kind === 'bulb' ? 'на лампу' :
+                     socketObj.kind === 'led'  ? 'со светильника' :
+                                                  'со всей ленты'}
+                </span>
+                <b style={{ color: T.text }}>{autoLm.toLocaleString('ru-RU')} лм</b>
+              </div>
+            </>
+          ) : (
+            <TextInput value={customLm || ''} onChange={v => setCustomLm(parseInt(v) || 0)}
+              placeholder={socketObj.kind === 'bulb' ? 'люмены на одну лампу' : 'люмены со всего устройства'}
+              type="number" />
+          )}
+        </Section>
+
+        <Section title="Корпус">
+          <Segment options={BODIES} value={bodyId} onChange={setBody} columns={3} />
+        </Section>
+
+        <Section title="Цвет светильника" hint={tintObj.label}>
+          {/* Горизонтальный скролл-ряд */}
+          <div className="tint-scroll" style={{
+            display: 'flex', gap: 12, padding: '6px 2px 10px',
+            overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+          }}>
+            {TINTS.map(t => {
+              const active = tintId === t.id
+              return (
+                <button key={t.id} onClick={() => setTintId(t.id)} title={t.label} style={{
+                  flexShrink: 0,
+                  width: 44, height: 44, borderRadius: '50%', padding: 0,
+                  border: active ? `2px solid ${T.text}` : '2px solid transparent',
+                  background: 'transparent', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Orb hex={t.hex} size={36} />
+                </button>
+              )
+            })}
+          </div>
+        </Section>
+
+        <Section title="Оттенок света">
+          <Segment options={TEMPS} value={temp} onChange={setTemp} columns={3} />
+        </Section>
+
+        {/* Live preview яркости */}
+        <div style={{
+          marginTop: 4, padding: '14px 16px',
+          background: T.neutral + '11',
+          border: `1px solid ${T.neutral}33`,
+          borderRadius: 12,
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 600, color: T.neutral,
+            textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6,
+          }}>
+            В комнату пойдёт
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 24, fontWeight: 700, color: T.text }}>
+              {totalLm.toLocaleString('ru-RU')}
+            </span>
+            <span style={{ fontSize: 13, color: T.textSec }}>лм общего света</span>
+          </div>
+          <div style={{ fontSize: 11, color: T.textDim, marginTop: 4 }}>
+            {lmPer} × {effectiveLamps} × {body.toFixed(2)} (корпус) × {ambient.toFixed(2)} (тип)
+          </div>
+        </div>
+
+        {/* Удалить — большая outline-кнопка в красной плашке (как у WOODLED) */}
+        {!isNew && (
+          <div style={{
+            background: T.red + '14', border: `1px solid ${T.red}33`,
+            borderRadius: 10, padding: 14, marginTop: 16,
+          }}>
+            <div style={{ fontSize: 12, color: T.textSec, marginBottom: 10, lineHeight: 1.5 }}>
+              «{displayName}» будет удалён из комнаты. Настройки не сохранятся — при повторном добавлении нужно будет ввести заново.
+            </div>
+            <button onClick={() => setShowDel(true)} style={{
+              width: '100%', padding: 10, background: 'none',
+              border: `1px solid ${T.red}44`, borderRadius: 8,
+              color: T.red, cursor: 'pointer',
+              fontSize: 17, fontWeight: 600, fontFamily: 'inherit',
+            }}>
+              Удалить светильник
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Sticky bottom — ОДНА кнопка (как у WOODLED) */}
+      <div style={{
+        flexShrink: 0,
+        padding: '12px 20px 18px',
+        borderTop: `1px solid ${T.border}`,
+        background: T.bg,
+      }}>
+        <button onClick={handleSave} disabled={!canSave} style={{
+          width: '100%', padding: 14, border: 'none',
+          background: canSave ? T.text : T.border,
+          color: canSave ? T.bg : T.textDim,
+          borderRadius: 10, fontSize: 15, fontWeight: 700,
+          cursor: canSave ? 'pointer' : 'not-allowed',
+          fontFamily: 'inherit',
+        }}>{isNew ? 'Добавить' : 'Сохранить'}</button>
+      </div>
+
+      {showDelConfirm && (
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20, zIndex: 1,
+        }}>
+          <div style={{
+            width: '100%', maxWidth: 340, background: T.bg,
+            borderRadius: 16, border: `1px solid ${T.border}`,
+            padding: '24px 20px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 8 }}>
+              Удалить светильник?
+            </div>
+            <div style={{ fontSize: 13, color: T.textSec, lineHeight: 1.5, marginBottom: 20 }}>
+              «{displayName}» будет удалён из комнаты. Все настройки потеряются.
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setShowDel(false)} style={{
+                flex: 1, padding: 12, borderRadius: 10,
+                border: `1px solid ${T.border}`, background: T.card,
+                color: T.textSec, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+              }}>Отмена</button>
+              <button onClick={() => { setShowDel(false); onDelete?.() }} style={{
+                flex: 1, padding: 12, borderRadius: 10, border: 'none',
+                background: T.red, color: '#fff', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+              }}>Удалить</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function Demo() {
+  const [saved, setSaved] = useState(null)
+  const [open, setOpen] = useState(true)
+  const [isNew, setNew] = useState(true)
+
+  return (
+    <div style={{
+      minHeight: '100vh', background: T.bg, color: T.text,
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 16, padding: 24,
+    }}>
+      {!open && (
+        <>
+          <button onClick={() => { setOpen(true); setSaved(null); setNew(true) }} style={{
+            padding: '12px 24px', background: T.text, color: T.bg,
+            border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer',
+          }}>Добавить новый</button>
+          <button onClick={() => { setOpen(true); setSaved(null); setNew(false) }} style={{
+            padding: '12px 24px', background: 'transparent', color: T.text,
+            border: `1px solid ${T.border}`, borderRadius: 12,
+            fontSize: 15, fontWeight: 700, cursor: 'pointer',
+          }}>Редактировать существующий</button>
+          {saved && (
+            <pre style={{
+              background: T.card, padding: 16, borderRadius: 12,
+              border: `1px solid ${T.border}`, fontSize: 12,
+              maxWidth: 400, overflow: 'auto',
+            }}>{JSON.stringify(saved, null, 2)}</pre>
+          )}
+        </>
+      )}
+      {open && (
+        <CustomFxEditor
+          isNew={isNew} roomName="Гостиная"
+          onSave={(fx) => { setSaved(fx); setOpen(false) }}
+          onDelete={() => { setSaved({ action: 'deleted' }); setOpen(false) }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </div>
+  )
+}

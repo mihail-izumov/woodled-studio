@@ -19,7 +19,7 @@ import {
   decompressFromEncodedURIComponent,
 } from './lz-string'
 import type { Room, WallFinish } from '../data/rooms'
-import type { Fixture } from '../data/catalog'
+import type { Fixture, CustomSpec } from '../data/catalog'
 import type { FxOpts } from '../data/materials'
 
 const V2_PREFIX = '2.'
@@ -34,6 +34,8 @@ interface PackedFixture {
   l?: number     // lamps override
   o?: Partial<FxOpts> // options (включая bulbOpt/baseColor)
   d?: string[]   // done — выполненные шаги чек-листа
+  /** Кастомный светильник (другой бренд) — спека сериализуется как есть. */
+  c?: CustomSpec
 }
 
 interface PackedRoom {
@@ -65,6 +67,9 @@ function packFixture(fx: Fixture): PackedFixture {
   if (fx.l != null) out.l = fx.l
   if (fx.opts && Object.keys(fx.opts).length > 0) out.o = fx.opts
   if (fx.done && fx.done.length > 0) out.d = fx.done
+  // Кастомный светильник: спека уезжает в ссылку как есть. На приёмнике
+  // registerAllCustoms перепишет её в MD под тем же id (хеш стабилен).
+  if (fx.custom) out.c = fx.custom
   return out
 }
 
@@ -77,6 +82,7 @@ function unpackFixture(p: PackedFixture): Fixture {
     l: p.l,
     opts: p.o,
     done: p.d,
+    custom: p.c,
   }
 }
 

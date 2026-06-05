@@ -16,7 +16,7 @@
 
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { T, Z } from '../theme/tokens'
-import { ALL_ZONES, type Fixture, type ZoneId } from '../data/catalog'
+import { ALL_ZONES, type Fixture, type ZoneId, type CustomSpec, type FxType } from '../data/catalog'
 import { autoMood, type Mood } from '../data/moods'
 import { getRT, ROOM_PREP, ROOM_ACC, type Room, type ZoneLimits } from '../data/rooms'
 import {
@@ -32,6 +32,7 @@ import { forestScene, roomKnobs } from '../engine/forest'
 import { MD } from '../data/catalog'
 import { getBright } from '../data/moods'
 import { useConfigurator } from '../store/configurator'
+import { registerCustom } from '../engine/custom-registry'
 
 import Icon from './ui/Icons.vue'
 import Modal from './ui/Modal.vue'
@@ -123,6 +124,56 @@ function addFx(fx: Fixture) {
   /* Тост «добавлен» НЕ показываем здесь: светильник пока провизорный.
      Подтверждение появится на «Сохранить» (App.onFxSave → «Светильник сохранён»).
      isNew=true → стрелка назад удалит несохранённый светильник. */
+  emit('openFx', props.room.id, newIdx, true)
+}
+
+/**
+ * Добавить светильник другого бренда. Создаём provisional Fixture с
+ * разумными дефолтами под зону (тип, lamps, lmPer) — пользователь
+ * правит параметры в CustomFxEditor. Стрелка «Назад» без сохранения
+ * удалит этот fixture (через App.fxIsProvisional → onFxClose).
+ */
+function addCustomFx(zone: ZoneId) {
+  const limit = (props.room.limits ?? rt.value.limits)?.[zone] ?? 99
+  const cur = zoneFxCount(props.room.fixtures, zone)
+  if (cur >= limit) {
+    const zName = ALL_ZONES.find((z) => z.id === zone)?.name ?? zone
+    emit('feedback', `Максимум ${limit} точек для ${zName}`)
+    return
+  }
+  const type: FxType =
+    zone === 'ceiling' ? 'люстра' :
+    zone === 'floor'   ? 'торшер' :
+    zone === 'table'   ? 'настольная' :
+                         'бра'
+  const ambient: number =
+    type === 'люстра' ? 1.0 :
+    type === 'бра'    ? 0.7 :
+    type === 'торшер' ? 0.85 :
+    type === 'настольная' ? 0.55 : 0.85
+  const placeholder: CustomSpec = {
+    name: '', brand: '', type, zone,
+    chip: type === 'люстра' ? 'средняя' : '',
+    lamps: type === 'люстра' ? 4 : type === 'бра' ? 2 : 1,
+    lmPer: type === 'люстра' ? 1100 : 810,    // ≈E27/E14 при ~10 Вт
+    body: 0.8,                                // абажур по умолчанию
+    ambient,
+    btemp: '2700',
+    tint: { id: 'oak', hex: '#C4A46C' },
+    source: 'bulb',
+    socket: type === 'люстра' ? 'E27' : 'E14',
+    sqMin: type === 'люстра' ? 8 : undefined,
+    sqMax: type === 'люстра' ? 12 : undefined,
+  }
+  // Регистрируем синхронно ДО emit — иначе реактивность дойдёт до
+  // ZoneCard/RoomDetail с m, для которого MD[m] === undefined, и упадёт.
+  const m = registerCustom(placeholder)
+  const fx: Fixture = {
+    m, q: 1, wood: 'oak', zone, l: placeholder.lamps, custom: placeholder,
+  }
+  const newFixtures = [...props.room.fixtures, fx]
+  const newIdx = newFixtures.length - 1
+  emit('update', { ...props.room, fixtures: newFixtures })
   emit('openFx', props.room.id, newIdx, true)
 }
 
@@ -516,6 +567,7 @@ watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { imme
       :room-fixtures="props.room.fixtures"
       :room-name="props.room.customName || rt.name"
       @add="(fx) => { addFx(fx); addZone = null }"
+      @add-custom="(zone) => { addCustomFx(zone); addZone = null }"
       @close="addZone = null"
     />
 

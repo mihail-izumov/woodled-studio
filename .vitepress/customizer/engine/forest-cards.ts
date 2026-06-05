@@ -504,7 +504,9 @@ const WOOD_TEACH = [
 ] as const
 
 function woodCard(_rt: RoomType, room: Room, seed: number): KnobCard | null {
-  const fx = room.fixtures
+  // Карточка «Дерево» рассказывает про WOODLED-породы. Кастомы (другой
+  // бренд) в неё не попадают — у них нет деревянных ламелей.
+  const fx = room.fixtures.filter((f) => !f.custom)
   if (fx.length === 0) return null
   const groups = groupByModel(fx)
 

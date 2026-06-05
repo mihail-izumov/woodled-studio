@@ -141,13 +141,19 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
   const filledRooms = rooms.filter((r) => r.fixtures.length > 0)
 
   const totalLm = rooms.reduce((s, r) => s + fxLm(r.fixtures), 0)
-  const totalLamps = rooms.reduce((s, r) => s + fxLamps(r.fixtures), 0)
+  // Лампы и цоколи (слайд 8) считаем только по WOODLED — у кастомов другие
+  // цоколи и LED-модули, в одну упаковку не положишь.
+  const totalLamps = rooms.reduce(
+    (s, r) => s + fxLamps(r.fixtures.filter((f) => !f.custom)),
+    0,
+  )
   const totalArea = rooms.reduce((s, r) => {
     const rt = getRT(r.typeId)
     return s + getArea(rt, r)
   }, 0)
+  // «Деревья» — это только WOODLED-светильники (кастомы не из дерева).
   const totalTrees = rooms.reduce(
-    (s, r) => s + r.fixtures.reduce((a, f) => a + (f.q ?? 1), 0),
+    (s, r) => s + r.fixtures.reduce((a, f) => a + (f.custom ? 0 : (f.q ?? 1)), 0),
     0,
   )
 
@@ -155,9 +161,11 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
   const allWoods = woodNames(allFx)
   const lmPerM2 = totalArea > 0 ? Math.round(totalLm / totalArea) : 0
 
-  /* Доминирующее дерево по точкам. */
+  /* Доминирующее дерево по точкам. Кастомные светильники (другие бренды)
+     не считаем — лес собирается только из WOODLED-пород. */
+  const ownFx = allFx.filter((f) => !f.custom)
   const woodCounts: Record<string, number> = {}
-  for (const f of allFx) {
+  for (const f of ownFx) {
     const w = f.wood ?? 'oak'
     woodCounts[w] = (woodCounts[w] ?? 0) + (f.q ?? 1)
   }
@@ -170,6 +178,7 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
     const scene = forestScene(rt, r)
     const woods: Wood[] = []
     for (const fx of r.fixtures) {
+      if (fx.custom) continue // другие бренды в «лес» не входят
       const q = fx.q ?? 1
       for (let i = 0; i < q; i++) woods.push((fx.wood ?? 'oak') as Wood)
     }
@@ -247,9 +256,10 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
 
   const hasMirror = rooms.some((r) => r.furniture.includes('mirror'))
 
-  /* Цоколи: считаем лампы (l × q) по типу. */
+  /* Цоколи: считаем лампы (l × q) по типу. Только WOODLED — у кастомов
+     может быть встроенный LED или лента, в Cap-таблицу не вписать. */
   const lampsByCap: Record<Cap, number> = { E27: 0, GX53: 0, E14: 0 }
-  for (const f of allFx) {
+  for (const f of ownFx) {
     const m = MD[f.m]
     if (!m) continue
     const cap = detectCap(m.ltName)

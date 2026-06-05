@@ -404,14 +404,10 @@ export function buildStorySlides(rooms: Room[], name: string): StorySlide[] {
 
   /* ═══ Фаза 1: Что вы построили ═══ */
 
-  /* Слайд 1 · Интро. Eyebrow «Освещение в доме WOODLED» подсвечивает что
-     Story рассказывает про WOODLED-лес (другие бренды сюда не входят).
-     bigSub=true делает имя дома крупным акцентом под мелким eyebrow.
-     Цифры «N деревьев в M комнатах» переехали на слайд 2 «Ваш лес». */
+  /* Слайд 1 · Интро */
   slides.push({
-    title: 'Освещение в доме WOODLED',
-    sub: ctx.name,
-    bigSub: true,
+    title: ctx.name,
+    sub: `${ctx.totalTrees} ${tw(ctx.totalTrees)} в ${ctx.filledRooms.length} ${rw(ctx.filledRooms.length)}`,
     iconKey: 'house',
     color: T.neutral,
   })

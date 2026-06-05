@@ -41,7 +41,23 @@ const step = ref<Step>('list')
 const discountMode = ref(false)
 const discountFx = ref<{ roomId: string; fxIdx: number } | null>(null)
 const contact = ref({ name: '', phone: '', comment: '' })
-const filledRooms = computed(() => props.rooms.filter((r) => r.fixtures.length > 0))
+/**
+ * «Мой Лес» — про WOODLED-светильники: каталог, скидка на первый, форма
+ * заказа. Кастомы (другие бренды) тут не показываем — у них цена 0 и
+ * заказывать их через WOODLED нельзя.
+ */
+function woodledFx(r: Room): Fixture[] {
+  return r.fixtures.filter((f) => !f.custom)
+}
+/** Индексы WOODLED-светильников в исходном r.fixtures (для discount/onFxClick). */
+function woodledEntries(r: Room): Array<{ fx: Fixture; idx: number }> {
+  return r.fixtures
+    .map((fx, idx) => ({ fx, idx }))
+    .filter((x) => !x.fx.custom)
+}
+const filledRooms = computed(() =>
+  props.rooms.filter((r) => woodledFx(r).length > 0),
+)
 const expandedRooms = reactive<Record<string, boolean>>({})
 function isExpanded(roomId: string): boolean { return expandedRooms[roomId] !== false }
 function toggleRoom(roomId: string) { expandedRooms[roomId] = !isExpanded(roomId) }
@@ -57,10 +73,10 @@ function isDiscounted(roomId: string, fxIdx: number): boolean { const sel = disc
 const discountApplied = computed(() => discountFx.value !== null)
 const discountDetails = computed(() => { if (!discountFx.value) return null; const r = props.rooms.find((rm) => rm.id === discountFx.value!.roomId); const fx = r?.fixtures[discountFx.value!.fxIdx]; if (!r || !fx) return null; const m = MD[fx.m]; if (!m) return null; const woodName = MATS.find((x) => x.id === (fx.wood ?? 'oak'))?.name ?? 'Дуб'; return { room: r, fx, m, woodName } })
 
-const totalAll = computed(() => filledRooms.value.reduce((s, r) => s + fxPrice(r.fixtures), 0))
+const totalAll = computed(() => filledRooms.value.reduce((s, r) => s + fxPrice(woodledFx(r)), 0))
 const grandTotal = computed(() => totalAll.value - (discountApplied.value ? 3000 : 0))
-function roomTotal(r: Room): number { const base = fxPrice(r.fixtures); if (discountFx.value?.roomId === r.id) return Math.max(0, base - 3000); return base }
-function fxCount(r: Room): number { return r.fixtures.reduce((s, fx) => s + (fx.q ?? 1), 0) }
+function roomTotal(r: Room): number { const base = fxPrice(woodledFx(r)); if (discountFx.value?.roomId === r.id) return Math.max(0, base - 3000); return base }
+function fxCount(r: Room): number { return woodledFx(r).reduce((s, fx) => s + (fx.q ?? 1), 0) }
 
 function onFxClick(roomId: string, fxIdx: number) { if (discountMode.value) { toggleDiscount(roomId, fxIdx) } else { emit('openFx', roomId, fxIdx) } }
 function goToFirstRoom() { if (cfg.rooms.length > 0) { cfg.showBuy.value = false; cfg.active.value = cfg.rooms[0].id } else { emit('close') } }
@@ -146,8 +162,10 @@ function woodBadgeStyle(woodColor: string) {
         </GradientFill>
       </div>
 
-      <!-- batch11 #2 (#10) + batch11 #3 (#4): 2 строки, font 32, weight 600 (было 700) -->
-      <div :style="{ textAlign: 'center', marginTop: '8px', marginBottom: '24px', fontSize: '32px', fontWeight: 600, color: T.text, lineHeight: 1.1 }">Освещение<br/>в доме</div>
+      <!-- batch11 #2 (#10) + batch11 #3 (#4): 2 строки, font 32, weight 600 (было 700).
+           «WOODLED» добавлено в третьей строке — подчёркивает что это
+           заказ только по WOODLED-каталогу (кастомы скрыты выше). -->
+      <div :style="{ textAlign: 'center', marginTop: '8px', marginBottom: '24px', fontSize: '32px', fontWeight: 600, color: T.text, lineHeight: 1.1 }">Освещение<br/>в доме WOODLED</div>
 
       <div v-if="filledRooms.length > 0" :style="{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }">
         <div :style="{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }">
@@ -186,7 +204,10 @@ function woodBadgeStyle(woodColor: string) {
         </div>
         <div :style="{ maxHeight: isExpanded(r.id) ? '800px' : '0', overflow: 'hidden', transition: 'max-height 0.3s ease' }">
           <div :style="{ display: 'flex', flexDirection: 'column', gap: '6px', paddingBottom: ri < filledRooms.length - 1 ? '12px' : '0' }">
-            <button v-for="(fx, i) in r.fixtures" :key="i" :style="fxCardStyle(r.id, i)" @click="onFxClick(r.id, i)">
+            <!-- v-for по WOODLED-only через woodledEntries — кастомы (IKEA и пр.)
+                 не показываем. idx — оригинальный индекс из r.fixtures, чтобы
+                 discount/openFx ссылались на правильный fixture в массиве. -->
+            <button v-for="{ fx, idx: i } in woodledEntries(r)" :key="i" :style="fxCardStyle(r.id, i)" @click="onFxClick(r.id, i)">
               <div v-if="discountMode" :style="{ width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${isDiscounted(r.id, i) ? T.text : T.textDim}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }"><div v-if="isDiscounted(r.id, i)" :style="{ width: '8px', height: '8px', borderRadius: '50%', background: T.text }" /></div>
               <!-- batch11 #1 v3: 48×48 — крупнее, карточка ниже за счёт padding 6px -->
               <div :style="{ width: '48px', height: '48px', borderRadius: '12px', background: WCOL[fx.wood ?? 'oak'] + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }"><Icon :name="fxIcName(MD[fx.m].type)" :color="WCOL[fx.wood ?? 'oak']" :size="24" /></div>

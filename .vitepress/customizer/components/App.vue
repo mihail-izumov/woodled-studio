@@ -281,11 +281,12 @@ function onGalleryGiftClick() {
   </template>
 
   <template v-else>
-    <!-- PWA-баннер «Откройте WOODLED как приложение». Sticky сверху,
-         поверх него остаётся видна SoundButton (z 90 > banner z 80).
-         Показывается только тут (главная с комнатами); внутрь самой
-         комнаты, светильника или поверх модалок — НЕ заходит. -->
-    <PWAInstallBanner />
+    <!-- PWA-баннер «Откройте WOODLED как приложение». Sticky top z:100.
+         Только на главной, и только когда поверх неё не открыты другие
+         модалки (BuyModal/StoryModal/Share/Name/Picker/ColorPicker/...).
+         BuyModal сам по себе fullscreen, но баннер z:100 выше его z:55 —
+         без этого guard'а он торчит сверху над «Мой Лес». -->
+    <PWAInstallBanner v-if="!anyModalOpen && !cfg.showBuy.value && !cfg.showStory.value && !cfg.showShare.value" />
     <div
       :style="{
         position: 'relative',

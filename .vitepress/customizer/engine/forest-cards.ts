@@ -74,12 +74,18 @@ function fixtureLm(f: Fixture): number {
 }
 
 /**
- * Группировка по модели + дерево + температура — отдельная группа для разных параметров.
+ * Группировка для текста карточки «Где свет».
  *
- * Кастомы (другой бренд) группируем по type+chip+zone — у каждого f.m уникальный
- * хеш, и без этой нормализации текст карточки «Где свет» получает «торшер,
- * торшер, торшер» вместо «три торшера». Бренд/название для группировки не
- * важны — текст карточки оперирует только типом+размером.
+ * Ключ группы = type + chip + zone + wood + btemp. Не по `f.m` — иначе:
+ *   - каждый кастом получает уникальный hash-id → «торшер, торшер, торшер»
+ *     вместо «три торшера» (исправлено: кастомы объединяются между собой)
+ *   - WOODLED-настольная + кастом-настольная остаются разными группами →
+ *     «две настольные и настольная» вместо «три настольные»
+ *     (исправлено: они тоже сливаются в одну группу)
+ *
+ * Текст карточки оперирует только типом+размером — бренд/конкретная модель
+ * для фразы не нужны. modelId в группе — первая встретившаяся (любая из
+ * сливаемых моделей даёт правильный type+chip для fxNameNom/Gen/Dat).
  */
 function groupByModel(fx: Fixture[]): FxGroup[] {
   const map = new Map<string, FxGroup>()
@@ -89,12 +95,11 @@ function groupByModel(fx: Fixture[]): FxGroup[] {
     const q = f.q ?? 1
     const lm = fixtureLm(f)
     const wood = (f.wood ?? 'oak') as Wood
-    const btemp = f.opts?.btemp ?? DEF_OPT.btemp
+    // Кастомы хранят температуру в custom.btemp (у них нет opts).
+    const btemp = f.opts?.btemp ?? f.custom?.btemp ?? DEF_OPT.btemp
     const zone = (f.zone ?? 'ceiling') as ZoneId
-    // Для кастомов нормализуем ключ по type+chip — иначе разные бренды
-    // одного типа становятся разными группами в тексте.
-    const groupId = f.custom ? `custom:${m.type}|${m.chip || ''}` : f.m
-    const key = `${groupId}|${wood}|${btemp}|${zone}`
+    // Единый ключ для WOODLED и кастомов одного type+chip.
+    const key = `${m.type}|${m.chip || ''}|${zone}|${wood}|${btemp}`
     const existing = map.get(key)
     if (existing) {
       existing.count += q

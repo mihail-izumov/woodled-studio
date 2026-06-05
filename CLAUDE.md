@@ -29,6 +29,7 @@
 - `NAMING_SPEC.md` — как формируется подпись светильника (тип + чип, без `collection`/`name`).
 - `WOODLED_цвет_стен.md` — отделка стен: пресеты + свой HEX, автоклассификация по relative luminance (BT.709), пороги, влияние на UF, UI в `RoomSettings`, swatch в карточке настроения, share/persist.
 - `WOODLED_шаринг.md` — сериализация состояния в URL-хеш: карта полей `Room`/`Fixture` ↔ `PackedRoom`/`PackedFixture`, дефолты, правило «новое поле в модели → ключ в share.ts», roundtrip-проверка.
+- `WOODLED_кастомные_светильники_тех.md` — система светильников другого бренда: `Fixture.custom: CustomSpec`, рантайм-регистрация в `MD` через `engine/custom-registry.ts`, фильтры «леса» (только WOODLED), `inputs` для точного восстановления UI-state при reopen. Концепция UI — `NON_WOODLED_FIXTURES.md`.
 - `WOODLED_прелоадеры.md` — три слоя preloader'а (inline boot-loader из `config.mts`, Vue `Preloader.vue`, `PageFade.vue`). Матрица: что показывается на десктопе / iOS / PWA / при медленном интернете / при reload. Правила синхронизации (`__wlBoot.clear()`, `__wlBranded`, флаг `cleared` против race-condition).
 
 **Рационал и голос:**
@@ -36,6 +37,7 @@
 - `WOODLED_коэффициенты_светильников.md` — `FX_FACTORS` по моделям, обоснование.
 - `WOODLED_tone_of_voice.md` — голос (спокойный · тёплый · по делу, «вы», без AI-штампов).
 - `WOODLED_аудит_текстов_настроений.md` — чек-лист аудита перед сложными правками.
+- `WOODLED_проверка_фичей_чек-лист.md` — методика верификации фичи без dev-сервера (парсинг + mental-симуляция). Применять после любой правки `Fixture`/`Room`/store/share.
 
 ## Карта папок (`.vitepress/customizer/`)
 - `components/` — все Vue-компоненты (экраны, карточки, модалки). UI-примитивы в `components/ui/`.

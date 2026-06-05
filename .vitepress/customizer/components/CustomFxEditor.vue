@@ -50,7 +50,12 @@ const emit = defineEmits<{
 /* ──────────────── Справочники ──────────────── */
 
 const NAME_MAX = 16
-const BRAND_MAX = 18
+/**
+ * Бренд короткий: UPPERCASE-плашка в ZoneCard ~110px ширины при 10px шрифте
+ * → влезает 8-10 знаков. 12 — небольшой запас, остальное обрежется ellipsis.
+ * Топ-бренды («IKEA», «GAUSS», «PHILIPS», «OSRAM», «NAVIGATOR») влезают.
+ */
+const BRAND_MAX = 12
 /** Пустой бренд — НЕ показываем плашку в карточке зоны (см. catalog.ts/fxLine). */
 const EMPTY_BRAND = ''
 
@@ -175,21 +180,24 @@ const source    = ref<string>(c?.source === 'led' ? 'LED'
                               : c?.source === 'tape' ? 'TAPE'
                               : (c?.socket ?? 'E14'))
 const lamps     = ref<number>(c?.lamps ?? 2)
-const wattMap   = ref<Record<string, number>>(
-  { E27: 11, E14: 9, GX53: 9, GU10: 7, G9: 5, LED: 20 },
-)
-const tapeW     = ref<number>(9.6)
-const tapeLen   = ref<number>(5)
-const manualLm  = ref<boolean>(false)
-const customLm  = ref<number>(0)
+
+/* UI-state восстанавливается из c.inputs если сохранён, иначе — дефолты
+   с приближённой реконструкцией мощности из lmPer (только для bulb/LED). */
+const DEFAULT_WATTS: Record<string, number> = { E27: 11, E14: 9, GX53: 9, GU10: 7, G9: 5, LED: 20 }
+const wattMap   = ref<Record<string, number>>({ ...DEFAULT_WATTS, ...(c?.inputs?.watt ?? {}) })
+const tapeW     = ref<number>(c?.inputs?.tapeW ?? 9.6)
+const tapeLen   = ref<number>(c?.inputs?.tapeLen ?? 5)
+const manualLm  = ref<boolean>(c?.inputs?.manualLm ?? false)
+const customLm  = ref<number>(c?.inputs?.manualLmValue ?? 0)
 const temp      = ref<string>(c?.btemp ?? '2700')
 const bodyId    = ref<string>(
   (c && BODIES.find((b) => b.body === c.body)?.id) || 'shade',
 )
 const tintId    = ref<string>(c?.tint?.id ?? 'oak')
 
-// Если редактируем существующий — попробуем восстановить мощность из lmPer.
-if (c) {
+/* Fallback-реконструкция мощности из lmPer для старых сохранений без inputs.
+   Применяется только если в c.inputs.watt нет записи для текущего цоколя. */
+if (c && !c.inputs?.watt) {
   const s = SOCKETS.find((s) => s.id === source.value)
   if (s?.kind === 'bulb' && s.watts) {
     const guess = Math.round(c.lmPer / s.lmPerW)
@@ -204,11 +212,16 @@ if (c) {
     )
     wattMap.value.LED = closest
   }
+  // Tape без inputs восстановить точно нельзя (3 неизвестных: lmPerW × tapeW × tapeLen),
+  // оставляем дефолт 9.6 × 5 (~4800 лм). Это покажет расхождение в превью, но
+  // у новых сохранений inputs всегда присутствуют — баг ловит только legacy.
 }
 
 const pasteState = ref<'' | 'ok' | 'fail'>('')
+const copyState = ref<'' | 'ok' | 'fail'>('')
 const showDelConfirm = ref(false)
 const showLeaveConfirm = ref(false)
+const urlInputEl = ref<HTMLInputElement | null>(null)
 
 /* ──────────────── Вычисленные значения ──────────────── */
 
@@ -278,13 +291,27 @@ function buildSpec(): CustomSpec {
     socket: socketObj.value.kind === 'bulb' ? source.value : undefined,
     sqMin: showSize.value && sz ? sz.sqMin : undefined,
     sqMax: showSize.value && sz ? sz.sqMax : undefined,
+    // UI-state — для точного восстановления формы при повторном открытии.
+    inputs: {
+      manualLm: manualLm.value,
+      manualLmValue: manualLm.value ? customLm.value : undefined,
+      watt: { ...wattMap.value },
+      tapeW: tapeW.value,
+      tapeLen: tapeLen.value,
+    },
   }
 }
 
-/* ──────────────── isDirty: было vs сейчас ──────────────── */
-
-const initialSpecSnapshot = c ? JSON.stringify(c) : ''
-const currentSpecJson = computed(() => JSON.stringify(buildSpec()))
+/* ──────────────── isDirty: было vs сейчас ────────────────
+ * Сравниваем «содержательные» поля — без inputs. Это позволяет добавлять
+ * UI-state в inputs у уже сохранённых кастомов без ложного isDirty=true. */
+function stripInputs(spec: CustomSpec | undefined | null) {
+  if (!spec) return ''
+  const { inputs: _ignored, ...core } = spec
+  return JSON.stringify(core)
+}
+const initialSpecSnapshot = stripInputs(c)
+const currentSpecJson = computed(() => stripInputs(buildSpec()))
 const isDirty = computed(() =>
   props.isProvisional || currentSpecJson.value !== initialSpecSnapshot,
 )
@@ -320,6 +347,15 @@ function scrollToSave() {
 /* ──────────────── Действия ──────────────── */
 
 async function pasteUrl() {
+  /* navigator.clipboard.readText() требует HTTPS + user-gesture + разрешения.
+     В iOS Safari/некоторых браузерах reject без promptа — даём пользователю
+     fallback: фокусируем input, чтобы можно было long-press / cmd+v вручную. */
+  if (!navigator.clipboard?.readText) {
+    urlInputEl.value?.focus()
+    pasteState.value = 'fail'
+    setTimeout(() => { pasteState.value = '' }, 1800)
+    return
+  }
   try {
     const txt = await navigator.clipboard.readText()
     if (txt) {
@@ -327,11 +363,33 @@ async function pasteUrl() {
       pasteState.value = 'ok'
     } else {
       pasteState.value = 'fail'
+      urlInputEl.value?.focus()
     }
   } catch {
+    /* Браузер отказал в доступе — fallback на ручную вставку. */
     pasteState.value = 'fail'
+    urlInputEl.value?.focus()
   }
-  setTimeout(() => { pasteState.value = '' }, 1400)
+  setTimeout(() => { pasteState.value = '' }, 1800)
+}
+
+async function copyUrl() {
+  if (!url.value) return
+  if (!navigator.clipboard?.writeText) {
+    /* Старые браузеры: выделим текст в инпуте, дальше — Ctrl+C/системное меню. */
+    urlInputEl.value?.select()
+    copyState.value = 'fail'
+    setTimeout(() => { copyState.value = '' }, 1800)
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(url.value)
+    copyState.value = 'ok'
+  } catch {
+    urlInputEl.value?.select()
+    copyState.value = 'fail'
+  }
+  setTimeout(() => { copyState.value = '' }, 1800)
 }
 
 function handleSave() {
@@ -598,7 +656,7 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
         <input
           v-model="brand"
           :maxlength="BRAND_MAX"
-          placeholder="GAUSS, FERON, NAVIGATOR..."
+          placeholder="IKEA, GAUSS, PHILIPS..."
           :style="{
             width: '100%', padding: '12px 14px',
             background: T.cardAlt, border: `1px solid ${T.border}`,
@@ -620,30 +678,63 @@ const EMPTY_BRAND_CONST = EMPTY_BRAND
         </div>
         <div :style="{ position: 'relative' }">
           <input
+            ref="urlInputEl"
             v-model="url"
             type="url"
             placeholder="https://..."
             :style="{
-              width: '100%', padding: '12px 88px 12px 14px',
+              width: '100%', padding: '12px 132px 12px 14px',
               background: T.cardAlt, border: `1px solid ${T.border}`,
               borderRadius: '12px', color: T.text, fontSize: '16px',
               outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
             }"
           />
-          <button
-            :style="{
-              position: 'absolute', right: '6px', top: '50%',
-              transform: 'translateY(-50%)',
-              padding: '7px 14px', border: 'none', borderRadius: '8px',
-              background: pasteState === 'ok' ? T.green
-                        : pasteState === 'fail' ? T.red + '88'
-                        : T.neutral + '33',
-              color: (pasteState === 'ok' || pasteState === 'fail') ? T.bg : T.neutral,
-              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-              transition: 'all .2s', fontFamily: 'inherit',
-            }"
-            @click="pasteUrl"
-          >{{ pasteState === 'ok' ? 'вставлено' : pasteState === 'fail' ? 'нет доступа' : 'Вставить' }}</button>
+          <!-- Группа кнопок: Копировать (иконка) + Вставить -->
+          <div :style="{
+            position: 'absolute', right: '6px', top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }">
+            <!-- Копировать: иконка-only. Disabled если url пустой. -->
+            <button
+              :disabled="!url"
+              :title="copyState === 'ok' ? 'Скопировано' : 'Скопировать'"
+              :style="{
+                width: '34px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none', borderRadius: '8px',
+                background: copyState === 'ok' ? T.green
+                          : copyState === 'fail' ? T.red + '88'
+                          : url ? T.neutral + '33' : 'transparent',
+                color: (copyState === 'ok' || copyState === 'fail') ? T.bg
+                       : url ? T.neutral : T.textDim,
+                cursor: url ? 'pointer' : 'not-allowed',
+                transition: 'all .2s', fontFamily: 'inherit',
+              }"
+              @click="copyUrl"
+            >
+              <svg v-if="copyState !== 'ok'" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </button>
+            <!-- Вставить: текстовая кнопка -->
+            <button
+              :style="{
+                padding: '7px 14px', border: 'none', borderRadius: '8px',
+                background: pasteState === 'ok' ? T.green
+                          : pasteState === 'fail' ? T.red + '88'
+                          : T.neutral + '33',
+                color: (pasteState === 'ok' || pasteState === 'fail') ? T.bg : T.neutral,
+                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                transition: 'all .2s', fontFamily: 'inherit',
+              }"
+              @click="pasteUrl"
+            >{{ pasteState === 'ok' ? 'вставлено' : pasteState === 'fail' ? 'зажмите' : 'Вставить' }}</button>
+          </div>
         </div>
       </div>
 

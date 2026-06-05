@@ -403,16 +403,17 @@ function onGalleryGiftClick() {
   </template>
 
   <!-- SoundButton:
-       • базовый top = 20px — на одной линии с центром бейджа
-         «WOODLED Студия» (бейдж: home pad 16 + wrap padTop 8 +
-         полвысоты бейджа ≈ 15 → центр ~39px от верха home; полкнопки
-         ≈ 20 → top 19-20). См. ReloadButton ниже — то же значение.
-       • с PWA-банером сдвигается на --wl-banner-h (transition
-         синхронно с slide-анимацией банера 360ms). -->
+       • Главная: top = 20px — на линии с центром бейджа «WOODLED Студия».
+         С PWA-банером сдвигается на --wl-banner-h.
+       • Остальные экраны (RoomDetail/FxEditor/CustomFxEditor): top = 6px —
+         внутри NavHeader 44px, центр кнопки ≈ 22px (полкнопки ~16px).
+         На главной такое значение не годится (бейдж бы перекрывался). -->
   <div
     :style="{
       position: 'fixed',
-      top: 'calc(20px + var(--wl-banner-h, 0px))',
+      top: isHome
+        ? 'calc(20px + var(--wl-banner-h, 0px))'
+        : '6px',
       right: '16px',
       zIndex: 90,
       transition: 'top 360ms cubic-bezier(0.4, 0, 0.2, 1)',

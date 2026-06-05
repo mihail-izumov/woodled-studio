@@ -88,7 +88,8 @@ type Warmth = 'warm' | 'neutral' | 'clear'
 function tempWarmth(fx: Fixture[]): Warmth {
   const w: Record<string, number> = {}
   for (const f of fx) {
-    const t = f.opts?.btemp ?? DEF_OPT.btemp
+    // Кастомы хранят температуру в custom.btemp (у них нет opts).
+    const t = f.opts?.btemp ?? f.custom?.btemp ?? DEF_OPT.btemp
     w[t] = (w[t] ?? 0) + fxLm([f])
   }
   const top = Object.entries(w).sort((a, b) => b[1] - a[1])[0]?.[0] ?? DEF_OPT.btemp

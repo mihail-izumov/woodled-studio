@@ -230,17 +230,18 @@ export function buildStoryContext(rooms: Room[], name: string): StoryContext {
     return totalLm > 0 ? Math.round((lm / totalLm) * 100) : 0
   }
 
-  /* Средняя температура (по точкам). */
+  /* Средняя температура (по WOODLED-точкам). У кастомов температура
+     лежит в f.custom.btemp, а не в f.opts.btemp — но «Характер дома»
+     в Story говорит про WOODLED-лес, поэтому считаем только по своим
+     (иначе denom=totalTrees без кастомов и sum по всем — перекос). */
   let avgKelvin = '—'
   if (filledRooms.length > 0) {
     const denom = Math.max(1, totalTrees)
-    const sum = filledRooms
-      .flatMap((r) => r.fixtures)
-      .reduce((s, f) => {
-        const k = parseInt(f.opts?.btemp ?? '4000') || 4000
-        return s + k * (f.q ?? 1)
-      }, 0)
-    avgKelvin = '~' + Math.round(sum / denom) + 'K'
+    const sum = ownFx.reduce((s, f) => {
+      const k = parseInt(f.opts?.btemp ?? '4000') || 4000
+      return s + k * (f.q ?? 1)
+    }, 0)
+    avgKelvin = denom > 0 ? '~' + Math.round(sum / denom) + 'K' : '—'
   }
 
   /* Средний процент потерь от мебели. */

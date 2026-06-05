@@ -91,6 +91,8 @@ export default defineConfig({
         var rootEl = null, textEl = null, timers = [];
         var mode = null;       // 'simple' (reload) | 'branded' (initial)
         var startTime = 0;     // время старта branded preloader
+        var cleared = false;   // race-condition guard: Vue вызвал clear()
+                               // раньше, чем whenBody-поллер построил DOM.
         var LAMEL_COUNT = 20, R_FAR = 170, R_NEAR = 80;
 
         function whenBody(cb) {
@@ -170,8 +172,10 @@ export default defineConfig({
         var Boot = {
           // Простой спиннер с текстом — для reload и быстрых сообщений.
           show: function (text, hints) {
+            cleared = false;
             clearTimers();
             var doShow = function () {
+              if (cleared) return;
               if (!rootEl) { mode = 'simple'; buildSimple(text || ''); }
               else if (textEl && text) textEl.textContent = text;
               if (hints && hints.length) {
@@ -186,8 +190,10 @@ export default defineConfig({
           },
           // Брендовый preloader — копия Preloader.vue для initial-сценария.
           showBranded: function (text, hints) {
+            cleared = false;
             clearTimers();
             var doShow = function () {
+              if (cleared) return;
               if (!rootEl) {
                 mode = 'branded';
                 buildBranded(text || '');
@@ -212,6 +218,9 @@ export default defineConfig({
           // тэглайн «Настоящее дерево становится живым светом в доме»,
           // даём 1.2с прочитать — и фейдаемся.
           clear: function () {
+            // Race-condition guard: даже если rootEl ещё null (whenBody
+            // не достроил DOM), флаг блокирует поздний buildSimple/branded.
+            cleared = true;
             clearTimers();
             if (!rootEl) return;
             if (mode === 'branded') {
@@ -250,24 +259,41 @@ export default defineConfig({
         window.__wlBoot = Boot;
 
         // Initial: какой preloader показать?
-        //  • штатное открытие PWA → branded (копия Preloader.vue).
-        //    Подсказки про VPN на 6с/18с.
-        //  • после ReloadButton (флаг ?_reload=1) → simple-спиннер,
-        //    подсказки на 4с/10с. Это переживает navigation: новая
-        //    страница подхватывает контекст из query.
+        //  • после ReloadButton (флаг ?_reload=1) → simple-спиннер.
+        //    Это переживает navigation: новая страница подхватывает
+        //    контекст из query.
+        //  • штатное открытие PWA (standalone-режим) → branded
+        //    (копия Preloader.vue) с подсказками про VPN.
+        //  • обычный браузер на десктопе / лендинг / онбординг → НИЧЕГО.
+        //    Раньше preloader показывался везде и в неверных контекстах
+        //    висел вечно. Это фрустрировало юзеров.
         var isReload = false;
         try { isReload = new URLSearchParams(window.location.search).get('_reload') === '1'; } catch (e) {}
+
+        var isStandalone = false;
+        try {
+          if (window.navigator && window.navigator.standalone) isStandalone = true;
+          else if (window.matchMedia) {
+            var modes = ['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'];
+            for (var i = 0; i < modes.length; i++) {
+              if (window.matchMedia('(display-mode: ' + modes[i] + ')').matches) { isStandalone = true; break; }
+            }
+          }
+        } catch (e) {}
+
         if (isReload) {
           Boot.show('Перезагружаем…', [
             { at: 4000,  text: 'Долго не отвечает. С VPN такое бывает — подождите.' },
             { at: 10000, text: 'Не получается? Закройте и откройте приложение, проверьте интернет.' },
           ]);
-        } else {
+        } else if (isStandalone) {
           Boot.showBranded('Загружаем лес WOODLED…', [
             { at: 6000,  text: 'Чуть дольше обычного. С VPN такое бывает — подождите.' },
             { at: 18000, text: 'Не загружается? Проверьте интернет и обновите страницу.' },
           ]);
         }
+        // иначе — preloader не запускается; window.__wlBoot всё равно
+        // экспонирован, ReloadButton может им пользоваться при нужде.
       })();
     `],
     // Регистрация Service Worker. Лежит в /public/sw.js, в проде доступен

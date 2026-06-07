@@ -321,7 +321,12 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       <template v-if="view==='summary'">
         <!-- Hero-блок: реактивный к build, показывает фото под выбор юзера -->
         <div :style="{marginBottom:'16px'}">
-          <FxHeroGallery :build="build" :tint="props.roomTint" :interior-count="galleryDisplayItems.length" />
+          <FxHeroGallery
+            :build="build"
+            :tint="props.roomTint"
+            :interior-count="galleryDisplayItems.length"
+            :interior-thumbs="galleryDisplayItems.slice(0, 6).map(i => i.src)"
+          />
         </div>
 
         <div ref="plateEl" :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">

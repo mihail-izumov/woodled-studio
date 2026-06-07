@@ -39,9 +39,10 @@ const props = defineProps<{
   build: BuildSnapshot
   /** Цвет акцента — обычно цвет комнаты (для CTA-кнопки). */
   tint?: string
-  /** Сколько интерьеров есть в старой GallerySection ниже — для CTA-слайда.
-   *  Передаётся как `galleryDisplayItems.length` из FxEditor. */
+  /** Сколько интерьеров есть в нижней GallerySection — для CTA-слайда. */
   interiorCount?: number
+  /** URLs первых 6 интерьеров — превью-сетка в CTA-слайде (3×2 квадратов без промежутков). */
+  interiorThumbs?: readonly string[]
 }>()
 
 const config = computed(() => fxToConfig({
@@ -146,32 +147,61 @@ const accent = computed(() => props.tint || T.neutral)
         @click="openLightbox(idx)"
       />
 
-      <!-- CTA-слайд (последний экран, если фото мало) -->
+      <!-- CTA-слайд: заголовок · сетка 6 миниатюр 3×2 · кнопка. Весь блок кликабелен. -->
       <div
         v-else
+        @click="jumpToInteriors"
         :style="{
           width: '100%', height: '100%', background: T.card,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          gap: '14px', padding: '24px', textAlign: 'center',
+          display: 'grid', gridTemplateRows: '1fr 4fr 1fr',
+          cursor: 'pointer',
         }"
       >
-        <div :style="{ fontSize: '18px', fontWeight: 700, color: T.text, lineHeight: 1.3 }">
-          {{ ctaTitle }}
+        <!-- Заголовок -->
+        <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }">
+          <span :style="{ fontSize: '16px', fontWeight: 700, color: T.text, textAlign: 'center', lineHeight: 1.3 }">
+            {{ ctaTitle }}
+          </span>
         </div>
-        <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.5, maxWidth: '260px' }">
-          {{ interiorCount }} {{ interiorCount === 1 ? 'фото' : (interiorCount < 5 ? 'фото' : 'фото') }} в реальных комнатах
+
+        <!-- Сетка 3×2 миниатюр, без промежутков, квадратные cells (т.к. 4fr на 3 col = 1:1) -->
+        <div :style="{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateRows: 'repeat(2, 1fr)',
+          gap: 0,
+          overflow: 'hidden',
+        }">
+          <div
+            v-for="i in 6"
+            :key="i"
+            :style="{
+              width: '100%', height: '100%',
+              background: (interiorThumbs && interiorThumbs[i-1]) ? '#000' : T.cardAlt,
+              overflow: 'hidden',
+            }"
+          >
+            <img
+              v-if="interiorThumbs && interiorThumbs[i-1]"
+              :src="interiorThumbs[i-1]"
+              loading="lazy"
+              alt=""
+              :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }"
+            />
+          </div>
         </div>
-        <button
-          @click="jumpToInteriors"
-          :style="{
-            padding: '12px 22px', borderRadius: '24px',
-            background: accent, color: T.bg, border: 'none',
-            fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-          }"
-        >
-          Посмотреть ↓
-        </button>
+
+        <!-- Кнопка-индикатор -->
+        <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }">
+          <span :style="{
+            padding: '8px 18px', borderRadius: '20px',
+            background: accent, color: T.bg,
+            fontSize: '13px', fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+          }">
+            Посмотреть <span>↓</span>
+          </span>
+        </div>
       </div>
 
       <!-- Прев / след стрелки (если слайдов >1) -->

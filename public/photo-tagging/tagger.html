@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>WOODLED — Photo Tagger v5</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --border: #d2d2d7;
+    --line: #ececef;
+    --text: #1d1d1f;
+    --text-sec: #6e6e73;
+    --text-dim: #a1a1a6;
+    --accent: #0071e3;
+    --danger: #ff3b30;
+    --warn: #ff9500;
+    --ok: #34c759;
+    --oak: #c4a46c;
+    --walnut: #8b6242;
+    --black: #2a2622;
+    --acryl: #ededed;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    font-size: 14px; line-height: 1.4;
+  }
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(245,245,247,0.94);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px 0;
+  }
+  .topbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  h1 { font-size:17px; font-weight:600; margin:0; flex:1; }
+  .stats { font-size:12px; color: var(--text-sec); }
+  .stats b { color: var(--text); font-weight:600; }
+  .btn {
+    border:none; background: var(--accent); color:white;
+    padding:8px 14px; border-radius:8px; font-size:13px; font-weight:500;
+    cursor:pointer; font-family:inherit;
+  }
+  .btn:hover { opacity:0.9; }
+  .btn.secondary { background:#e8e8ed; color:var(--text); }
+  .tabs { display:flex; gap:4px; margin-top:14px; }
+  .tab {
+    background:none; border:none; padding:10px 18px;
+    font:inherit; cursor:pointer; color: var(--text-sec);
+    font-weight:500; border-bottom:2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .filters {
+    margin-top:10px; padding-bottom:10px;
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  }
+  .filters select, .filters input {
+    padding:6px 10px; border:1px solid var(--border); border-radius:6px;
+    background:var(--card); font:inherit; color:inherit;
+  }
+  .filters input { width:200px; }
+  .progress {
+    height:4px; background: var(--line); border-radius:2px;
+    margin-top:4px; overflow:hidden;
+  }
+  .progress > div { height:100%; background: var(--ok); transition: width 0.3s ease; }
+  main { padding:20px 24px 60px; max-width: 1400px; margin: 0 auto; }
+  .pane { display:none; }
+  .pane.active { display:block; }
+
+  .grp {
+    margin: 32px 0 16px;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, #ffffff 0%, #fafafd 100%);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+  }
+  .grp-name {
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.4px; color: var(--text);
+    margin: 0 0 6px;
+  }
+  .grp-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 10px; }
+  .grp-stats {
+    display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px;
+  }
+  .grp-stats .stat { display:flex; align-items:baseline; gap:6px; }
+  .grp-stats .stat .num { font-size:18px; font-weight:700; }
+  .grp-stats .num.ok    { color: var(--ok); }
+  .grp-stats .num.todo  { color: var(--warn); }
+  .grp-stats .num.del   { color: var(--danger); }
+  .grp-required { margin-top: 10px; font-size: 12px; color: var(--text-sec); }
+  .grp-required b { color: var(--text); }
+
+  .card {
+    background: var(--card); border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+    display: grid; grid-template-columns: 280px 1fr;
+    margin-bottom: 12px; overflow: hidden;
+    transition: opacity 0.2s, box-shadow 0.2s;
+  }
+  .card.deleted { opacity: 0.4; }
+  .card.deleted .photo-pane { background: #fff0f0; }
+  .card.untagged { box-shadow: 0 0 0 2px var(--warn), 0 1px 3px rgba(0,0,0,0.04); }
+  .card.tagged   { box-shadow: 0 0 0 1px var(--ok), 0 1px 3px rgba(0,0,0,0.04); }
+
+  .photo-pane {
+    background: #faf9f7; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+    border-right: 1px solid var(--line);
+  }
+  .photo-pane img {
+    width: 100%; aspect-ratio: 1; object-fit: contain;
+    border-radius: 8px; background: #fff; cursor: zoom-in;
+  }
+  .photo-meta { width: 100%; font-size: 11px; color: var(--text-sec); text-align: center; }
+  .photo-meta .file {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    word-break: break-all; color: var(--text); font-weight: 500; margin-top: 2px;
+  }
+  .photo-meta .folder { font-size: 10px; color: var(--text-dim); line-height: 1.3; }
+
+  .card-progress {
+    width: 100%; display: flex; align-items: center; gap: 6px; margin-top: 4px;
+  }
+  .card-progress .bar {
+    flex: 1; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden;
+  }
+  .card-progress .bar > div { height:100%; background: var(--ok); transition: width 0.2s; }
+  .card-progress .txt {
+    font-size: 11px; font-weight: 700; color: var(--text-sec); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .card-progress .txt.full { color: var(--ok); }
+
+  .form-pane { padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .auto-strip {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--line);
+  }
+  .auto-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; background: #f2f2f5; border-radius: 14px;
+    font-size: 12px; color: var(--text);
+  }
+  .auto-chip b { font-weight: 600; }
+  .auto-chip .lbl {
+    color: var(--text-dim); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .sku-chip {
+    background: #fff8e0; color: #8b6e10;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 14px; align-items: center;
+  }
+  .row .label { font-size: 12px; color: var(--text-sec); font-weight: 500; }
+  .row .label .hint {
+    display: block; font-size: 10px; color: var(--text-dim);
+    font-weight: 400; margin-top: 1px;
+  }
+  .row .label.req::after {
+    content: ' *'; color: var(--warn); font-weight: 700;
+  }
+
+  .wood-group, .body-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .wood-opt, .body-opt {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 12px 7px 7px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    cursor: pointer; font-size: 13px; user-select: none;
+    background: var(--card); transition: all 0.12s;
+  }
+  .wood-opt:hover, .body-opt:hover { border-color: var(--text-sec); }
+  .wood-opt.sel, .body-opt.sel {
+    border-color: var(--accent); background: #e9f3ff; font-weight: 600;
+  }
+  .wood-opt.sku {
+    border-color: var(--ok); background: #f0fbf4;
+  }
+  .wood-opt.sku.sel {
+    background: #e6f7ec; border-color: var(--ok); border-width: 2px;
+  }
+  .wood-opt.disabled {
+    opacity: 0.4; cursor: not-allowed; pointer-events: none;
+  }
+  .wood-opt .sku-tag {
+    font-size: 9px; font-weight: 700; color: var(--ok);
+    background: white; padding: 2px 5px; border-radius: 6px;
+    margin-left: 4px; letter-spacing: 0.3px;
+  }
+  .wood-swatch, .body-swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .wood-swatch.oak    { background: var(--oak); }
+  .wood-swatch.walnut { background: var(--walnut); }
+  .wood-swatch.black  { background: var(--black); }
+  .wood-swatch.acryl  { background: var(--acryl); border-color: rgba(0,0,0,0.15); }
+  .body-swatch.white  { background: #ECE6DA; border-color: rgba(0,0,0,0.15); }
+  .body-swatch.black  { background: #2A2622; }
+
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--text-sec);
+    font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.12s;
+  }
+  .pill:hover { border-color: var(--text-sec); color: var(--text); }
+  .pill.sel { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+  .pill.na { background: #f4f4f6; color: var(--text-dim); border-style: dashed; }
+  .pill.na.sel { background: var(--text-sec); color: white; border-color: var(--text-sec); border-style: solid; }
+
+  select.field, input[type="text"].field, input[type="number"].field {
+    padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--card); font: inherit; color: inherit; min-width: 160px;
+  }
+  select.field:focus, input.field:focus {
+    outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent;
+  }
+  input[type="number"].field { width: 80px; min-width: 80px; }
+  textarea.field {
+    padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--card); font: inherit; color: inherit;
+    width: 100%; min-height: 36px; resize: vertical; font-family: inherit;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 11px; font-size: 11px; font-weight: 600;
+  }
+  .badge.warn { background: #fff5e6; color: #8b5a00; }
+  .badge.ok   { background: #e6f7ec; color: #00701f; }
+  .badge.del  { background: #ffe8e6; color: #b8211a; }
+
+  .del-row {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding-top: 12px; border-top: 1px solid var(--line);
+  }
+  .del-btn {
+    padding: 6px 14px; border: 1.5px solid #f5c4c1;
+    background: #fff5f4; color: var(--danger);
+    border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .del-btn.active { background: var(--danger); color: white; border-color: var(--danger); }
+
+  /* Simulator */
+  .sim-panel {
+    background: var(--card); border-radius: 14px; padding: 20px;
+    margin-bottom: 24px; border: 1px solid var(--line);
+  }
+  .sim-panel h2 { margin: 0 0 4px; font-size: 17px; }
+  .sim-panel .sub { margin: 0 0 16px; font-size: 13px; color: var(--text-sec); }
+  .sim-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 14px;
+    align-items: center; margin-bottom: 12px;
+  }
+  .sim-row .label { font-size: 13px; color: var(--text-sec); font-weight: 500; }
+
+  .scoring-info {
+    background: #f6f8fb; padding: 14px 16px; border-radius: 10px;
+    font-size: 12px; color: var(--text); line-height: 1.65;
+    margin-top: 14px;
+  }
+  .scoring-info .h { font-weight: 700; margin-bottom: 6px; }
+  .scoring-info code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: white; padding: 1px 6px; border-radius: 4px; font-size: 11px;
+  }
+
+  /* Result sections */
+  .res-section {
+    margin-top: 28px;
+  }
+  .res-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+    padding: 0 4px;
+  }
+  .res-head h3 {
+    margin: 0; font-size: 17px; font-weight: 700;
+  }
+  .res-head .count {
+    font-size: 18px; font-weight: 800;
+    padding: 2px 12px; border-radius: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .res-head.exact .count    { background: var(--ok); color: white; }
+  .res-head.partial .count  { background: #fff5e6; color: #8b5a00; }
+  .res-head.fallback .count { background: #fee; color: var(--danger); }
+  .res-head.excl .count     { background: #f0f0f3; color: var(--text-sec); }
+  .res-head .note {
+    font-size: 12px; color: var(--text-sec);
+  }
+  .res-head .toggle {
+    background:none; border:none; padding:0; font:inherit;
+    color:var(--accent); cursor:pointer; font-size:12px;
+    margin-left: auto;
+  }
+
+  .sim-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .sim-card {
+    background: var(--card); border-radius: 12px;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex; flex-direction: column;
+  }
+  .sim-card.partial { opacity: 0.85; background: #fffbf3; }
+  .sim-card.fallback { opacity: 0.7; background: #fff8f7; }
+  .sim-card img {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+    background: #faf9f7; cursor: zoom-in;
+  }
+  .sim-card .sc-body { padding: 10px 12px; }
+  .sim-card .sc-rank {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .sim-card .sc-num {
+    font-size: 12px; font-weight: 700; color: var(--text-sec);
+    background: #f0f0f3; padding: 2px 8px; border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sim-card .sc-num.top { background: var(--ok); color: white; }
+  .sim-card .sc-meta { font-size: 11px; color: var(--text-sec); }
+  .sim-card .sc-tags {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+  }
+  .sc-tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 8px; font-weight: 500;
+  }
+  .sc-tag.match    { background: #e6f7ec; color: #00701f; }
+  .sc-tag.wildcard { background: #f0f0f3; color: var(--text-sec); }
+  .sc-tag.extra    { background: #fff8e6; color: #8b5a00; }
+  .sc-file {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 9px; color: var(--text-dim); margin-top: 6px;
+    word-break: break-all;
+  }
+  .partial-note, .fallback-note {
+    background: #fff5e6; color: #8b5a00;
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 12px; margin-bottom: 12px;
+  }
+  .fallback-note { background: #ffe8e6; color: #b8211a; }
+  .partial-note b, .fallback-note b { font-weight: 700; }
+
+  .excluded-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .excluded-card {
+    background: var(--card); border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    opacity: 0.85;
+  }
+  .excluded-card img {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+    filter: grayscale(0.5); cursor: zoom-in;
+  }
+  .excluded-card .ec-body { padding: 8px 10px; }
+  .excluded-card .ec-reason {
+    font-size: 10px; color: var(--danger); font-weight: 600; margin-bottom: 4px;
+  }
+  .excluded-card .ec-file {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 9px; color: var(--text-dim); word-break: break-all;
+  }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--text-sec);
+    background: var(--card); border-radius: 14px;
+  }
+
+  .lb {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; cursor: zoom-out;
+  }
+  .lb.open { display: flex; }
+  .lb img { max-width: 94vw; max-height: 94vh; border-radius: 6px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: white; padding: 10px 18px; border-radius: 22px;
+    font-size: 13px; opacity: 0; transition: opacity 0.25s; z-index: 300;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topbar">
+    <h1>WOODLED — Photo Tagger</h1>
+    <span class="stats" id="stats"></span>
+    <button class="btn secondary" id="reset-btn">Сбросить</button>
+    <button class="btn" id="export-btn">Экспорт JSON</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="tag">Тегирование</button>
+    <button class="tab" data-tab="sim">Алгоритм подбора</button>
+    <button class="tab" data-tab="cov">Покрытие</button>
+  </div>
+  <div class="filters" id="tag-filters">
+    <label>Коллекция:
+      <select id="filter-coll"><option value="">все</option></select>
+    </label>
+    <label>Модель:
+      <select id="filter-model"><option value="">все</option></select>
+    </label>
+    <label>Статус:
+      <select id="filter-status">
+        <option value="">все</option>
+        <option value="untagged">только без тегов</option>
+        <option value="tagged">только протегированные</option>
+        <option value="deleted">только на удаление</option>
+      </select>
+    </label>
+    <label>Дерево:
+      <select id="filter-wood">
+        <option value="">все</option>
+        <option value="sku">✓ SKU-подтверждено</option>
+        <option value="manual-verified">✓ ручное проверено</option>
+        <option value="manual-unverified">⚠ ручное не проверено</option>
+        <option value="manual-empty">⚠ ручное и пустое</option>
+        <option value="multi">мульти-цвет render</option>
+      </select>
+    </label>
+    <label>Съёмка:
+      <select id="filter-shot">
+        <option value="">все</option>
+        <option value="studio">студия</option>
+        <option value="interior">интерьер</option>
+        <option value="detail">без фона</option>
+      </select>
+    </label>
+    <input id="filter-search" type="search" placeholder="Поиск по файлу / notes…">
+  </div>
+  <div class="progress"><div id="progress-bar"></div></div>
+</header>
+
+<main>
+  <div class="pane active" id="pane-tag"></div>
+  <div class="pane" id="pane-sim"></div>
+  <div class="pane" id="pane-cov"></div>
+</main>
+
+<div class="lb" id="lb"><img id="lb-img" alt=""></div>
+<div class="toast" id="toast"></div>
+
+<script src="./_seed.js"></script>
+<script>
+'use strict';
+
+const WOODS = [
+  { id:'oak',    label:'Дуб',          cls:'oak'    },
+  { id:'walnut', label:'Орех',         cls:'walnut' },
+  { id:'black',  label:'Чёрный дуб',   cls:'black'  },
+  { id:'acryl',  label:'Акрил (бел.)', cls:'acryl'  },
+];
+const BODY_COLORS = [
+  { id:'white', label:'Белый',  cls:'white' },
+  { id:'black', label:'Чёрный', cls:'black' },
+];
+const MOUNT_BY_COLL = {
+  rotor:        ['pendant','flush'],
+  rotor_x:      ['pendant','flush'],
+  elliptical:   ['flush','pendant'],
+  spot:         ['pendant','track'],
+  unit:         ['wall'],
+  bra_h:        ['wall'],
+  bra_v:        ['wall'],
+  table_lamp:   ['table'],
+  floor_lamp:   ['floor'],
+  floor_lamp_s: ['floor'],
+};
+const MOUNT_LABEL = {
+  pendant:'Подвес', flush:'Вплотную', track:'Шинопровод',
+  wall:'Стена', table:'Стол', floor:'Пол',
+};
+const BOWLS = [
+  { id:'chrome_8',  label:'Хром Ø8' },
+  { id:'black_8',   label:'Чёрная Ø8' },
+  { id:'white_8',   label:'Белая Ø8' },
+  { id:'wood_8',    label:'Деревянная Ø8' },
+  { id:'nickel',    label:'Никель' },
+  { id:'hook_10',   label:'Хром-крюк Ø10' },
+  { id:'chrome_14', label:'Хром Ø14' },
+];
+const BTEMPS = [
+  { id:'2700', label:'2700K' },
+  { id:'3000', label:'3000K' },
+  { id:'4000', label:'4000K' },
+];
+const DIFFUSER_OPTS = [
+  { id:'yes', label:'Есть' },
+  { id:'no',  label:'Нет' },
+];
+const SHOTS = [
+  { id:'studio',   label:'Студия',    desc:'нейтральный/серый фон, packshot' },
+  { id:'interior', label:'Интерьер',  desc:'в реальной комнате, для вдохновения' },
+  { id:'detail',   label:'Без фона',  desc:'белый фон, для каталога' },  // переименовано из «Деталь»
+];
+
+const REQUIRED_BY_COLL = {
+  rotor:        ['wood', 'mount'],
+  rotor_x:      ['wood', 'mount', 'diffuser'],
+  elliptical:   ['wood', 'mount'],
+  spot:         ['wood'],
+  unit:         ['wood', 'bodyColor'],
+  bra_h:        ['wood'],
+  bra_v:        ['wood'],
+  table_lamp:   ['wood'],
+  floor_lamp:   ['wood', 'bodyColor'],
+  floor_lamp_s: ['wood'],
+};
+
+const COLL_INFO = {
+  rotor:        { desc: 'Люстра-кольцо с ламелями · потолок' },
+  rotor_x:      { desc: 'Rotor X — с акриловыми вставками + рассеиватель · потолок' },
+  elliptical:   { desc: 'Эллиптическая люстра-кольцо · потолок' },
+  spot:         { desc: 'Точечный спот · потолок (на подвесе или шинопровод)' },
+  unit:         { desc: 'Настенный спот · стена · металлический корпус' },
+  bra_h:        { desc: 'Бра горизонтальное · стена' },
+  bra_v:        { desc: 'Бра вертикальное · стена' },
+  table_lamp:   { desc: 'Настольная лампа · стол' },
+  floor_lamp:   { desc: 'Торшер на треноге · пол · ножка белая/чёрная' },
+  floor_lamp_s: { desc: 'Торшер на стойке · пол' },
+};
+
+function visibleFields(coll) {
+  return {
+    // mount — реальный выбор только у rotor (catalog.ts: hasMount:true только у rotor S/M/L/1000)
+    mount:     coll === 'rotor',
+    bowl:      ['rotor','rotor_x','elliptical','spot','unit'].includes(coll),
+    diffuser:  coll === 'rotor_x',
+    bodyColor: coll === 'floor_lamp',
+    patrons:   ['rotor','rotor_x','elliptical'].includes(coll),
+  };
+}
+const FIELD_LABEL = {
+  wood:'цвет/материал', mount:'крепление',
+  diffuser:'рассеиватель', bodyColor:'цвет корпуса',
+  bowl:'чаша', on:'свет', btemp:'температура',
+};
+function hasValue(v) { return v !== '' && v !== null && v !== undefined; }
+
+function tagProgress(r) {
+  const req = REQUIRED_BY_COLL[r.collection] || ['wood'];
+  const done = req.filter(f => hasValue(r[f])).length;
+  return { done, total: req.length };
+}
+function isTagged(r) { const { done, total } = tagProgress(r); return done === total; }
+
+// ============================================================================
+//  STATE
+// ============================================================================
+const STORAGE_KEY = 'woodled-tagger-v20';
+let rows = [];
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  rows = saved ? JSON.parse(saved) : structuredClone(window.SEED);
+} catch (e) { rows = structuredClone(window.SEED); }
+rows.forEach(r => {
+  if (r.patrons === undefined) r.patrons = '';
+  if (r.bodyColor === undefined) r.bodyColor = r.base || '';
+  delete r.base; delete r.lampsVisible;
+});
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }
+
+let activeTab = 'tag';
+
+// ============================================================================
+//  TAGGING TAB
+// ============================================================================
+function encURL(s) { return s.split('/').map(encodeURIComponent).join('/'); }
+
+function renderCard(r, idx) {
+  const v = visibleFields(r.collection);
+  const req = REQUIRED_BY_COLL[r.collection] || ['wood'];
+  const { done, total } = tagProgress(r);
+  const tagged = isTagged(r);
+  const folder = r.src.substring(0, r.src.lastIndexOf('/'));
+  const file = r.src.substring(r.src.lastIndexOf('/')+1);
+  const url = encURL(r.src);
+
+  let html = `<div class="card ${r.deleted?'deleted':''} ${r.deleted ? '' : (tagged ? 'tagged' : 'untagged')}" data-idx="${idx}">`;
+  html += `<div class="photo-pane">
+    <img src="./${url}" loading="lazy" alt="" data-zoom>
+    <div class="photo-meta">
+      <div class="folder">${folder}</div>
+      <div class="file">${file}</div>
+      ${r.deleted ? '<div class="badge del" style="margin-top:6px">помечен на удаление</div>'
+        : (tagged ? '<div class="badge ok" style="margin-top:6px">✓ протегирован</div>'
+                  : '<div class="badge warn" style="margin-top:6px">нужны теги</div>')}
+    </div>
+    <div class="card-progress">
+      <div class="bar"><div style="width:${total?Math.round(done/total*100):0}%"></div></div>
+      <span class="txt ${done===total?'full':''}">${done}/${total}</span>
+    </div>
+  </div>`;
+
+  html += `<div class="form-pane">`;
+  html += `<div class="auto-strip">
+    <span class="auto-chip"><span class="lbl">КОЛЛЕКЦИЯ</span><b>${r.collection}</b></span>
+    <span class="auto-chip"><span class="lbl">МОДЕЛЬ</span><b>${r.model}</b></span>
+    <span class="auto-chip"><span class="lbl">НАЗВАНИЕ</span><b>${r.name}</b></span>
+    <span class="auto-chip"><span class="lbl">РАЗМЕР</span><b>${r.size}</b></span>
+    ${r.sku ? `<span class="auto-chip sku-chip"><span class="lbl">SKU</span><b>${r.sku}</b></span>` : ''}
+  </div>`;
+
+  const isReq = (k) => req.includes(k);
+
+  // ─── Wood picker с SKU-lock + мульти-цвет ───
+  const hasSkuLock = r.skuWood && !r.skuOverride;
+  const isMulti = Array.isArray(r.wood);
+  html += `<div class="row">
+    <div class="label ${isReq('wood')?'req':''}">Цвет / материал
+      ${r.skuWood ? `<span class="hint">из папки SKU <b>${r.sku}</b> → ${WOODS.find(w=>w.id===r.skuWood)?.label || r.skuWood}${r.skuOverride ? ' <span style="color:var(--warn)">(переопределён)</span>' : ''}</span>` : isMulti ? `<span class="hint" style="color:var(--accent)">мульти-цвет (${r.wood.length}): ${r.wood.map(id => WOODS.find(w=>w.id===id)?.label||id).join(' · ')}</span>` : `<span class="hint">породы дерева или акрил</span>`}
+    </div>
+    <div class="wood-group">`;
+  for (const w of WOODS) {
+    const isSku = w.id === r.skuWood;
+    const sel = isMulti ? r.wood.includes(w.id) : (w.id === r.wood);
+    const cls = ['wood-opt'];
+    if (sel) cls.push('sel');
+    if (isSku) cls.push('sku');
+    if (hasSkuLock && !isSku) cls.push('disabled');
+    const dataAttr = hasSkuLock && !isSku ? '' : `data-wood="${w.id}"`;
+    html += `<div class="${cls.join(' ')}" ${dataAttr}>
+      <div class="wood-swatch ${w.cls}"></div><span>${w.label}</span>${isSku?'<span class="sku-tag">SKU</span>':''}${sel && isMulti ? '<span style="margin-left:4px;font-size:10px">✓</span>' : ''}</div>`;
+  }
+  if (r.skuWood) {
+    html += `<button class="pill na" data-toggle-sku-override>${r.skuOverride ? '🔒 Вернуть SKU' : '🔓 Переопределить'}</button>`;
+  }
+  // Кнопка мульти-цвет (только когда не SKU-lock)
+  if (!hasSkuLock) {
+    html += `<button class="pill ${isMulti ? 'sel' : 'na'}" data-toggle-multi style="${isMulti ? 'background:var(--accent);color:white;border-color:var(--accent)' : ''}">${isMulti ? '🎨 Один цвет' : '🎨 Несколько'}</button>`;
+  }
+  // ─── Кнопка «Проверено» для ручной разметки (single ИЛИ multi) ───
+  // Показывается когда: нет SKU-lock и есть значение (string или непустой array)
+  const hasManualValue = (!r.skuWood || r.skuOverride) && (
+    (Array.isArray(r.wood) && r.wood.length > 0) ||
+    (!Array.isArray(r.wood) && hasValue(r.wood))
+  );
+  if (hasManualValue) {
+    html += `<button class="pill ${r.woodVerified ? 'sel' : ''}" data-toggle-wood-verified style="${r.woodVerified ? 'background:var(--ok);border-color:var(--ok)' : ''}">${r.woodVerified ? '✓ Проверено' : 'Подтвердить'}</button>`;
+  }
+  html += `</div></div>`;
+
+  if (v.mount) {
+    html += `<div class="row">
+      <div class="label ${isReq('mount')?'req':''}">Крепление<span class="hint">видно на фото</span></div>
+      <div class="pills">`;
+    for (const m of MOUNT_BY_COLL[r.collection]) {
+      html += `<button class="pill${m===r.mount?' sel':''}" data-mount="${m}">${MOUNT_LABEL[m]}</button>`;
+    }
+    html += `<button class="pill na${r.mount===''?' sel':''}" data-mount="">не определить</button>
+    </div></div>`;
+  }
+
+  if (v.bodyColor) {
+    html += `<div class="row">
+      <div class="label ${isReq('bodyColor')?'req':''}">Цвет корпуса<span class="hint">ножка / крепление / металл</span></div>
+      <div class="body-group">`;
+    for (const b of BODY_COLORS) {
+      html += `<div class="body-opt${b.id===r.bodyColor?' sel':''}" data-bodycolor="${b.id}">
+        <div class="body-swatch ${b.cls}"></div><span>${b.label}</span></div>`;
+    }
+    html += `<button class="pill na${r.bodyColor===''?' sel':''}" data-bodycolor="">не определить</button>
+    </div></div>`;
+  }
+
+  if (v.bowl) {
+    html += `<div class="row">
+      <div class="label">Чаша<span class="hint">если не видно — оставь пусто</span></div>
+      <div><select class="field" data-field="bowl">
+        <option value="">— не определить —</option>`;
+    for (const b of BOWLS) {
+      html += `<option value="${b.id}"${b.id===r.bowl?' selected':''}>${b.label}</option>`;
+    }
+    html += `</select></div></div>`;
+  }
+
+  if (v.diffuser) {
+    html += `<div class="row">
+      <div class="label ${isReq('diffuser')?'req':''}">Рассеиватель<span class="hint">матовая «крышка»</span></div>
+      <div class="pills">`;
+    for (const d of DIFFUSER_OPTS) {
+      html += `<button class="pill${d.id===r.diffuser?' sel':''}" data-diffuser="${d.id}">${d.label}</button>`;
+    }
+    html += `<button class="pill na${r.diffuser===''?' sel':''}" data-diffuser="">— н/о —</button>
+    </div></div>`;
+  }
+
+  if (v.patrons) {
+    html += `<div class="row">
+      <div class="label">Кол-во патронов<span class="hint">если торец открыт</span></div>
+      <div><input type="number" class="field" data-field="patrons" value="${r.patrons||''}" min="0" max="20" placeholder="не определить"></div>
+    </div>`;
+  }
+
+  html += `<div class="row">
+    <div class="label">Свет включён</div>
+    <div class="pills">
+      <button class="pill${r.on===true?' sel':''}" data-on="true">Включён</button>
+      <button class="pill${r.on===false?' sel':''}" data-on="false">Выключен</button>
+    </div>
+  </div>`;
+
+  if (r.on === true) {
+    html += `<div class="row">
+      <div class="label">Темп. света<span class="hint">если различима</span></div>
+      <div class="pills">`;
+    for (const t of BTEMPS) {
+      html += `<button class="pill${t.id===r.btemp?' sel':''}" data-btemp="${t.id}">${t.label}</button>`;
+    }
+    html += `<button class="pill na${r.btemp===''?' sel':''}" data-btemp="">— н/о —</button>
+    </div></div>`;
+  }
+
+  // ─── Тип съёмки ───
+  html += `<div class="row">
+    <div class="label">Тип съёмки<span class="hint">студия / интерьер / деталь</span></div>
+    <div class="pills">`;
+  for (const s of SHOTS) {
+    html += `<button class="pill${s.id===r.shot?' sel':''}" data-shot="${s.id}" title="${s.desc}">${s.label}</button>`;
+  }
+  html += `</div></div>`;
+
+  html += `<div class="row">
+    <div class="label">Заметки<span class="hint">фон/комнату не пиши</span></div>
+    <div><textarea class="field" data-field="notes" placeholder="что важно отметить…">${(r.notes||'').replace(/</g,'&lt;')}</textarea></div>
+  </div>`;
+
+  html += `<div class="del-row">
+    <button class="del-btn${r.deleted?' active':''}" data-toggle-del>${r.deleted?'Восстановить':'✕ Пометить на удаление'}</button>
+  </div>`;
+
+  html += `</div></div>`;
+  return html;
+}
+
+function renderTagPane() {
+  const grid = document.getElementById('pane-tag');
+  const fColl = document.getElementById('filter-coll').value;
+  const fModel = document.getElementById('filter-model').value;
+  const fStatus = document.getElementById('filter-status').value;
+  const fSearch = document.getElementById('filter-search').value.toLowerCase();
+
+  const fWood = document.getElementById('filter-wood')?.value || '';
+  const fShot = document.getElementById('filter-shot')?.value || '';
+
+  const groups = {};
+  rows.forEach((r, idx) => {
+    if (fColl && r.collection !== fColl) return;
+    if (fModel && r.model !== fModel) return;
+    if (fStatus === 'untagged' && (isTagged(r) || r.deleted)) return;
+    if (fStatus === 'tagged' && !isTagged(r)) return;
+    if (fStatus === 'deleted' && !r.deleted) return;
+    // Wood-confidence filter — multi и single работают одинаково
+    const isSkuLocked = r.skuWood && !r.skuOverride;
+    const woodHasValue = (Array.isArray(r.wood) && r.wood.length > 0) || (!Array.isArray(r.wood) && r.wood);
+    if (fWood === 'sku' && !isSkuLocked) return;
+    if (fWood === 'manual-verified' && (isSkuLocked || !woodHasValue || !r.woodVerified)) return;
+    if (fWood === 'manual-unverified' && (isSkuLocked || !woodHasValue || r.woodVerified)) return;
+    if (fWood === 'manual-empty' && (isSkuLocked || woodHasValue)) return;
+    if (fWood === 'multi' && !Array.isArray(r.wood)) return;
+    // Shot filter
+    if (fShot && (r.shot || 'studio') !== fShot) return;
+    if (fSearch && !(r.src.toLowerCase().includes(fSearch) || (r.notes||'').toLowerCase().includes(fSearch))) return;
+    if (!groups[r.model]) groups[r.model] = { coll: r.collection, name: r.name, items: [] };
+    groups[r.model].items.push({ row: r, idx });
+  });
+
+  let html = '';
+  for (const k of Object.keys(groups)) {
+    const g = groups[k];
+    const total = g.items.length;
+    const tagged = g.items.filter(x => isTagged(x.row)).length;
+    const del = g.items.filter(x => x.row.deleted).length;
+    const todo = total - tagged - del;
+    const req = (REQUIRED_BY_COLL[g.coll] || ['wood']);
+    const reqLabels = req.map(f => FIELD_LABEL[f] || f);
+    html += `<div class="grp">
+      <h2 class="grp-name">${g.name}</h2>
+      <div class="grp-sub">${COLL_INFO[g.coll]?.desc || g.coll}</div>
+      <div class="grp-stats">
+        <div class="stat"><span class="num">${total}</span> фото всего</div>
+        ${tagged>0?`<div class="stat"><span class="num ok">✓ ${tagged}</span> готово</div>`:''}
+        ${todo>0?`<div class="stat"><span class="num todo">${todo}</span> к разбору</div>`:''}
+        ${del>0?`<div class="stat"><span class="num del">${del}</span> к удалению</div>`:''}
+      </div>
+      <div class="grp-required">Обязательные теги: <b>${reqLabels.join(' · ')}</b></div>
+    </div>`;
+    for (const it of g.items) html += renderCard(it.row, it.idx);
+  }
+  if (!html) html = '<div class="empty-state">Ничего не найдено</div>';
+  grid.innerHTML = html;
+  updateStats();
+}
+
+function updateStats() {
+  const total = rows.length;
+  const tagged = rows.filter(r => !r.deleted && isTagged(r)).length;
+  const del = rows.filter(r => r.deleted).length;
+  const todo = rows.filter(r => !r.deleted && !isTagged(r)).length;
+  document.getElementById('stats').innerHTML =
+    `Всего: <b>${total}</b> · ✓ <b>${tagged}</b> · нужны теги: <b style="color:var(--warn)">${todo}</b> · к удалению: <b>${del}</b>`;
+  const pct = total ? Math.round(tagged / Math.max(1, total - del) * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+// ============================================================================
+//  ИСТОЧНИК ПРАВДЫ — алгоритм Hero и Gallery
+//  (это место переедет в .vitepress/customizer/engine/fx-gallery.ts)
+// ============================================================================
+const simState = {
+  model: 'rotor_1000',
+  wood: '', mount: '', bodyColor: '', diffuser: '', bowl: '',
+  showExcluded: false,
+};
+
+// ─── Ключевые поля для матчинга ────────────────────────────────────────────
+// HERO_FIELDS — нужна визуальная идентичность светильника.
+//   wood        — всегда: цвет ламелей — главное отличие.
+//   mount       — только rotor: «подвес vs flush» сильно меняет силуэт. catalog.hasMount:true.
+//   diffuser    — только rotor_x: «есть/нет» меняет вид плафона (шар vs декор).
+//   bodyColor   — только floor_lamp: тренога белая/чёрная (catalog.baseColors).
+//
+// GALLERY_FIELDS — интерьеры, проще: «модель + дерево + цвет ножки/подвеса».
+//   На интерьерных фото мелкие детали (bowl/diffuser) плохо читаются,
+//   пользователи замечают именно несовпадение дерева и формы крепления.
+//
+// Удалено из обоих наборов:
+//   bowl     — 0/179 фото в датасете размечено → всегда wildcard, бесполезно.
+//   patrons  — 3/179, btemp — 9/179 → данных слишком мало.
+//   on       — метаданные, не визуальный матч.
+//   У rotor_x/elliptical/spot mount в каталоге `hasMount:false` (юзер не выбирает) —
+//   не подаём в фильтр, хотя в фото размечен.
+const HERO_FIELDS = {
+  rotor:        ['wood','mount'],
+  rotor_x:      ['wood','diffuser'],
+  elliptical:   ['wood'],
+  spot:         ['wood'],
+  unit:         ['wood'],
+  bra_h:        ['wood'],
+  bra_v:        ['wood'],
+  table_lamp:   ['wood'],
+  floor_lamp:   ['wood','bodyColor'],
+  floor_lamp_s: ['wood'],
+};
+const GALLERY_FIELDS = {
+  rotor:        ['wood','mount'],
+  rotor_x:      ['wood'],
+  elliptical:   ['wood'],
+  spot:         ['wood'],
+  unit:         ['wood'],
+  bra_h:        ['wood'],
+  bra_v:        ['wood'],
+  table_lamp:   ['wood'],
+  floor_lamp:   ['wood','bodyColor'],
+  floor_lamp_s: ['wood'],
+};
+function fieldsFor(coll, mode) {
+  const src = mode === 'gallery' ? GALLERY_FIELDS : HERO_FIELDS;
+  return src[coll] || ['wood'];
+}
+
+// ─── Семейства моделей для cross-size fallback ───
+// Когда фото точного размера нет — показываем близкие размеры той же линейки.
+// На превью-thumbnail размер визуально неразличим — приближённое фото лучше пустоты.
+//
+// ⚠ spot_s/spot_l НЕ в одной семье. Физически разные:
+//   spot_s = Ø12 × 12см (коротыш-куб), spot_l = Ø12 × 30см (длинная труба).
+//   Cross-size fallback показал бы длинный за короткий — неверно.
+const FAMILIES = {
+  rotor_s:'rotor', rotor_m:'rotor', rotor_l:'rotor', rotor_1000:'rotor',
+  rotor_x_m:'rotor_x', rotor_x_l:'rotor_x',
+  elliptical_s:'elliptical', elliptical_l:'elliptical',
+  bra_v_s:'bra_v', bra_v_l:'bra_v',
+};
+function familyOf(model) { return FAMILIES[model] || model; }
+
+// ─── Алгоритм ──────────────────────────────────────────────────────────────
+// ВХОД:   fx-config = { model, wood, mount, bodyColor, diffuser, ... }
+// ВЫХОД:  pickFxPhotos(config) → { hero: [...], interiors: [...], excluded: [...] }
+//
+//  1. Hard-filter: photo.family === config.family  (другие семьи отбрасываются молча).
+//  2. Field-match — по HERO_FIELDS или GALLERY_FIELDS (отдельно для каждого режима):
+//       cv≠'' && pv≠'' && совпали   → matchCount++          (явное совпадение)
+//       cv≠'' && pv≠'' && не совпали → исключаем              (конфликт)
+//       cv≠'' && pv пусто           → wildcard, strict=false  (нестрого)
+//       cv пусто                    → не учитывается
+//  3. Сплит по shot:
+//       hero      ← shot ∈ {studio, detail}
+//       interiors ← shot === 'interior'
+//  4. Слои внутри каждого массива:
+//       strict          — все user-picks реально совпали
+//       partial         — есть wildcards
+//       woodSubstitute  — ТОЛЬКО hero — пройти ещё раз с дроп-фильтром wood,
+//                         показать другое дерево + бейдж «цвет может отличаться»
+//  5. Сортировка внутри каждого слоя:
+//       matchCount DESC → sameSize=true первым → стабильно
+//     sameSize — тайбрейкер, не отдельный tier.
+//  6. Финальная страховка: если hero пуст после всех слоёв — UI рисует CTA-плашку
+//     «Посмотреть в интерьере ↓». Никакого ложного «fallback из любых фото» больше нет.
+//
+// Поддержка wood как массива (мульти-цвет рендеры): photo.wood === ['oak','black','walnut']
+// → матчит при выборе любого из перечисленных.
+
+function valueMatches(cv, pv) {
+  if (Array.isArray(pv)) return pv.includes(cv);
+  return String(cv) === String(pv);
+}
+function pvDisplay(pv) {
+  if (Array.isArray(pv)) return pv.join('/');
+  return String(pv);
+}
+function pvHasValue(pv) {
+  if (Array.isArray(pv)) return pv.length > 0;
+  return hasValue(pv);
+}
+
+// Применить набор полей. Возвращает { excluded, matchCount, strictMatch, tags } или null если отбракован.
+function evalMatch(photo, config, fields) {
+  const tags = [];
+  let matchCount = 0;
+  let userFilterCount = 0;
+  let strictMatch = true;
+  for (const field of fields) {
+    const cv = config[field];
+    const pv = photo[field];
+    const cvOk = hasValue(cv);
+    const pvOk = pvHasValue(pv);
+    if (cvOk) userFilterCount++;
+    if (cvOk && pvOk) {
+      if (valueMatches(cv, pv)) {
+        matchCount++;
+        tags.push({ field, status:'match', value: pvDisplay(pv) });
+      } else {
+        return { excluded:true, reason: `${FIELD_LABEL[field]||field}: фото "${pvDisplay(pv)}" ≠ ваш "${cv}"` };
+      }
+    } else if (cvOk && !pvOk) {
+      strictMatch = false;
+      tags.push({ field, status:'wildcard', value:'—' });
+    } else if (!cvOk && pvOk) {
+      tags.push({ field, status:'extra', value: pvDisplay(pv) });
+    }
+  }
+  if (userFilterCount === 0) strictMatch = true;
+  return { excluded:false, matchCount, strictMatch, userFilterCount, tags };
+}
+
+// Стабильная сортировка: matchCount DESC → sameSize=true первым.
+function sortLayer(arr) {
+  return arr.sort((a, b) => {
+    if (b.matchCount !== a.matchCount) return b.matchCount - a.matchCount;
+    if (a.sameSize !== b.sameSize) return a.sameSize ? -1 : 1;
+    return 0;
+  });
+}
+
+// Единый матчер: один прогон → раскладка для hero и interiors.
+function pickFxPhotos(config, mode /* 'hero' | 'gallery' */) {
+  const fam = familyOf(config.model);
+  const hero = { strict:[], partial:[], woodSubstitute:[] };
+  const interiors = { strict:[], partial:[] };
+  const excluded = [];
+
+  for (const p of rows) {
+    if (p.deleted) continue;
+    if (familyOf(p.model) !== fam) continue;
+
+    const fields = fieldsFor(p.collection, mode);
+    const m = evalMatch(p, config, fields);
+    const sameSize = p.model === config.model;
+
+    if (m.excluded) {
+      excluded.push({ photo:p, reason:m.reason, sameSize });
+      continue;
+    }
+    const entry = { photo:p, matchCount:m.matchCount, tags:m.tags, sameSize, shot:p.shot||'studio' };
+    const bucket = (entry.shot === 'interior') ? interiors : hero;
+    (m.strictMatch ? bucket.strict : bucket.partial).push(entry);
+  }
+
+  // Hero-only: woodSubstitute. Если strict+partial пусты, ищем clean того же fixture/семьи,
+  // дропая wood из фильтра (другое дерево, но фотогр. совпадение остальных key params).
+  if (mode === 'hero' && hero.strict.length === 0 && hero.partial.length === 0 && hasValue(config.wood)) {
+    const cfgNoWood = { ...config, wood: '' };
+    for (const p of rows) {
+      if (p.deleted) continue;
+      if (familyOf(p.model) !== fam) continue;
+      const shot = p.shot || 'studio';
+      if (shot === 'interior') continue;  // substitute — только clean
+      const fields = fieldsFor(p.collection, 'hero').filter(f => f !== 'wood');
+      const m = evalMatch(p, cfgNoWood, fields);
+      if (m.excluded || !m.strictMatch) continue;
+      hero.woodSubstitute.push({
+        photo:p, matchCount:m.matchCount, tags:m.tags,
+        sameSize: p.model === config.model, shot, substituted:true
+      });
+    }
+  }
+
+  sortLayer(hero.strict); sortLayer(hero.partial); sortLayer(hero.woodSubstitute);
+  sortLayer(interiors.strict); sortLayer(interiors.partial);
+
+  return { hero, interiors, excluded };
+}
+
+// Совместимость со старым кодом симулятора (пока не переписан UI).
+// Удалить вместе с переписыванием renderSimPane.
+function rankPhotos(config) {
+  const { hero, interiors, excluded } = pickFxPhotos(config, 'hero');
+  return {
+    exactSame:    [...hero.strict.filter(x=>x.sameSize), ...interiors.strict.filter(x=>x.sameSize)],
+    exactOther:   [...hero.strict.filter(x=>!x.sameSize), ...interiors.strict.filter(x=>!x.sameSize)],
+    partialSame:  [...hero.partial.filter(x=>x.sameSize), ...interiors.partial.filter(x=>x.sameSize)],
+    partialOther: [...hero.partial.filter(x=>!x.sameSize), ...interiors.partial.filter(x=>!x.sameSize)],
+    excluded,
+    fallback: null,
+  };
+}
+
+function renderSimPane() {
+  const pane = document.getElementById('pane-sim');
+  const models = [...new Set(rows.map(r => r.model))].sort();
+  const sampleRow = rows.find(r => r.model === simState.model);
+  const v = sampleRow ? visibleFields(sampleRow.collection) : {};
+  const coll = sampleRow ? sampleRow.collection : 'rotor';
+  const heroF = fieldsFor(coll,'hero');
+  const galF  = fieldsFor(coll,'gallery');
+
+  // ─── ИСТОЧНИК ПРАВДЫ (видимый в HTML) ────────────────────────────────────
+  let html = `<div class="sim-panel">
+    <h2>Источник правды — Hero и Gallery</h2>
+    <div class="sub">Эта секция = алгоритм, который потом переедет в TS. Снизу — симулятор по нему же.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+      <div style="padding:14px;background:#f6f8fb;border-radius:10px;border-left:3px solid var(--accent)">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">HERO_FIELDS · ${coll}</div>
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text)">${heroF.join(' · ')}</div>
+        <div style="font-size:11px;color:var(--text-sec);margin-top:6px">визуальная идентичность · clean BG (studio + detail)</div>
+      </div>
+      <div style="padding:14px;background:#fafafd;border-radius:10px;border-left:3px solid var(--ok)">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">GALLERY_FIELDS · ${coll}</div>
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text)">${galF.join(' · ')}</div>
+        <div style="font-size:11px;color:var(--text-sec);margin-top:6px">интерьеры · только этот fixture</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:12px 14px;background:white;border:1px solid var(--line);border-radius:10px;font-size:12px;line-height:1.6;color:var(--text-sec)">
+      <b style="color:var(--text)">Слои Hero:</b> <code>strict</code> (все user-picks совпали) → <code>partial</code> (есть wildcards) → <code>woodSubstitute</code> (другое дерево, тот же fixture). Пусто → CTA «в интерьерах ↓».<br>
+      <b style="color:var(--text)">Слои Gallery:</b> <code>strict</code> → <code>partial</code>. Без woodSubstitute (для интерьеров критично дерево).<br>
+      <b style="color:var(--text)">Размер:</b> тайбрейкер в сортировке, не отдельный tier. <code>sameSize=true</code> идёт раньше при равном matchCount.<br>
+      <b style="color:var(--text)">Не в матчере:</b> <code>bowl</code> (0 фото размечено), <code>btemp / patrons / socket / lamps</code> (либо мало данных, либо не видны на фото).
+    </div>
+    <div style="margin-top:10px;padding:12px 14px;background:#fff8ee;border:1px solid #f0d8a3;border-radius:10px;font-size:12px;line-height:1.6;color:#7a4f00">
+      <b>Плашки на карточках (user-facing copy для Vue):</b><br>
+      • <code>strict</code> — <b>без плашки</b> (100% match по тем полям, что отслеживаем)<br>
+      • <code>partial</code> — «${MATCH_BADGE.partial}» — у фото поле не размечено<br>
+      • <code>woodSubstitute</code> — «${MATCH_BADGE.fallback}» — другое дерево, остальное точно совпало<br>
+      <b style="display:inline-block;margin-top:6px">Глобальный disclaimer под слайдером Hero:</b> «Фото не отражает выбор цоколя, температуры и количества ламп».
+    </div>
+  </div>`;
+
+  // ─── КОНФИГ (выбор юзера) ─────────────────────────────────────────────────
+  html += `<div class="sim-panel">
+    <h2>Симулятор</h2>
+    <div class="sub">Имитирует выбор в FxEditor. Hero и Интерьеры обновляются синхронно.</div>
+    <div class="sim-row"><div class="label">Модель:</div>
+      <div><select class="field" id="sim-model">`;
+  for (const m of models) html += `<option value="${m}"${m===simState.model?' selected':''}>${m}</option>`;
+  html += `</select></div></div>`;
+
+  html += `<div class="sim-row"><div class="label">Цвет/материал:</div><div class="pills">`;
+  for (const w of WOODS) {
+    if (w.id === 'acryl') continue; // не каталожная опция, юзер не выбирает
+    html += `<button class="pill${w.id===simState.wood?' sel':''}" data-sim-wood="${w.id}">${w.label}</button>`;
+  }
+  html += `<button class="pill na${simState.wood===''?' sel':''}" data-sim-wood="">не указано</button></div></div>`;
+
+  if (sampleRow && v.mount) {
+    html += `<div class="sim-row"><div class="label">Крепление:</div><div class="pills">`;
+    for (const m of MOUNT_BY_COLL[sampleRow.collection]) html += `<button class="pill${m===simState.mount?' sel':''}" data-sim-mount="${m}">${MOUNT_LABEL[m]}</button>`;
+    html += `<button class="pill na${simState.mount===''?' sel':''}" data-sim-mount="">не указано</button></div></div>`;
+  }
+  if (sampleRow && v.bodyColor) {
+    html += `<div class="sim-row"><div class="label">Цвет корпуса:</div><div class="pills">`;
+    for (const b of BODY_COLORS) html += `<button class="pill${b.id===simState.bodyColor?' sel':''}" data-sim-bodycolor="${b.id}">${b.label}</button>`;
+    html += `<button class="pill na${simState.bodyColor===''?' sel':''}" data-sim-bodycolor="">не указано</button></div></div>`;
+  }
+  if (sampleRow && v.diffuser) {
+    html += `<div class="sim-row"><div class="label">Рассеиватель:</div><div class="pills">`;
+    for (const d of DIFFUSER_OPTS) html += `<button class="pill${d.id===simState.diffuser?' sel':''}" data-sim-diffuser="${d.id}">${d.label}</button>`;
+    html += `<button class="pill na${simState.diffuser===''?' sel':''}" data-sim-diffuser="">не указано</button></div></div>`;
+  }
+  html += `</div>`;
+
+  // ─── РЕЗУЛЬТАТ: две колонки Hero | Интерьеры ──────────────────────────────
+  const heroPick = pickFxPhotos(simState, 'hero');
+  const galPick  = pickFxPhotos(simState, 'gallery');
+  const hero = heroPick.hero;
+  const interiors = galPick.interiors;
+  const heroEmpty = hero.strict.length + hero.partial.length + hero.woodSubstitute.length === 0;
+  const intEmpty = interiors.strict.length + interiors.partial.length === 0;
+
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">`;
+
+  // HERO COLUMN
+  html += `<div class="sim-panel" style="margin:0">
+    <h2 style="display:flex;align-items:center;gap:8px">Hero <span style="font-size:11px;color:var(--text-sec);font-weight:500">clean BG (studio + detail)</span></h2>`;
+  html += renderLayer('strict',         'Точно',           hero.strict,         'Все ключевые поля совпали.');
+  html += renderLayer('partial',        'Приближённо',     hero.partial,        'Есть wildcards — у фото поле не размечено.');
+  html += renderLayer('woodSubstitute', 'Другое дерево',   hero.woodSubstitute, 'Цвет на фото отличается. Этот fixture в clean BG нет в выбранном дереве — показываем ближайший.');
+  if (heroEmpty) {
+    html += `<div class="fallback-note" style="margin-top:14px">❌ <b>Hero пуст.</b> Ни одно clean-фото не подошло. UI должен показать CTA-плашку с якорем «Посмотреть в интерьере ↓».</div>`;
+  }
+  html += `</div>`;
+
+  // INTERIORS COLUMN
+  html += `<div class="sim-panel" style="margin:0">
+    <h2 style="display:flex;align-items:center;gap:8px">Интерьеры <span style="font-size:11px;color:var(--text-sec);font-weight:500">shot = interior · GALLERY_FIELDS</span></h2>`;
+  html += renderLayer('strict',  'Точно',       interiors.strict,  'Все ключевые поля совпали.');
+  html += renderLayer('partial', 'Приближённо', interiors.partial, 'Есть wildcards.');
+  if (intEmpty) {
+    html += `<div class="partial-note" style="margin-top:14px">Интерьеров для этой конфигурации нет. UI не рисует плашку.</div>`;
+  }
+  html += `</div>`;
+
+  html += `</div>`; // end grid
+
+  // ─── EXCLUDED (общий, по hero-фильтру) ────────────────────────────────────
+  const excluded = heroPick.excluded;
+  if (excluded.length > 0) {
+    html += `<div class="sim-panel"><div class="res-head excl">
+      <h3>Исключены по конфликту (hero)</h3>
+      <span class="count">${excluded.length}</span>
+      <span class="note">явный диссонанс с фильтром</span>
+      <button class="toggle" id="sim-toggle-excl">${simState.showExcluded?'Скрыть':'Показать почему'}</button>
+    </div>`;
+    if (simState.showExcluded) {
+      html += `<div class="excluded-grid">`;
+      for (const e of excluded) {
+        const url = encURL(e.photo.src);
+        const file = e.photo.src.split('/').pop();
+        html += `<div class="excluded-card">
+          <img src="./${url}" loading="lazy" alt="" data-zoom>
+          <div class="ec-body">
+            <div class="ec-reason">✕ ${e.reason}</div>
+            <div class="ec-file">${file}</div>
+          </div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
+  function renderLayer(kind, title, arr, note) {
+    if (arr.length === 0) return ``;
+    const headCls = kind === 'strict' ? 'exact' : (kind === 'woodSubstitute' ? 'fallback' : 'partial');
+    let h = `<div class="res-section" style="margin-top:14px">
+      <div class="res-head ${headCls}">
+        <h3>${title}</h3>
+        <span class="count">${arr.length}</span>
+        <span class="note">${note}</span>
+      </div>
+      <div class="sim-grid">`;
+    arr.forEach((r,i) => h += renderSimCard(r, i, kind === 'strict' ? 'exact' : (kind === 'woodSubstitute' ? 'fallback' : 'partial')));
+    h += `</div></div>`;
+    return h;
+  }
+
+  pane.innerHTML = html;
+}
+
+// ============================================================================
+//  COVERAGE TAB — аналитика для решения Plan A vs B
+// ============================================================================
+function renderCoveragePane() {
+  const pane = document.getElementById('pane-cov');
+  const alive = rows.filter(r => !r.deleted);
+
+  // Общая сводка
+  const total = alive.length;
+  const byShot = { studio:0, interior:0, detail:0 };
+  alive.forEach(r => byShot[r.shot || 'studio']++);
+
+  // Wood confidence stats — multi и single работают одинаково
+  function hasWoodValue(r) {
+    return (Array.isArray(r.wood) && r.wood.length > 0) || (!Array.isArray(r.wood) && r.wood);
+  }
+  const skuLocked = alive.filter(r => r.skuWood && !r.skuOverride).length;
+  const manualVerified = alive.filter(r => !(r.skuWood && !r.skuOverride) && hasWoodValue(r) && r.woodVerified).length;
+  const manualUnverified = alive.filter(r => !(r.skuWood && !r.skuOverride) && hasWoodValue(r) && !r.woodVerified).length;
+  const manualEmpty = alive.filter(r => !(r.skuWood && !r.skuOverride) && !hasWoodValue(r)).length;
+  // Дополнительно — сколько из verified/unverified это мульти-цвет
+  const multiTotal = alive.filter(r => Array.isArray(r.wood) && r.wood.length > 0).length;
+  const totalConfirmed = skuLocked + manualVerified;
+  // По коллекциям — где требуется работа
+  const manualByColl = {};
+  alive.forEach(r => {
+    if (!(r.skuWood && !r.skuOverride) && (!hasWoodValue(r) || !r.woodVerified)) {
+      manualByColl[r.collection] = (manualByColl[r.collection]||0)+1;
+    }
+  });
+
+  let html = `<div class="sim-panel">
+    <h2>Подтверждение цвета</h2>
+    <div class="sub">SKU (от дизайнера) или ваша ручная проверка = подтверждённый цвет. Цель — довести «Подтверждено всего» до 100%.</div>
+    <div style="background:#f6f8fb;padding:16px;border-radius:10px;margin-top:16px;margin-bottom:12px;text-align:center">
+      <div style="font-size:11px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px">Подтверждено всего</div>
+      <div style="font-size:32px;font-weight:800;color:#00701f;margin-top:4px">${totalConfirmed} <span style="font-size:18px;color:var(--text-sec);font-weight:500">из ${total} · ${Math.round(totalConfirmed/total*100)}%</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div style="background:#e6f7ec;padding:12px;border-radius:8px;border-left:3px solid var(--ok)">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.3px">✓ SKU</div>
+        <div style="font-size:20px;font-weight:700;margin-top:2px;color:#00701f">${skuLocked}</div>
+        <div style="font-size:10px;color:var(--text-sec);margin-top:2px">артикул дизайнера</div>
+      </div>
+      <div style="background:#e6f7ec;padding:12px;border-radius:8px;border-left:3px solid var(--ok)">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.3px">✓ ручное</div>
+        <div style="font-size:20px;font-weight:700;margin-top:2px;color:#00701f">${manualVerified}</div>
+        <div style="font-size:10px;color:var(--text-sec);margin-top:2px">вы подтвердили</div>
+      </div>
+      <div style="background:#fff5e6;padding:12px;border-radius:8px;border-left:3px solid var(--warn)">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.3px">⚠ непроверено</div>
+        <div style="font-size:20px;font-weight:700;margin-top:2px;color:#8b5a00">${manualUnverified}</div>
+        <div style="font-size:10px;color:var(--text-sec);margin-top:2px">мои визуальные теги</div>
+      </div>
+      <div style="background:#ffe8e6;padding:12px;border-radius:8px;border-left:3px solid var(--danger)">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.3px">— пустое</div>
+        <div style="font-size:20px;font-weight:700;margin-top:2px;color:#b8211a">${manualEmpty}</div>
+        <div style="font-size:10px;color:var(--text-sec);margin-top:2px">требуется тег</div>
+      </div>
+    </div>
+    ${multiTotal > 0 ? `<div style="margin-top:10px;font-size:11px;color:var(--text-sec);text-align:center">в составе ручных: <b>${multiTotal}</b> мульти-цвет render'а</div>` : ''}
+    <div style="margin-top:16px;padding:14px;background:#fafafd;border-radius:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:8px">Не подтверждено — по коллекциям:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${
+        Object.entries(manualByColl).sort((a,b) => b[1]-a[1]).map(([c,n]) =>
+          `<span style="padding:5px 12px;background:white;border:1px solid var(--border);border-radius:14px;font-size:12px"><b>${c}</b> · ${n}</span>`
+        ).join('') || '<span style="color:var(--ok);font-weight:600">🎉 всё подтверждено!</span>'
+      }</div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:10px">Детальный breakdown по коллекциям</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f6f8fb">
+          <th style="text-align:left;padding:8px 10px;font-weight:600">Коллекция</th>
+          <th style="text-align:right;padding:8px 10px;font-weight:600">Всего</th>
+          <th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--ok)">SKU-папка</th>
+          <th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--accent)">SKU в имени</th>
+          <th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text-sec)">Мульти</th>
+          <th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--warn)">Ручное</th>
+          <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-sec)">Причина «ручного»</th>
+        </tr></thead>
+        <tbody>${(() => {
+          const colls = [...new Set(alive.map(r => r.collection))];
+          return colls.sort().map(coll => {
+            const items = alive.filter(r => r.collection === coll);
+            const skuFolder = items.filter(r => r.sku).length;
+            const skuFilename = items.filter(r => r.skuWood && !r.sku).length;
+            const multi = items.filter(r => Array.isArray(r.wood)).length;
+            const manual = items.filter(r => !r.skuWood && !Array.isArray(r.wood)).length;
+            // examples of manual file naming
+            const manualSamples = items.filter(r => !r.skuWood && !Array.isArray(r.wood)).slice(0, 2);
+            let reasonStr = '';
+            if (manual > 0) {
+              const samples = manualSamples.map(r => r.src.split('/').pop()).join(', ');
+              if (samples.match(/^woodled_rotor/)) reasonStr = 'маркетинговые woodled_rotor_NN';
+              else if (samples.match(/^[a-f0-9]{20}/)) reasonStr = 'хеш-экспорты';
+              else if (samples.match(/^\d+\.jpg/)) reasonStr = 'чисто числовые';
+              else reasonStr = 'смешанные';
+              reasonStr += ` (напр. ${samples})`;
+            }
+            const isFullSku = manual === 0;
+            return `<tr style="border-top:1px solid var(--line);${isFullSku?'background:#f0fbf4':''}">
+              <td style="padding:8px 10px;font-family:ui-monospace,Menlo,monospace;font-weight:600">${coll}${isFullSku?' ✓':''}</td>
+              <td style="text-align:right;padding:8px 10px">${items.length}</td>
+              <td style="text-align:right;padding:8px 10px;color:${skuFolder>0?'var(--ok)':'var(--text-dim)'}">${skuFolder||'—'}</td>
+              <td style="text-align:right;padding:8px 10px;color:${skuFilename>0?'var(--accent)':'var(--text-dim)'}">${skuFilename||'—'}</td>
+              <td style="text-align:right;padding:8px 10px;color:var(--text-dim)">${multi||'—'}</td>
+              <td style="text-align:right;padding:8px 10px;color:${manual>0?'var(--warn)':'var(--text-dim)'};font-weight:${manual>0?'600':'normal'}">${manual||'—'}</td>
+              <td style="padding:8px 10px;color:var(--text-sec);font-size:11px">${reasonStr||'<span style="color:var(--ok)">все по SKU</span>'}</td>
+            </tr>`;
+          }).join('');
+        })()}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // ─── НОВАЯ МАТРИЦА: model × wood для каталожных деревьев — прогон через pickFxPhotos ──
+  // Каталог = oak / walnut / black. Acryl не показываем (юзер не выбирает).
+  const CAT_WOODS = ['oak','walnut','black'];
+  const allModels = [...new Set(alive.map(r=>r.model))].sort();
+
+  function cellStatus(model, wood) {
+    const cfg = { model, wood, mount:'', bodyColor:'', diffuser:'', bowl:'' };
+    const h = pickFxPhotos(cfg, 'hero').hero;
+    const g = pickFxPhotos(cfg, 'gallery').interiors;
+    const heroLayer = h.strict.length > 0 ? 'strict'
+                    : h.partial.length > 0 ? 'partial'
+                    : h.woodSubstitute.length > 0 ? 'substitute'
+                    : 'empty';
+    const heroN = h.strict.length || h.partial.length || h.woodSubstitute.length;
+    const intN = g.strict.length + g.partial.length;
+    return { heroLayer, heroN, intN, hero:h, interiors:g };
+  }
+
+  let needsCTA = 0, heroPerfect = 0, heroSubstitute = 0;
+  const cells = [];
+  for (const md of allModels){
+    for (const w of CAT_WOODS){
+      const s = cellStatus(md, w);
+      cells.push({ md, w, ...s });
+      if (s.heroLayer === 'strict' || s.heroLayer === 'partial') heroPerfect++;
+      else if (s.heroLayer === 'substitute') heroSubstitute++;
+      else needsCTA++;
+    }
+  }
+
+  // Группировка по моделям: одна строка = модель, три статус-ячейки = oak/walnut/black
+  const byModel = {};
+  for (const c of cells) {
+    if (!byModel[c.md]) byModel[c.md] = {};
+    byModel[c.md][c.w] = c;
+  }
+
+  const layerBadge = (l) => {
+    if (l === 'strict')     return '<span title="strict — все ключевые поля совпали" style="display:inline-block;padding:2px 7px;background:#e6f7ec;color:#00701f;border-radius:10px;font-size:11px;font-weight:600">✓</span>';
+    if (l === 'partial')    return '<span title="partial — wildcards в матче" style="display:inline-block;padding:2px 7px;background:#eaf3ff;color:var(--accent);border-radius:10px;font-size:11px;font-weight:600">~</span>';
+    if (l === 'substitute') return '<span title="cross-wood substitute — другое дерево" style="display:inline-block;padding:2px 7px;background:#fff5e6;color:#8b5a00;border-radius:10px;font-size:11px;font-weight:600">△</span>';
+    return '<span title="пусто — нужна CTA в интерьеры" style="display:inline-block;padding:2px 7px;background:#ffe8e6;color:#b8211a;border-radius:10px;font-size:11px;font-weight:600">❌</span>';
+  };
+
+  html += `<div class="sim-panel">
+    <h2>Покрытие — прогон через pickFxPhotos</h2>
+    <div class="sub">17 моделей × 3 каталожных дерева (дуб/орех/чёрный дуб) = ${cells.length} комбинаций — всё пространство выборов юзера в FxEditor.<br>
+    <span style="color:var(--text-dim)">Не путать с 172 интерьерами в <code>data/gallery.ts</code> — это отдельный датасет «вдохновение», в матчер ещё не подключён.</span></div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0">
+      <div style="background:#e6f7ec;padding:12px;border-radius:8px;border-left:3px solid var(--ok)">
+        <div style="font-size:11px;color:var(--text-sec);text-transform:uppercase">Hero strict/partial</div>
+        <div style="font-size:22px;font-weight:700;color:#00701f">${heroPerfect}<span style="font-size:13px;color:var(--text-sec);font-weight:500"> / ${cells.length}</span></div>
+      </div>
+      <div style="background:#fff5e6;padding:12px;border-radius:8px;border-left:3px solid var(--warn)">
+        <div style="font-size:11px;color:var(--text-sec);text-transform:uppercase">Через substitute</div>
+        <div style="font-size:22px;font-weight:700;color:#8b5a00">${heroSubstitute}</div>
+        <div style="font-size:10px;color:var(--text-sec);margin-top:2px">бейдж «цвет может отличаться»</div>
+      </div>
+      <div style="background:#ffe8e6;padding:12px;border-radius:8px;border-left:3px solid var(--danger)">
+        <div style="font-size:11px;color:var(--text-sec);text-transform:uppercase">Пусто → CTA в интерьеры</div>
+        <div style="font-size:22px;font-weight:700;color:#b8211a">${needsCTA}</div>
+      </div>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;font-size:12px;background:white;border-radius:8px;overflow:hidden">
+      <thead><tr style="background:#f0f0f3">
+        <th style="width:24px"></th>
+        <th style="text-align:left;padding:8px 12px;font-weight:600">Модель</th>
+        <th style="text-align:center;padding:8px 12px;font-weight:600">Дуб</th>
+        <th style="text-align:center;padding:8px 12px;font-weight:600">Орех</th>
+        <th style="text-align:center;padding:8px 12px;font-weight:600">Чёрный дуб</th>
+        <th style="text-align:center;padding:8px 12px;font-weight:600;color:var(--text-sec)">Интерьеры</th>
+      </tr></thead><tbody>`;
+
+  // Группировка по family — заголовок-разделитель между группами
+  const familyOrder = ['rotor','rotor_x','elliptical','spot','unit','bra_h','bra_v','table_lamp','floor_lamp','floor_lamp_s'];
+  const sortedMd = allModels.sort((a,b) => {
+    const fa = familyOf(a), fb = familyOf(b);
+    const ia = familyOrder.indexOf(fa), ib = familyOrder.indexOf(fb);
+    if (ia !== ib) return ia - ib;
+    return a.localeCompare(b);
+  });
+  if (!simState.openModels) simState.openModels = new Set();
+  let prevFam = null;
+  for (const md of sortedMd) {
+    const fa = familyOf(md);
+    if (fa !== prevFam) {
+      html += `<tr style="background:#fafafd"><td colspan="6" style="padding:6px 12px;font-size:10px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px">${fa}</td></tr>`;
+      prevFam = fa;
+    }
+    const row = byModel[md];
+    if (!row) continue;
+    const intSum = CAT_WOODS.reduce((s,w) => s + (row[w]?.intN||0), 0);
+    const hasIssue = CAT_WOODS.some(w => row[w] && row[w].heroLayer !== 'strict');
+    const isOpen = simState.openModels.has(md);
+    html += `<tr class="cov-row" data-model="${md}" style="border-top:1px solid var(--line);cursor:pointer;${hasIssue?'background:#fffaf3':''}${isOpen?';background:#f4f4f7':''}">
+      <td style="padding:8px 0 8px 10px;color:var(--text-sec);font-size:11px">${isOpen?'▼':'▶'}</td>
+      <td style="padding:8px 12px;font-family:ui-monospace,Menlo,monospace;font-weight:600">${md}</td>`;
+    for (const w of CAT_WOODS) {
+      const cell = row[w];
+      const layer = cell ? cell.heroLayer : 'empty';
+      const sub = cell && cell.heroLayer === 'substitute' ? ` <span style="color:var(--text-dim);font-size:10px">×${cell.heroN}</span>` : '';
+      html += `<td style="text-align:center;padding:8px 12px">${layerBadge(layer)}${sub}</td>`;
+    }
+    html += `<td style="text-align:center;padding:8px 12px;color:${intSum>0?'var(--text-sec)':'var(--text-dim)'}">${intSum||'—'}</td>
+    </tr>`;
+
+    // Expanded detail row
+    if (isOpen) {
+      html += `<tr><td colspan="6" style="padding:0;background:#fafafd;border-top:1px dashed var(--border)">
+        <div style="padding:14px 18px">
+          <div style="font-size:11px;color:var(--text-sec);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Раскладка по выборам юзера · ${md}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">`;
+      for (const w of CAT_WOODS) {
+        const wMeta = WOODS.find(x=>x.id===w);
+        const cell = row[w];
+        if (!cell) { html += `<div style="padding:12px;background:white;border-radius:8px;border:1px solid var(--line);color:var(--text-dim);font-size:12px">${wMeta?.label||w}: нет данных</div>`; continue; }
+        const layerColor = cell.heroLayer==='strict' ? 'var(--ok)' :
+                           cell.heroLayer==='partial' ? 'var(--accent)' :
+                           cell.heroLayer==='substitute' ? 'var(--warn)' : 'var(--danger)';
+        const hStrict = cell.hero.strict.length;
+        const hPart = cell.hero.partial.length;
+        const hSub = cell.hero.woodSubstitute.length;
+        const iStrict = cell.interiors.strict.length;
+        const iPart = cell.interiors.partial.length;
+        // первые 3 превью из активного слоя + маркер если не strict
+        const activeArr = hStrict>0 ? cell.hero.strict : hPart>0 ? cell.hero.partial : cell.hero.woodSubstitute;
+        const thumbMark = cell.heroLayer === 'substitute' ? '△' : cell.heroLayer === 'partial' ? '~' : '';
+        const thumbMarkColor = cell.heroLayer === 'substitute' ? '#8b5a00;background:#fff5e6' : '#0050b8;background:#eaf3ff';
+        const thumbs = activeArr.slice(0,3).map(r => {
+          const u = encURL(r.photo.src);
+          const mark = thumbMark
+            ? `<span style="position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;color:${thumbMarkColor};font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.15);box-shadow:0 1px 2px rgba(0,0,0,.1)">${thumbMark}</span>`
+            : '';
+          return `<div style="position:relative;width:48px;height:48px"><img src="./${u}" loading="lazy" alt="" data-zoom style="width:48px;height:48px;object-fit:cover;border-radius:4px;cursor:zoom-in;display:block">${mark}</div>`;
+        }).join('');
+        html += `<div style="padding:12px;background:white;border-radius:8px;border:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--${wMeta.cls});border:1px solid rgba(0,0,0,.1)"></span>
+            <b style="font-size:13px">${wMeta.label}</b>
+            <span style="margin-left:auto">${layerBadge(cell.heroLayer)}</span>
+          </div>
+          <div style="font-size:11px;line-height:1.7;color:var(--text-sec)">
+            Hero · <b style="color:${layerColor}">${cell.heroLayer}</b><br>
+            strict: <b>${hStrict}</b> · partial: <b>${hPart}</b> · substitute: <b>${hSub}</b><br>
+            Интерьеры: <b>${iStrict+iPart}</b> ${iStrict+iPart>0?'<span style="color:var(--text-dim)">(strict '+iStrict+' · partial '+iPart+')</span>':''}
+          </div>
+          ${thumbs ? `<div style="display:flex;gap:4px;margin-top:8px">${thumbs}</div>` : ''}
+        </div>`;
+      }
+      html += `</div></div></td></tr>`;
+    }
+  }
+  html += `</tbody></table>
+
+  <div style="margin-top:10px;font-size:11px;color:var(--text-sec);display:flex;gap:14px;flex-wrap:wrap">
+    <span>${layerBadge('strict')} strict — точный матч</span>
+    <span>${layerBadge('partial')} partial — есть wildcards</span>
+    <span>${layerBadge('substitute')} substitute — другое дерево</span>
+    <span>${layerBadge('empty')} CTA — Hero пуст</span>
+  </div>
+  </div>`;
+
+  // ─── Старая матрица модель × shot — оставляем как справку по физ. покрытию ────
+  const models = [...new Set(alive.map(r => r.model))].sort();
+
+  html += `<div class="sim-panel">
+    <h2>Покрытие по моделям — справочно</h2>
+    <div class="sub">Сырая статистика тегов в датасете. Не учитывает алгоритм матчера.</div>
+    <table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:13px">
+      <thead>
+        <tr style="background:#f6f8fb">
+          <th style="text-align:left;padding:10px 12px;font-weight:600;width:30px"></th>
+          <th style="text-align:left;padding:10px 12px;font-weight:600">Модель</th>
+          <th style="text-align:right;padding:10px 12px;font-weight:600">Всего</th>
+          <th style="text-align:right;padding:10px 12px;font-weight:600;color:#c47b00">Без фона</th>
+          <th style="text-align:right;padding:10px 12px;font-weight:600;color:var(--accent)">Студия</th>
+          <th style="text-align:right;padding:10px 12px;font-weight:600;color:var(--ok)">Интерьер</th>
+          <th style="text-align:left;padding:10px 12px;font-weight:600">Статус</th>
+        </tr>
+        <tr style="background:#fafafd;border-bottom:2px solid var(--border)">
+          <td style="padding:10px 12px;text-align:center;color:var(--text-sec)">∑</td>
+          <td style="padding:10px 12px;font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.5px;color:var(--text-sec)">Всего по датасету</td>
+          <td style="text-align:right;padding:10px 12px;font-weight:700">${total}</td>
+          <td style="text-align:right;padding:10px 12px;font-weight:700;color:#c47b00">${byShot.detail} <span style="font-size:10px;color:var(--text-sec);font-weight:500">${Math.round(byShot.detail/total*100)}%</span></td>
+          <td style="text-align:right;padding:10px 12px;font-weight:700;color:var(--accent)">${byShot.studio} <span style="font-size:10px;color:var(--text-sec);font-weight:500">${Math.round(byShot.studio/total*100)}%</span></td>
+          <td style="text-align:right;padding:10px 12px;font-weight:700;color:var(--ok)">${byShot.interior} <span style="font-size:10px;color:var(--text-sec);font-weight:500">${Math.round(byShot.interior/total*100)}%</span></td>
+          <td style="padding:10px 12px;color:var(--text-sec);font-size:11px">clean BG (Без фона + Студия): <b style="color:var(--text)">${byShot.detail + byShot.studio}</b></td>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  for (const m of models) {
+    const mPhotos = alive.filter(r => r.model === m);
+    const mShot = { studio:0, interior:0, detail:0 };
+    mPhotos.forEach(r => mShot[r.shot || 'studio']++);
+    // Hero-suitable = studio + detail (clean BG)
+    const heroSuitable = mShot.studio + mShot.detail;
+    // status
+    let statusEl = '';
+    if (heroSuitable === 0 && mShot.interior > 0) {
+      statusEl = '<span style="color:var(--warn);font-weight:600">⚠ только интерьер</span>';
+    } else if (heroSuitable === 0) {
+      statusEl = '<span style="color:var(--danger);font-weight:600">❌ нет clean BG</span>';
+    } else if (heroSuitable < 3) {
+      statusEl = '<span style="color:var(--warn)">тонко (' + heroSuitable + ' clean)</span>';
+    } else {
+      statusEl = '<span style="color:var(--ok)">✓ норм</span>';
+    }
+    const isOpen = simState.openModels?.has(m);
+    html += `<tr class="cov-row" data-model="${m}" style="border-top:1px solid var(--line);cursor:pointer;${isOpen?'background:#f9f9fc':''}">
+      <td style="padding:10px 12px;text-align:center;color:var(--text-sec)">${isOpen ? '▼' : '▶'}</td>
+      <td style="padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-weight:600">${m}</td>
+      <td style="text-align:right;padding:10px 12px">${mPhotos.length}</td>
+      <td style="text-align:right;padding:10px 12px;font-weight:600;color:${mShot.detail>0?'#c47b00':'var(--text-dim)'}">${mShot.detail||'—'}</td>
+      <td style="text-align:right;padding:10px 12px;font-weight:600;color:${mShot.studio>0?'var(--accent)':'var(--text-dim)'}">${mShot.studio||'—'}</td>
+      <td style="text-align:right;padding:10px 12px;color:${mShot.interior>0?'var(--ok)':'var(--text-dim)'}">${mShot.interior||'—'}</td>
+      <td style="padding:10px 12px">${statusEl}</td>
+    </tr>`;
+    // Expanded matrix
+    if (isOpen) {
+      // Collect all woods present (including arrays)
+      const allWoods = new Set();
+      mPhotos.forEach(r => {
+        if (Array.isArray(r.wood)) r.wood.forEach(w => allWoods.add(w));
+        else if (r.wood) allWoods.add(r.wood);
+      });
+      // Always show all 4 standard woods even if 0
+      WOODS.forEach(w => allWoods.add(w.id));
+      const sortedWoods = [...allWoods].sort((a,b) => WOODS.findIndex(w=>w.id===a) - WOODS.findIndex(w=>w.id===b));
+
+      html += `<tr><td colspan="7" style="padding:0">
+        <div style="background:#fafafd;padding:14px 18px;border-top:1px dashed var(--border)">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:10px;font-weight:600">Матрица «цвет × тип съёмки» для ${m}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;background:white;border-radius:8px;overflow:hidden">
+            <thead>
+              <tr style="background:#f0f0f3">
+                <th style="text-align:left;padding:8px 12px;font-weight:600">Цвет</th>
+                <th style="text-align:center;padding:8px 12px;font-weight:600;color:#c47b00">Без фона</th>
+                <th style="text-align:center;padding:8px 12px;font-weight:600;color:var(--accent)">Студия</th>
+                <th style="text-align:center;padding:8px 12px;font-weight:600;color:var(--ok)">Интерьер</th>
+                <th style="text-align:center;padding:8px 12px;font-weight:600">Всего</th>
+                <th style="text-align:left;padding:8px 12px;font-weight:600">Hero-готовность</th>
+              </tr>
+            </thead>
+            <tbody>`;
+      for (const wId of sortedWoods) {
+        const w = WOODS.find(ww => ww.id === wId);
+        if (!w) continue;
+        const woodPhotos = mPhotos.filter(r => {
+          const pw = Array.isArray(r.wood) ? r.wood : [r.wood];
+          return pw.includes(wId);
+        });
+        const wShot = { studio:0, interior:0, detail:0 };
+        woodPhotos.forEach(r => wShot[r.shot||'studio']++);
+        const clean = wShot.studio + wShot.detail;
+        let cellStatus = '';
+        if (woodPhotos.length === 0) cellStatus = '<span style="color:var(--danger);font-weight:600">❌ нет фото</span>';
+        else if (clean === 0) cellStatus = '<span style="color:var(--warn);font-weight:600">⚠ только интерьер</span>';
+        else if (clean === 1) cellStatus = '<span style="color:var(--warn)">тонко (1 clean)</span>';
+        else cellStatus = `<span style="color:var(--ok)">✓ ${clean} clean</span>`;
+        html += `<tr style="border-top:1px solid var(--line)">
+          <td style="padding:8px 12px;font-weight:500"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--${w.cls});border:1px solid rgba(0,0,0,.1);vertical-align:middle;margin-right:6px"></span>${w.label}</td>
+          <td style="text-align:center;padding:8px 12px;color:${wShot.detail>0?'#c47b00':'var(--text-dim)'};font-weight:${wShot.detail>0?'600':'normal'}">${wShot.detail||'—'}</td>
+          <td style="text-align:center;padding:8px 12px;color:${wShot.studio>0?'var(--accent)':'var(--text-dim)'};font-weight:${wShot.studio>0?'600':'normal'}">${wShot.studio||'—'}</td>
+          <td style="text-align:center;padding:8px 12px;color:${wShot.interior>0?'var(--ok)':'var(--text-dim)'}">${wShot.interior||'—'}</td>
+          <td style="text-align:center;padding:8px 12px;font-weight:600">${woodPhotos.length||'—'}</td>
+          <td style="padding:8px 12px">${cellStatus}</td>
+        </tr>`;
+      }
+      html += `</tbody></table></div></td></tr>`;
+    }
+  }
+  html += `</tbody></table>
+  <div style="margin-top:12px;font-size:11px;color:var(--text-sec);text-align:right">«Без фона» + «Студия» = clean BG, готовы для Hero. «Интерьер» — fallback / bottom gallery.</div>
+  </div>`;
+
+  pane.innerHTML = html;
+}
+
+// ─── Текст плашек «не 100% match» для не-strict карточек ─────────────────
+// Это user-facing copy, поедет в Vue. strict — без плашки.
+const MATCH_BADGE = {
+  partial:  'деталь может отличаться',     // wildcards в матче — фото без точной разметки поля
+  fallback: 'цвет на фото отличается',     // woodSubstitute — другое дерево, остальное совпало
+};
+
+function renderSimCard(r, i, kind) {
+  const url = encURL(r.photo.src);
+  const file = r.photo.src.split('/').pop();
+  const isTop = i === 0 && kind === 'exact';
+  let tagsHtml = '';
+  if (r.tags) {
+    for (const t of r.tags) {
+      tagsHtml += `<span class="sc-tag ${t.status}">${FIELD_LABEL[t.field]||t.field}: ${t.value}</span>`;
+    }
+  }
+  const meta = r.matchCount !== undefined ? `совпало тегов: <b>${r.matchCount}</b>` : 'fallback';
+  const badge = MATCH_BADGE[kind]
+    ? `<div style="position:absolute;bottom:8px;left:8px;right:8px;background:rgba(0,0,0,0.72);color:white;font-size:11px;font-weight:500;padding:5px 9px;border-radius:6px;text-align:center;letter-spacing:.2px;pointer-events:none">${MATCH_BADGE[kind]}</div>`
+    : '';
+  return `<div class="sim-card ${kind}">
+    <div style="position:relative">
+      <img src="./${url}" loading="lazy" alt="" data-zoom>
+      ${badge}
+    </div>
+    <div class="sc-body">
+      <div class="sc-rank">
+        <span class="sc-num ${isTop?'top':''}">#${i+1}</span>
+        <span class="sc-meta">${meta}</span>
+      </div>
+      ${tagsHtml ? `<div class="sc-tags">${tagsHtml}</div>` : ''}
+      <div class="sc-file">${file}</div>
+    </div>
+  </div>`;
+}
+
+// ============================================================================
+//  EVENTS
+// ============================================================================
+document.body.addEventListener('click', e => {
+  if (e.target.classList.contains('tab')) {
+    activeTab = e.target.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === e.target));
+    document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === `pane-${activeTab}`));
+    document.getElementById('tag-filters').style.display = activeTab === 'tag' ? '' : 'none';
+    if (activeTab === 'sim') renderSimPane();
+    else if (activeTab === 'cov') renderCoveragePane();
+    else renderTagPane();
+    return;
+  }
+
+  if (e.target.dataset.zoom !== undefined) {
+    document.getElementById('lb-img').src = e.target.src;
+    document.getElementById('lb').classList.add('open');
+    return;
+  }
+
+  if (e.target.dataset.simWood !== undefined)      { simState.wood = e.target.dataset.simWood;            renderSimPane(); return; }
+  if (e.target.dataset.simMount !== undefined)     { simState.mount = e.target.dataset.simMount;          renderSimPane(); return; }
+  if (e.target.dataset.simBodycolor !== undefined) { simState.bodyColor = e.target.dataset.simBodycolor;  renderSimPane(); return; }
+  if (e.target.dataset.simDiffuser !== undefined)  { simState.diffuser = e.target.dataset.simDiffuser;    renderSimPane(); return; }
+  if (e.target.id === 'sim-toggle-excl') { simState.showExcluded = !simState.showExcluded; renderSimPane(); return; }
+  // Coverage tab: toggle model row
+  const covRow = e.target.closest('.cov-row');
+  if (covRow) {
+    if (!simState.openModels) simState.openModels = new Set();
+    const m = covRow.dataset.model;
+    if (simState.openModels.has(m)) simState.openModels.delete(m);
+    else simState.openModels.add(m);
+    renderCoveragePane();
+    return;
+  }
+
+  const card = e.target.closest('.card[data-idx]');
+  if (!card) return;
+  const idx = parseInt(card.dataset.idx);
+  const r = rows[idx];
+  const wood = e.target.closest('[data-wood]');
+  if (wood) {
+    const wId = wood.dataset.wood;
+    if (Array.isArray(r.wood)) {
+      // multi-mode: toggle membership
+      if (r.wood.includes(wId)) {
+        r.wood = r.wood.filter(w => w !== wId);
+        if (r.wood.length === 0) r.wood = '';
+        else if (r.wood.length === 1) r.wood = r.wood[0];  // auto-revert to single
+      } else {
+        r.wood = [...r.wood, wId];
+      }
+    } else {
+      r.wood = wId;
+    }
+    r.woodVerified = false;  // изменили значение — статус сбрасывается
+    save(); renderTagPane(); return;
+  }
+  if (e.target.hasAttribute('data-toggle-multi')) {
+    if (Array.isArray(r.wood)) {
+      // revert to single (take first or empty)
+      r.wood = r.wood[0] || '';
+    } else {
+      // convert to array
+      r.wood = r.wood ? [r.wood] : [];
+    }
+    save(); renderTagPane(); return;
+  }
+  const body = e.target.closest('[data-bodycolor]');
+  if (body) { r.bodyColor = body.dataset.bodycolor; save(); renderTagPane(); return; }
+  if (e.target.dataset.mount !== undefined) { r.mount = e.target.dataset.mount; save(); renderTagPane(); return; }
+  if (e.target.dataset.diffuser !== undefined) { r.diffuser = e.target.dataset.diffuser; save(); renderTagPane(); return; }
+  if (e.target.dataset.on !== undefined) {
+    r.on = e.target.dataset.on === 'true';
+    if (!r.on) r.btemp = '';
+    save(); renderTagPane(); return;
+  }
+  if (e.target.dataset.btemp !== undefined) { r.btemp = e.target.dataset.btemp; save(); renderTagPane(); return; }
+  if (e.target.dataset.shot !== undefined) { r.shot = e.target.dataset.shot; save(); renderTagPane(); return; }
+  if (e.target.hasAttribute('data-toggle-sku-override')) {
+    r.skuOverride = !r.skuOverride;
+    if (!r.skuOverride && r.skuWood) r.wood = r.skuWood;  // вернуть SKU значение
+    save(); renderTagPane(); return;
+  }
+  if (e.target.hasAttribute('data-toggle-wood-verified')) {
+    r.woodVerified = !r.woodVerified;
+    save(); renderTagPane(); return;
+  }
+  if (e.target.hasAttribute('data-toggle-del')) {
+    r.deleted = !r.deleted; save(); renderTagPane(); return;
+  }
+});
+
+['change','input'].forEach(evt => {
+  document.body.addEventListener(evt, e => {
+    if (e.target.id === 'sim-model') {
+      simState.model = e.target.value;
+      ['wood','mount','bodyColor','diffuser','bowl'].forEach(k => simState[k] = '');
+      renderSimPane(); return;
+    }
+    if (e.target.id === 'sim-bowl') { simState.bowl = e.target.value; renderSimPane(); return; }
+
+    const card = e.target.closest('.card[data-idx]');
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx);
+    const f = e.target.dataset.field;
+    if (!f) return;
+    rows[idx][f] = e.target.value;
+    save(); updateStats();
+  });
+});
+
+document.getElementById('lb').addEventListener('click', () => {
+  document.getElementById('lb').classList.remove('open');
+});
+
+['filter-coll','filter-model','filter-status','filter-wood','filter-shot','filter-search'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderTagPane);
+  document.getElementById(id).addEventListener('change', renderTagPane);
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (!confirm('Сбросить все правки к исходной разметке?')) return;
+  rows = structuredClone(window.SEED); save(); renderTagPane();
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const data = { generated: new Date().toISOString(), count: rows.length, photos: rows };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `woodled-tags-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON сохранён в Downloads');
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function populateFilters() {
+  const coll = new Set(), mdl = new Set();
+  rows.forEach(r => { coll.add(r.collection); mdl.add(r.model); });
+  const fc = document.getElementById('filter-coll');
+  [...coll].sort().forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; fc.appendChild(o);
+  });
+  const fm = document.getElementById('filter-model');
+  [...mdl].sort().forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; fm.appendChild(o);
+  });
+}
+
+populateFilters();
+renderTagPane();
+</script>
+</body>
+</html>

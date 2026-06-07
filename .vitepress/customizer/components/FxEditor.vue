@@ -28,10 +28,12 @@ import LeaveConfirmModal from './ui/LeaveConfirmModal.vue'
 import { buildFixtureShareUrl } from '../engine/share'
 import ShareModal from './ShareModal.vue'
 
-/* Фотогалерея «{Model} в интерьере» — под чек-листом */
+/* Фотогалерея «{Model} в интерьере» — под чек-листом (старая room-level inspiration) */
 import GallerySection from './gallery/GallerySection.vue'
 import { byModel, toDisplayItem, preloadAspects } from '../engine/gallery-engine'
 import { useConfigurator } from '../store/configurator'
+/* Новый Hero-блок: реактивная подборка фото под текущий выбор юзера */
+import FxHeroGallery from './FxHeroGallery.vue'
 
 interface Props {
   item: Fixture; defWood?: Wood; skipSize?: boolean; backLabel?: string
@@ -287,6 +289,11 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 
       <!-- SUMMARY -->
       <template v-if="view==='summary'">
+        <!-- Hero-блок: реактивный к build, показывает фото под выбор юзера -->
+        <div :style="{marginBottom:'16px'}">
+          <FxHeroGallery :build="build" :tint="props.roomTint" />
+        </div>
+
         <div ref="plateEl" :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">
           <div :style="{display:'flex',alignItems:'center',gap:'12px'}">
             <!-- batch11 #1: fxIcName(model.type) вместо захардкоженного "ceiling" -->

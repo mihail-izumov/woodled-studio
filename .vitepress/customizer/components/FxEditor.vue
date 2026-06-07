@@ -30,7 +30,7 @@ import ShareModal from './ShareModal.vue'
 
 /* Фотогалерея «{Model} в интерьере» — под чек-листом (старая room-level inspiration) */
 import GallerySection from './gallery/GallerySection.vue'
-import { byModel, toDisplayItem, preloadAspects } from '../engine/gallery-engine'
+import { byModel, toDisplayItem, preloadAspects, seedInteriorsForBuild, preloadSeedAspects } from '../engine/gallery-engine'
 import { useConfigurator } from '../store/configurator'
 /* Новый Hero-блок: реактивная подборка фото под текущий выбор юзера */
 import FxHeroGallery from './FxHeroGallery.vue'
@@ -190,8 +190,23 @@ const isDone=computed(()=>status.value==='Собран')
 
 /* ──────────── Фотогалерея модели ──────────── */
 const galleryItems = computed(() => byModel(mid.value))
-const galleryDisplayItems = computed(() => galleryItems.value.map(toDisplayItem))
+const curatedDisplayItems = computed(() => galleryItems.value.map(toDisplayItem))
 watch(galleryItems, items => { if (items.length) preloadAspects(items) }, { immediate: true })
+
+// Подкачка: интерьеры из _seed.js (точный матч через pickFxPhotos), пристёгиваются
+// в конец курированного списка. Реактивно меняется на смену build (дерево/крепление/etc).
+const seedInteriorDisplayItems = computed(() =>
+  seedInteriorsForBuild(build.value, curatedDisplayItems.value.length)
+)
+watch(seedInteriorDisplayItems, items => {
+  if (items.length) preloadSeedAspects(items.map(i => i.src))
+}, { immediate: true })
+
+// Финальный список для GallerySection: твоя курация впереди, seed-добивка после.
+const galleryDisplayItems = computed(() => [
+  ...curatedDisplayItems.value,
+  ...seedInteriorDisplayItems.value,
+])
 
 const myChoices=computed<[string,string][]>(()=>{
   const m=model.value,b=build.value
@@ -291,7 +306,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       <template v-if="view==='summary'">
         <!-- Hero-блок: реактивный к build, показывает фото под выбор юзера -->
         <div :style="{marginBottom:'16px'}">
-          <FxHeroGallery :build="build" :tint="props.roomTint" />
+          <FxHeroGallery :build="build" :tint="props.roomTint" :interior-count="galleryDisplayItems.length" />
         </div>
 
         <div ref="plateEl" :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">
@@ -360,8 +375,10 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         <button ref="saveBtnEl" :class="{'fx-save-glow':highlightSave}" :style="{position:'relative',zIndex:highlightSave?49:'auto',width:'100%',padding:'14px',background:T.text,color:T.bg,border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'17px',fontWeight:600,marginBottom:'8px'}" @click="doSave">{{ props.isProvisional?'Добавить':'Сохранить' }}</button>
         <button :style="{width:'100%',padding:'14px',background:'none',border:`2px solid ${T.text}`,borderRadius:'10px',color:T.text,cursor:'pointer',fontSize:'17px',fontWeight:600,display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'20px'}" @click="showShare=true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Поделиться</button>
 
-        <!-- Фотогалерея «{Model} в интерьере» — после Сохранить и Поделиться, с воздухом -->
-        <div :style="{marginTop:'24px'}">
+        <!-- Фотогалерея «{Model} в интерьере» — старая курированная GallerySection.
+             id на обёртке нужен для якоря CTA-слайда из FxHeroGallery («Посмотреть ↓»).
+             Алгоритм матчинга — старый gallery-engine (под апгрейд позже под принципы Hero). -->
+        <div id="fx-interiors" :style="{marginTop:'24px', scrollMarginTop:'60px'}">
           <GallerySection
             v-if="galleryDisplayItems.length > 0"
             :items="galleryDisplayItems"

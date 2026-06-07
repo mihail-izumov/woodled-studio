@@ -159,3 +159,84 @@ export function byCombined(opts: {
     })
   )
 }
+
+// ---------------------------------------------------------------------------
+// SEED INTERIORS — добивка из _seed.js (179-фото датасет теггера)
+//
+// Курированная gallery.ts (172 фото) идёт первой. После неё — точно
+// отфильтрованные интерьеры из _seed.js через pickFxPhotos('gallery').
+// Дубликатов нет: gallery.ts → public/gallery/, _seed.js → public/photo-tagging/.
+//
+// Используется только когда у юзера есть конкретный build (FxEditor).
+// На room-level (RoomDetail) только курированная — там нет «текущего fixture».
+// ---------------------------------------------------------------------------
+import { pickFxPhotos, fxToConfig } from './fx-gallery'
+import type { ModelId } from '../data/catalog'
+import type { Wood } from '../data/materials'
+
+interface SeedBuildSnapshot {
+  m: ModelId
+  wood: Wood
+  mount?: string
+  diffuser?: boolean
+  baseColor?: string
+}
+
+/** Добивка-интерьеры из _seed.js под текущий fixture. DisplayItem[] готовые для GallerySection. */
+export function seedInteriorsForBuild(
+  build: SeedBuildSnapshot,
+  indexOffset: number,
+): DisplayItem[] {
+  const config = fxToConfig({
+    m: build.m,
+    wood: build.wood,
+    opts: {
+      mount: build.mount,
+      diffuser: build.diffuser,
+      baseColor: build.baseColor,
+    },
+  })
+  const result = pickFxPhotos(config, 'gallery')
+  const photos = [...result.interiors.strict, ...result.interiors.partial]
+  return photos.map((p, i) => {
+    const woodKey = Array.isArray(p.photo.wood) ? p.photo.wood[0] : p.photo.wood
+    const wood = WOOD_DISPLAY[woodKey] ?? WOOD_DISPLAY.oak
+    const aspect = aspectCache.get(p.photo.src) ?? 1.0
+    // Подписка на aspectVersion для реактивного пересчёта после preload
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    aspectVersion.value
+    return {
+      n: indexOffset + i + 1,
+      natural: aspect,
+      aspect,
+      zone: 'ceiling', // _seed.js не размечает zone — дефолт
+      wood,
+      model: p.photo.model,
+      src: p.photo.src,
+      rooms: [],
+      label: `${p.photo.model} · интерьер`,
+    }
+  })
+}
+
+/** Preload aspect-ratio для seed-фото (тот же aspectCache что у gallery.ts). */
+export function preloadSeedAspects(urls: readonly string[]): Promise<void> {
+  const promises = urls.map(url => {
+    if (aspectCache.has(url)) return Promise.resolve()
+    return new Promise<void>(resolve => {
+      const img = new Image()
+      img.onload = () => {
+        aspectCache.set(url, img.naturalWidth / img.naturalHeight)
+        aspectVersion.value++
+        resolve()
+      }
+      img.onerror = () => {
+        aspectCache.set(url, 1.0)
+        aspectVersion.value++
+        resolve()
+      }
+      img.src = url
+    })
+  })
+  return Promise.all(promises).then(() => undefined)
+}

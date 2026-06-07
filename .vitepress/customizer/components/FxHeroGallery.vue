@@ -11,9 +11,10 @@
  * При пустом Hero рисуется CTA-плашка с якорной кнопкой #fx-interiors —
  * предполагается, что блок интерьеров (FxInteriorGallery, отдельный) лежит ниже.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ModelId } from '../data/catalog'
 import type { Wood } from '../data/materials'
+import { fxTitle } from '../data/catalog'
 import {
   pickFxPhotos,
   fxToConfig,
@@ -38,6 +39,9 @@ const props = defineProps<{
   build: BuildSnapshot
   /** Цвет акцента — обычно цвет комнаты (для CTA-кнопки). */
   tint?: string
+  /** Сколько интерьеров есть в старой GallerySection ниже — для CTA-слайда.
+   *  Передаётся как `galleryDisplayItems.length` из FxEditor. */
+  interiorCount?: number
 }>()
 
 const config = computed(() => fxToConfig({
@@ -56,13 +60,37 @@ const photos = computed(() => activeHeroPhotos(result.value))
 const hasPhotos = computed(() => photos.value.length > 0)
 const badge = computed(() => layer.value ? MATCH_BADGE[layer.value] : '')
 
+/* ─── CTA-слайд в конце слайдера ───
+ * Когда фото мало (≤2) И ниже есть интерьерная галерея — после фото
+ * добавляем «доп-экран» с кнопкой ведущей к блоку #fx-interiors.
+ *
+ * interiorCount передаётся пропсом из FxEditor (= galleryDisplayItems.length)
+ * — это РЕАЛЬНОЕ число фото в старой GallerySection под фикстурой. Не считаем
+ * сами — pickFxPhotos.interiors сейчас не используется (наш _seed.js пайплайн
+ * не активирован для нижнего блока, см. Phase 1 решение в фидбэке от продакта).
+ *
+ * Порог 2 — компромисс: при 1 фото юзер сразу видит «мало», при 3+
+ * слайдер выглядит достаточно богатым чтобы не пушить вниз.
+ */
+const interiorCount = computed(() => props.interiorCount ?? 0)
+const hasCtaSlide = computed(() =>
+  hasPhotos.value && photos.value.length <= 2 && interiorCount.value > 0
+)
+const totalSlides = computed(() =>
+  photos.value.length + (hasCtaSlide.value ? 1 : 0)
+)
+const onCtaSlide = computed(() => hasCtaSlide.value && idx.value === photos.value.length)
+const ctaTitle = computed(() => {
+  const t = fxTitle(props.build.m)
+  return t.charAt(0).toUpperCase() + t.slice(1) + ' в интерьере'
+})
+
 const idx = ref(0)
 // Сброс индекса при смене подборки (юзер сменил дерево → фото поменялись).
-import { watch } from 'vue'
 watch(photos, () => { idx.value = 0 })
 
 function nudge(delta: number) {
-  const n = photos.value.length
+  const n = totalSlides.value
   if (n < 2) return
   idx.value = (idx.value + delta + n) % n
 }
@@ -108,7 +136,9 @@ const accent = computed(() => props.tint || T.neutral)
         background: '#000',
       }"
     >
+      <!-- Фото-слайд (обычные кадры) -->
       <img
+        v-if="!onCtaSlide"
         :src="photos[idx].photo.src"
         loading="lazy"
         alt=""
@@ -116,9 +146,37 @@ const accent = computed(() => props.tint || T.neutral)
         @click="openLightbox(idx)"
       />
 
-      <!-- Прев / след стрелки (только если >1) -->
+      <!-- CTA-слайд (последний экран, если фото мало) -->
+      <div
+        v-else
+        :style="{
+          width: '100%', height: '100%', background: T.card,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: '14px', padding: '24px', textAlign: 'center',
+        }"
+      >
+        <div :style="{ fontSize: '18px', fontWeight: 700, color: T.text, lineHeight: 1.3 }">
+          {{ ctaTitle }}
+        </div>
+        <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.5, maxWidth: '260px' }">
+          {{ interiorCount }} {{ interiorCount === 1 ? 'фото' : (interiorCount < 5 ? 'фото' : 'фото') }} в реальных комнатах
+        </div>
+        <button
+          @click="jumpToInteriors"
+          :style="{
+            padding: '12px 22px', borderRadius: '24px',
+            background: accent, color: T.bg, border: 'none',
+            fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+          }"
+        >
+          Посмотреть ↓
+        </button>
+      </div>
+
+      <!-- Прев / след стрелки (если слайдов >1) -->
       <button
-        v-if="photos.length > 1"
+        v-if="totalSlides > 1"
         @click.stop="nudge(-1)"
         :style="{
           position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)',
@@ -129,7 +187,7 @@ const accent = computed(() => props.tint || T.neutral)
         aria-label="Предыдущее"
       >‹</button>
       <button
-        v-if="photos.length > 1"
+        v-if="totalSlides > 1"
         @click.stop="nudge(1)"
         :style="{
           position: 'absolute', top: '50%', right: '10px', transform: 'translateY(-50%)',
@@ -140,9 +198,9 @@ const accent = computed(() => props.tint || T.neutral)
         aria-label="Следующее"
       >›</button>
 
-      <!-- Бейдж слоя (partial / woodSubstitute) -->
+      <!-- Бейдж слоя (partial / woodSubstitute) — только на фото-слайдах -->
       <div
-        v-if="badge"
+        v-if="badge && !onCtaSlide"
         :style="{
           position: 'absolute', bottom: '12px', left: '12px', right: '12px',
           background: 'rgba(0,0,0,0.72)', color: 'white',
@@ -153,19 +211,19 @@ const accent = computed(() => props.tint || T.neutral)
 
       <!-- Пагинация-точки -->
       <div
-        v-if="photos.length > 1"
+        v-if="totalSlides > 1"
         :style="{
           position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)',
           display: 'flex', gap: '6px',
         }"
       >
         <span
-          v-for="(_, i) in photos"
+          v-for="i in totalSlides"
           :key="i"
           :style="{
-            width: i === idx ? '20px' : '6px', height: '6px',
+            width: (i-1) === idx ? '20px' : '6px', height: '6px',
             borderRadius: '3px',
-            background: i === idx ? 'white' : 'rgba(255,255,255,0.5)',
+            background: (i-1) === idx ? 'white' : 'rgba(255,255,255,0.5)',
             transition: 'width .2s',
           }"
         />

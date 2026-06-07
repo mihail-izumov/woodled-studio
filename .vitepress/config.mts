@@ -5,6 +5,12 @@ export default defineConfig({
   description: 'WOODLED — дизайнерские светильники из дерева',
   lang: 'ru-RU',
 
+  // .md в .claude/context/ — это база знаний для AI-ассистента (HANDOFF, спеки),
+  // не часть публичного сайта. VitePress сканирует всё дерево по умолчанию,
+  // и любые http://localhost-ссылки в этих файлах ломают prod-сборку как dead-links.
+  srcExclude: ['**/.claude/**', '**/node_modules/**'],
+  ignoreDeadLinks: 'localhostLinks',
+
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
     ['link', { rel: 'icon', type: 'image/png', href: '/apple-touch-icon.png' }],

@@ -90,6 +90,8 @@ const ctaCols = computed(() => {
   if (n === 4) return 2
   return 3
 })
+const ctaRows = computed(() => (ctaThumbs.value.length <= 3 ? 1 : 2))
+const ctaCellsTotal = computed(() => ctaCols.value * ctaRows.value)
 const totalSlides = computed(() =>
   photos.value.length + (hasCtaSlide.value ? 1 : 0)
 )
@@ -178,7 +180,9 @@ const accent = computed(() => props.tint || T.neutral)
           {{ ctaTitle }}
         </div>
 
-        <!-- Компактная сетка миниатюр без промежутков. Cells ~52px. -->
+        <!-- Компактная сетка миниатюр без промежутков. Cells ~52px.
+             Пустые cells (когда фото < ctaCols*ctaRows, типично n=5 в 3×2) закрашены
+             цветом комнаты — пустота не «дыра», а часть композиции. -->
         <div :style="{
           display: 'grid',
           gridTemplateColumns: `repeat(${ctaCols}, 52px)`,
@@ -187,14 +191,22 @@ const accent = computed(() => props.tint || T.neutral)
           borderRadius: '6px',
           overflow: 'hidden',
         }">
-          <img
-            v-for="(thumb, i) in ctaThumbs"
+          <div
+            v-for="i in ctaCellsTotal"
             :key="i"
-            :src="thumb"
-            loading="lazy"
-            alt=""
-            :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#000' }"
-          />
+            :style="{
+              width: '100%', height: '100%',
+              background: ctaThumbs[i-1] ? '#000' : accent,
+            }"
+          >
+            <img
+              v-if="ctaThumbs[i-1]"
+              :src="ctaThumbs[i-1]"
+              loading="lazy"
+              alt=""
+              :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }"
+            />
+          </div>
         </div>
 
         <!-- Кнопка-индикатор -->

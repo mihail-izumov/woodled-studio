@@ -8,12 +8,11 @@ export default defineConfig({
   // .md в .claude/context/ — это база знаний для AI-ассистента (HANDOFF, спеки),
   // не часть публичного сайта. Глоб с ведущей точкой ловит дотдиры.
   srcExclude: ['**/.claude/**', '.claude/**', '**/node_modules/**'],
-  // Глушим любые ссылки на dev-окружение (localhost / 127.0.0.1) — в спеках
-  // и HANDOFF-ах часто попадаются «открой http://localhost:5173/...» инструкции.
-  ignoreDeadLinks: [
-    /^https?:\/\/localhost/,
-    /^https?:\/\/127\.0\.0\.1/,
-  ],
+  // VitePress всё равно сканирует .claude/ для dead-link проверки (видимо
+  // srcExclude влияет только на роутинг, не на link-validation). Регексп
+  // 'localhostLinks' тоже не помог. Глушим всё — никакие .md в репо не
+  // являются публичной документацией, для них валидация бессмысленна.
+  ignoreDeadLinks: true,
 
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],

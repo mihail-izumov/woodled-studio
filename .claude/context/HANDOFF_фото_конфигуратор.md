@@ -18,7 +18,7 @@
   - `_seed.js` — 179 фото с тегами (wood, mount, bowl, diffuser, bodyColor, patrons, on, btemp, shot, skuWood, woodVerified, deleted, notes).
 - **Открыть тэггер локально:**
   - В терминале из корня `woodled-studio`: `npm run docs:dev`
-  - В браузере: **http://localhost:5173/photo-tagging/tagger.html**
+  - В браузере: `http://localhost:5173/photo-tagging/tagger.html`
   - (или просто открыть файл напрямую в браузере — `file://...tagger.html` тоже работает, фото грузятся из той же папки)
 - **Статус:** 179/179 подтверждено вручную (100%). Дерево + тип съёмки расставлены.
 - **Storage key:** `woodled-tagger-v20` (бампать при изменении схемы).

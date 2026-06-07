@@ -6,10 +6,14 @@ export default defineConfig({
   lang: 'ru-RU',
 
   // .md в .claude/context/ — это база знаний для AI-ассистента (HANDOFF, спеки),
-  // не часть публичного сайта. VitePress сканирует всё дерево по умолчанию,
-  // и любые http://localhost-ссылки в этих файлах ломают prod-сборку как dead-links.
-  srcExclude: ['**/.claude/**', '**/node_modules/**'],
-  ignoreDeadLinks: 'localhostLinks',
+  // не часть публичного сайта. Глоб с ведущей точкой ловит дотдиры.
+  srcExclude: ['**/.claude/**', '.claude/**', '**/node_modules/**'],
+  // Глушим любые ссылки на dev-окружение (localhost / 127.0.0.1) — в спеках
+  // и HANDOFF-ах часто попадаются «открой http://localhost:5173/...» инструкции.
+  ignoreDeadLinks: [
+    /^https?:\/\/localhost/,
+    /^https?:\/\/127\.0\.0\.1/,
+  ],
 
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],

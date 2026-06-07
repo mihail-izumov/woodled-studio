@@ -77,6 +77,19 @@ const interiorCount = computed(() => props.interiorCount ?? 0)
 const hasCtaSlide = computed(() =>
   hasPhotos.value && photos.value.length <= 2 && interiorCount.value > 0
 )
+
+/* Адаптивная mini-сетка превью под количество интерьеров.
+ *   ≤3 → одна строка N столбцов (без пустых cells)
+ *   4  → 2×2
+ *   5  → 3 cols, второй ряд из 2 (последний угол пустой, transparent → не виден)
+ *   6  → 3×2 */
+const ctaThumbs = computed(() => (props.interiorThumbs || []).slice(0, 6))
+const ctaCols = computed(() => {
+  const n = ctaThumbs.value.length
+  if (n <= 3) return n
+  if (n === 4) return 2
+  return 3
+})
 const totalSlides = computed(() =>
   photos.value.length + (hasCtaSlide.value ? 1 : 0)
 )
@@ -147,61 +160,52 @@ const accent = computed(() => props.tint || T.neutral)
         @click="openLightbox(idx)"
       />
 
-      <!-- CTA-слайд: заголовок · сетка 6 миниатюр 3×2 · кнопка. Весь блок кликабелен. -->
+      <!-- CTA-слайд: заголовок · компактная сетка миниатюр · кнопка. Весь блок кликабелен.
+           Сетка адаптивная под количество фото (≤3 в строку, 4=2×2, 5-6=3×N). -->
       <div
         v-else
         @click="jumpToInteriors"
         :style="{
           width: '100%', height: '100%', background: T.card,
-          display: 'grid', gridTemplateRows: '1fr 4fr 1fr',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: '18px', padding: '24px',
           cursor: 'pointer',
         }"
       >
         <!-- Заголовок -->
-        <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }">
-          <span :style="{ fontSize: '16px', fontWeight: 700, color: T.text, textAlign: 'center', lineHeight: 1.3 }">
-            {{ ctaTitle }}
-          </span>
+        <div :style="{ fontSize: '17px', fontWeight: 700, color: T.text, textAlign: 'center', lineHeight: 1.3 }">
+          {{ ctaTitle }}
         </div>
 
-        <!-- Сетка 3×2 миниатюр, без промежутков, квадратные cells (т.к. 4fr на 3 col = 1:1) -->
+        <!-- Компактная сетка миниатюр без промежутков. Cells ~52px. -->
         <div :style="{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gridTemplateRows: 'repeat(2, 1fr)',
+          gridTemplateColumns: `repeat(${ctaCols}, 52px)`,
+          gridAutoRows: '52px',
           gap: 0,
+          borderRadius: '6px',
           overflow: 'hidden',
         }">
-          <div
-            v-for="i in 6"
+          <img
+            v-for="(thumb, i) in ctaThumbs"
             :key="i"
-            :style="{
-              width: '100%', height: '100%',
-              background: (interiorThumbs && interiorThumbs[i-1]) ? '#000' : T.cardAlt,
-              overflow: 'hidden',
-            }"
-          >
-            <img
-              v-if="interiorThumbs && interiorThumbs[i-1]"
-              :src="interiorThumbs[i-1]"
-              loading="lazy"
-              alt=""
-              :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }"
-            />
-          </div>
+            :src="thumb"
+            loading="lazy"
+            alt=""
+            :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#000' }"
+          />
         </div>
 
         <!-- Кнопка-индикатор -->
-        <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }">
-          <span :style="{
-            padding: '8px 18px', borderRadius: '20px',
-            background: accent, color: T.bg,
-            fontSize: '13px', fontWeight: 700,
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-          }">
-            Посмотреть <span>↓</span>
-          </span>
-        </div>
+        <span :style="{
+          padding: '10px 22px', borderRadius: '24px',
+          background: accent, color: T.bg,
+          fontSize: '14px', fontWeight: 700,
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+        }">
+          Посмотреть <span>↓</span>
+        </span>
       </div>
 
       <!-- Прев / след стрелки (если слайдов >1) -->

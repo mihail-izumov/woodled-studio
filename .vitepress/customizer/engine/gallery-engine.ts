@@ -129,6 +129,29 @@ export function byModel(modelId: string): GalleryItem[] {
   )
 }
 
+/**
+ * byFixture — STRICT фильтр под текущий выбор юзера: model + wood.
+ *
+ * Используется в FxEditor вместо byModel (тот фильтрует только по модели и
+ * игнорирует выбор дерева — отсюда жалоба «фото не соответствуют дереву»).
+ *
+ * Что НЕ матчит: bowl/mount/diffuser/bodyColor — в gallery.ts этих тегов
+ * физически нет (только rooms/models/woods/zones). Расширить — отдельная
+ * задача с дотегированием.
+ *
+ * Возвращает пустой массив, если такой комбинации нет. Пустоту нужно
+ * обработать на стороне FxEditor (relaxed-wood fallback или seed-подкачка).
+ */
+export function byFixture(build: { m: string; wood?: string }): GalleryItem[] {
+  return sortByQuality(
+    GALLERY.filter(g => {
+      if (!(g.models as readonly string[]).includes(build.m)) return false
+      if (build.wood && !(g.woods as readonly string[]).includes(build.wood)) return false
+      return true
+    })
+  )
+}
+
 export function byRoom(roomTypeId: string): GalleryItem[] {
   return sortByQuality(
     GALLERY.filter(g => (g.rooms as readonly string[]).includes(roomTypeId))
@@ -182,14 +205,25 @@ interface SeedBuildSnapshot {
   baseColor?: string
 }
 
-/** Добивка-интерьеры из _seed.js под текущий fixture. DisplayItem[] готовые для GallerySection. */
+/** Добивка-интерьеры из _seed.js под текущий fixture. DisplayItem[] готовые для GallerySection.
+ *
+ *  opts.relaxWood — если true, дропаем wood из фильтра. Используется как
+ *  последний fallback когда курация + strict-seed пусты (типичный случай:
+ *  floor_lamp_s/black — нет ни в gallery.ts, ни в seed для black).
+ *
+ *  opts.maxPerWood — кап числа seed-фото на (model, wood). По умолчанию 2.
+ *  Это защита от ситуации, когда в seed несколько похожих ракурсов одного
+ *  fixture в одной комнате (как у unit/oak) и юзер видит «дубликаты».
+ */
 export function seedInteriorsForBuild(
   build: SeedBuildSnapshot,
   indexOffset: number,
+  opts?: { relaxWood?: boolean; maxPerWood?: number },
 ): DisplayItem[] {
+  const buildWood = opts?.relaxWood ? '' as Wood : build.wood
   const config = fxToConfig({
     m: build.m,
-    wood: build.wood,
+    wood: buildWood,
     opts: {
       mount: build.mount,
       diffuser: build.diffuser,
@@ -198,7 +232,21 @@ export function seedInteriorsForBuild(
   })
   const result = pickFxPhotos(config, 'gallery')
   const photos = [...result.interiors.strict, ...result.interiors.partial]
-  return photos.map((p, i) => {
+
+  // Кап числа фото на (model, wood) — иначе при нескольких похожих ракурсах
+  // юзер видит «дубль». Дефолт — 2, чтобы оставить выбор, но не флудить.
+  const cap = opts?.maxPerWood ?? 2
+  const seenCounts = new Map<string, number>()
+  const capped = photos.filter(p => {
+    const w = Array.isArray(p.photo.wood) ? p.photo.wood[0] : p.photo.wood
+    const key = `${p.photo.model}|${w}`
+    const n = seenCounts.get(key) ?? 0
+    if (n >= cap) return false
+    seenCounts.set(key, n + 1)
+    return true
+  })
+
+  return capped.map((p, i) => {
     const woodKey = Array.isArray(p.photo.wood) ? p.photo.wood[0] : p.photo.wood
     const wood = WOOD_DISPLAY[woodKey] ?? WOOD_DISPLAY.oak
     const aspect = aspectCache.get(p.photo.src) ?? 1.0

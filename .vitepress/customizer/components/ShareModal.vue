@@ -224,31 +224,31 @@ function onSendManager() {
           <span class="share-action-label">Поделиться</span>
         </button>
 
-        <!-- Третья кнопка — отправить менеджеру (консультация).
-             Доступна всегда: для неё не нужна короткая ссылка, заявка летит
-             через LeadModal на бэкенд, а ссылка сгенерируется там же.
-             Квадратный пузырь сообщения с тремя точками — пересобран из
-             простых примитивов (rect/path/circle), чтобы не зависеть от
-             длинного lucide-path с компактным синтаксисом (потенциальный
-             источник проблем у парсера/SSR). -->
         <button
-          class="share-action"
+          :style="{
+            flex: '1 1 0',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '10px',
+            background: 'red',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            fontFamily: 'inherit',
+          }"
           @click="onSendManager"
         >
-          <div class="share-action-circle">
-            <svg
-              width="28" height="28" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"
-            >
-              <rect x="3" y="4" width="18" height="13" rx="2" />
-              <path d="M8 17v3l-4-3" />
-              <circle cx="8" cy="11" r="1" fill="currentColor" stroke="none" />
-              <circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
-              <circle cx="16" cy="11" r="1" fill="currentColor" stroke="none" />
-            </svg>
+          <div :style="{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: '#f5f5f5', border: '1px solid #e8e8e8',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#1a1a1a',
+          }">
+            <span :style="{ fontSize: '24px', fontWeight: 700 }">М</span>
           </div>
-          <span class="share-action-label">Менеджеру</span>
+          <span :style="{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }">Менеджеру</span>
         </button>
       </div>
     </div>

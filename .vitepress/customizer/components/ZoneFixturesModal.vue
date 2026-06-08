@@ -21,7 +21,6 @@ import { MATS, WCOL, type Wood } from '../data/materials'
 import { zoneLm, zoneFxCount } from '../engine/zone-engine'
 import { occupiedPhrase } from '../engine/i18n'
 import { useConfigurator } from '../store/configurator'
-import Icon, { fxIcName } from './ui/Icons.vue'
 import { pickFxPhotos, fxToConfig, activeHeroPhotos } from '../engine/fx-gallery'
 
 interface Props {
@@ -188,27 +187,27 @@ function orbStyle(wood: Wood, size = 13) {
           :key="it._idx"
           :style="{
             background: cardPhotoFor(it)
-              ? `linear-gradient(180deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.55) 55%, rgba(255,255,255,.92) 100%), url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
+              ? `url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
               : L.surface,
             border: `1px solid ${L.border}`, borderRadius: '16px',
-            padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px',
+            padding: '14px', minHeight: '160px', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column',
           }"
           @click="emit('edit', it._idx)"
         >
-          <div :style="{ width: '44px', height: '44px', borderRadius: '12px', background: '#A8895A18', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-            <Icon :name="fxIcName(MD[it.m].type)" color="#A8895A" :size="22" />
+          <!-- Название сверху + сразу под ним непрозрачная пилюля коллекции -->
+          <div :style="{ flex: '0 0 auto' }">
+            <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.15, textShadow: '0 0 10px rgba(255,255,255,.85), 0 1px 2px rgba(255,255,255,.6)' }">{{ fxNav(it.m) }}</div>
+            <span :style="{ display: 'inline-block', marginTop: '5px', padding: '3px 9px', borderRadius: '999px', background: L.surface, color: L.text, fontSize: '9px', fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }">{{ fxLine(it.m) }}</span>
           </div>
-          <div>
-            <div :style="{ fontSize: '15px', fontWeight: 600, color: L.text }">{{ fxNav(it.m) }}</div>
-            <div :style="{ fontSize: '10px', fontWeight: 700, color: L.textSec, marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.6px' }">{{ fxLine(it.m) }}</div>
-            <div :style="{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '9px' }">
-              <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
-                <span :style="orbStyle(it.wood, 13)" />{{ WOOD_NAME[it.wood] }}
-              </span>
-              <span :style="{ padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
-                {{ fxLamps(it) }} {{ lampWord(fxLamps(it)) }}
-              </span>
-            </div>
+          <!-- Чипы прижимаются к низу -->
+          <div :style="{ marginTop: 'auto', paddingTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }">
+            <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
+              <span :style="orbStyle(it.wood, 13)" />{{ WOOD_NAME[it.wood] }}
+            </span>
+            <span :style="{ padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
+              {{ fxLamps(it) }} {{ lampWord(fxLamps(it)) }}
+            </span>
           </div>
         </div>
 

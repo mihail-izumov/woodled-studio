@@ -99,6 +99,7 @@ export const Z = {
   fullscreenModal: 55,
   fxPage: 60,            // выше всего — отдельная страница светильника
   storyOverlay: 65,      // ещё выше — story поверх buy
+  leadModal: 70,         // заявка менеджеру — над FxEditor и BuyModal
   toast: 100,
 } as const
 

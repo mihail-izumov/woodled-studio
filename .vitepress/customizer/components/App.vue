@@ -34,6 +34,8 @@ import FirstModal from './FirstModal.vue'
 import StoryModal from './StoryModal.vue'
 import BuyModal from './BuyModal.vue'
 import ShareModal from './ShareModal.vue'
+import LeadModal from './LeadModal.vue'
+import type { LeadSource } from '../engine/lead-api'
 import ColorPickerModal from './ColorPickerModal.vue'
 import RoomDetail from './RoomDetail.vue'
 import FxEditor from './FxEditor.vue'
@@ -156,7 +158,8 @@ const stickyVisible = computed(() =>
   && !cfg.activeFx.value
   && !cfg.showMoodDetail.value
   && !cfg.showRoomSettings.value
-  && !cfg.showZoneModal.value,
+  && !cfg.showZoneModal.value
+  && !cfg.showLead.value,
 )
 
 function onPromoClick() { cfg.showBuy.value = true }
@@ -207,7 +210,30 @@ function onResetConfirm() { cfg.resetAll(); showResetConfirm.value = false }
 function onResetCancel() { showResetConfirm.value = false }
 function onSaveShareLink() { cfg.showShare.value = true }
 
-const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value || cfg.showPriceDetails.value)
+/* ──────────── LeadModal: единая форма заявки менеджеру ──────────── */
+/* leadCtx хранит источник + (для fixture-режима) ссылку на конкретный
+   светильник. Когда не null — рендерится LeadModal поверх остального UI.
+   Запрашивается через emit('lead') от FxEditor / BuyModal / ShareModal. */
+interface LeadCtx {
+  source: LeadSource
+  roomId?: string
+  fxIdx?: number
+}
+const leadCtx = ref<LeadCtx | null>(null)
+const leadCtxRoom = computed<Room | null>(() => {
+  if (!leadCtx.value?.roomId) return null
+  return (cfg.rooms.find((r: Room) => r.id === leadCtx.value!.roomId) as Room) ?? null
+})
+function openLeadFromFx() {
+  const af = cfg.activeFx.value
+  if (!af) return
+  leadCtx.value = { source: 'fixture', roomId: af.roomId, fxIdx: af.fxIdx }
+}
+function openLeadFromForest() { leadCtx.value = { source: 'forest' } }
+function openLeadFromShare() { leadCtx.value = { source: 'consult' } }
+function onLeadClose() { leadCtx.value = null }
+
+const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value || cfg.showPriceDetails.value || cfg.showLead.value)
 
 /* Главный экран (список комнат): нет открытого светильника, нет активной комнаты,
    приветствие уже показано. На вложенных экранах reload-кнопку не показываем. */
@@ -266,7 +292,7 @@ function onGalleryGiftClick() {
       @close="onFxClose"
       @feedback="cfg.showFB"
     />
-    <FxEditor v-else :key="activeFxData.roomId + ':' + activeFxData.fxIdx" :item="activeFxData.fx" :def-wood="activeFxData.fx.wood ?? 'oak'" :back-label="fxBackLabel" :room-area="fxEditorRoomContext?.roomArea" :room-base-lm="fxEditorRoomContext?.roomBaseLm" :room-current-lm-without-this="fxEditorRoomContext?.roomCurrentLmWithoutThis" :room-name="fxEditorRoomContext?.roomName" :room-tint="fxEditorRoomContext?.roomTint" :is-provisional="fxIsProvisional" @save="onFxSave" @delete="onFxDelete" @close="onFxClose" @feedback="cfg.showFB" />
+    <FxEditor v-else :key="activeFxData.roomId + ':' + activeFxData.fxIdx" :item="activeFxData.fx" :def-wood="activeFxData.fx.wood ?? 'oak'" :back-label="fxBackLabel" :room-area="fxEditorRoomContext?.roomArea" :room-base-lm="fxEditorRoomContext?.roomBaseLm" :room-current-lm-without-this="fxEditorRoomContext?.roomCurrentLmWithoutThis" :room-name="fxEditorRoomContext?.roomName" :room-tint="fxEditorRoomContext?.roomTint" :is-provisional="fxIsProvisional" @save="onFxSave" @delete="onFxDelete" @close="onFxClose" @feedback="cfg.showFB" @lead="openLeadFromFx" />
   </template>
 
   <template v-else-if="activeRoom">
@@ -383,9 +409,9 @@ function onGalleryGiftClick() {
     <TypePicker v-if="cfg.picker.value" @pick="(tid) => cfg.add(tid)" @close="cfg.picker.value = false" />
     <FirstModal v-if="cfg.showFirst.value" :rooms="rooms" :first-id="cfg.firstId.value" @update="(id) => (cfg.firstId.value = id)" @close="cfg.showFirst.value = false" />
     <NameModal v-if="cfg.showName.value" :value="cfg.name.value" @save="cfg.setName" @close="cfg.showName.value = false" />
-    <BuyModal v-if="cfg.showBuy.value" :rooms="rooms" @edit-fx="onBuyEditFx" @open-fx="(roomId, fxIdx) => cfg.openFx(roomId, fxIdx)" @close="onBuyClose" @feedback="cfg.showFB" @story="cfg.showStory.value = true" />
+    <BuyModal v-if="cfg.showBuy.value" :rooms="rooms" @edit-fx="onBuyEditFx" @open-fx="(roomId, fxIdx) => cfg.openFx(roomId, fxIdx)" @close="onBuyClose" @feedback="cfg.showFB" @story="cfg.showStory.value = true" @lead="openLeadFromForest" />
     <StoryModal v-if="cfg.showStory.value" :rooms="rooms" :name="cfg.name.value" @close="cfg.showStory.value = false" />
-    <ShareModal v-if="cfg.showShare.value" :name="cfg.name.value" :rooms="rooms" @close="cfg.showShare.value = false" @feedback="cfg.showFB" />
+    <ShareModal v-if="cfg.showShare.value" :name="cfg.name.value" :rooms="rooms" @close="cfg.showShare.value = false" @feedback="cfg.showFB" @lead="openLeadFromShare" />
     <ColorPickerModal v-if="colorPickRoom" :current="colorPickRoom.cardColor" :room-name="colorPickRoom.customName || getRT(colorPickRoom.typeId).name" @pick="onColorPicked" @close="colorPickRoom = null" />
     <MoodDetailModal v-if="cfg.showMoodDetail.value" :mood="cfg.showMoodDetail.value" @close="cfg.showMoodDetail.value = null" />
 
@@ -402,6 +428,21 @@ function onGalleryGiftClick() {
 
     <StickyBar v-if="stickyVisible" @share="cfg.showShare.value = true" @buy="cfg.showBuy.value = true" />
   </template>
+
+  <!-- LeadModal — поверх всего: над FxEditor, BuyModal, ShareModal.
+       leadCtx ставится из openLeadFromFx/Forest/Share, onLeadClose снимает.
+       Источник определяет заголовок: «Заявка на светильник» / «Новый Лес
+       WOODLED» / «WOODLED Студия — Консультация». -->
+  <LeadModal
+    v-if="leadCtx"
+    :source="leadCtx.source"
+    :room="leadCtxRoom ?? undefined"
+    :fx-idx="leadCtx.fxIdx"
+    :rooms="rooms"
+    :house-name="cfg.name.value"
+    @close="onLeadClose"
+    @feedback="cfg.showFB"
+  />
 
   <!-- SoundButton:
        • Главная: top = 20px — на линии с центром бейджа «WOODLED Студия».

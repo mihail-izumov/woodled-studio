@@ -150,6 +150,12 @@ const showZoneModal = ref(false)
  * читает флаг чтобы скрыть SoundButton под модалкой (anyModalOpen).
  */
 const showPriceDetails = ref(false)
+/**
+ * Открыта модалка LeadModal (заявка/консультация менеджеру).
+ * Ставится самим LeadModal в onMounted / снимается в onBeforeUnmount.
+ * App.vue читает флаг чтобы скрыть StickyBar и SoundButton (anyModalOpen).
+ */
+const showLead = ref(false)
 
 const fb = ref<string | null>(null)
 /** Иконка тоста: 'check' → зелёный чекмарк «сделано». null → без иконки. */
@@ -423,6 +429,7 @@ function resetAll(): void {
   showRoomSettings.value = false
   showZoneModal.value = false
   showPriceDetails.value = false
+  showLead.value = false
   picker.value = false
   if (typeof window !== 'undefined') {
     try {
@@ -449,6 +456,7 @@ export function useConfigurator() {
     showRoomSettings,
     showZoneModal,
     showPriceDetails,
+    showLead,
     fb,
     fbIcon,
     discountFx,

@@ -49,6 +49,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
   feedback: [msg: string]
+  /** Третья кнопка — открывает LeadModal с source='consult'. */
+  lead: []
 }>()
 
 /* Длинный URL: либо передан явно (FxEditor mode), либо собираем из name+rooms (дом). */
@@ -141,6 +143,14 @@ function webShare() {
 function onOverlayClick() {
   emit('close')
 }
+
+function onSendManager() {
+  /* «Отправить менеджеру» — закрываем эту модалку и пробрасываем emit('lead')
+     наверх. App.vue откроет LeadModal с source='consult'. Заявка пойдёт
+     как консультация, а не покупка — менеджер видит другой приоритет. */
+  emit('lead')
+  emit('close')
+}
 </script>
 
 <template>
@@ -212,6 +222,25 @@ function onOverlayClick() {
             </svg>
           </div>
           <span class="share-action-label">Поделиться</span>
+        </button>
+
+        <!-- Третья кнопка — отправить менеджеру (консультация).
+             Доступна всегда: для неё не нужна короткая ссылка, заявка летит
+             через LeadModal на бэкенд, а ссылка сгенерируется там же. -->
+        <button
+          class="share-action"
+          @click="onSendManager"
+        >
+          <div class="share-action-circle">
+            <svg
+              width="28" height="28" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"
+            >
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+          </div>
+          <span class="share-action-label">Менеджеру</span>
         </button>
       </div>
     </div>
@@ -289,7 +318,7 @@ function onOverlayClick() {
 .share-buttons {
   display: flex;
   justify-content: center;
-  gap: 32px;
+  gap: 22px;
 }
 
 .share-action {

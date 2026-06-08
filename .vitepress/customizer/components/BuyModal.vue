@@ -30,17 +30,17 @@ const cfg = useConfigurator()
 
 interface Props { rooms: Room[] }
 const props = defineProps<Props>()
+/* Заявка идёт в LeadModal на уровне App.vue — здесь только emit('lead'),
+   App.vue откроет общую форму с source='forest' (заголовок «Новый Лес
+   WOODLED»). Старые шаги form/done и поле contact удалены. */
 const emit = defineEmits<{
   editFx: [roomId: string, fxIdx: number, next: Fixture | null]
   openFx: [roomId: string, fxIdx: number]
-  close: []; feedback: [msg: string]; story: []
+  close: []; feedback: [msg: string]; story: []; lead: []
 }>()
 
-type Step = 'list' | 'form' | 'done'
-const step = ref<Step>('list')
 const discountMode = ref(false)
 const discountFx = ref<{ roomId: string; fxIdx: number } | null>(null)
-const contact = ref({ name: '', phone: '', comment: '' })
 /**
  * «Мой Лес» — про WOODLED-светильники: каталог, скидка на первый, форма
  * заказа. Кастомы (другие бренды) тут не показываем — у них цена 0 и
@@ -71,7 +71,6 @@ function toggleDiscountMode() { if (discountMode.value) { discountMode.value = f
 function toggleDiscount(roomId: string, fxIdx: number) { const sel = discountFx.value; if (sel && sel.roomId === roomId && sel.fxIdx === fxIdx) { discountFx.value = null } else { discountFx.value = { roomId, fxIdx } } }
 function isDiscounted(roomId: string, fxIdx: number): boolean { const sel = discountFx.value; return !!sel && sel.roomId === roomId && sel.fxIdx === fxIdx }
 const discountApplied = computed(() => discountFx.value !== null)
-const discountDetails = computed(() => { if (!discountFx.value) return null; const r = props.rooms.find((rm) => rm.id === discountFx.value!.roomId); const fx = r?.fixtures[discountFx.value!.fxIdx]; if (!r || !fx) return null; const m = MD[fx.m]; if (!m) return null; const woodName = MATS.find((x) => x.id === (fx.wood ?? 'oak'))?.name ?? 'Дуб'; return { room: r, fx, m, woodName } })
 
 const totalAll = computed(() => filledRooms.value.reduce((s, r) => s + fxPrice(woodledFx(r)), 0))
 const grandTotal = computed(() => totalAll.value - (discountApplied.value ? 3000 : 0))
@@ -80,8 +79,7 @@ function fxCount(r: Room): number { return woodledFx(r).reduce((s, fx) => s + (f
 
 function onFxClick(roomId: string, fxIdx: number) { if (discountMode.value) { toggleDiscount(roomId, fxIdx) } else { emit('openFx', roomId, fxIdx) } }
 function goToFirstRoom() { if (cfg.rooms.length > 0) { cfg.showBuy.value = false; cfg.active.value = cfg.rooms[0].id } else { emit('close') } }
-function submitList() { step.value = 'form' }
-function submitForm() { if (!contact.value.phone) { emit('feedback', 'Укажите телефон'); return }; step.value = 'done' }
+function submitList() { emit('lead') }
 
 /**
  * batch10 #5 v3: PANEL_BG (#EAE0CA) убран — фон формирует GradientFill
@@ -113,38 +111,9 @@ function woodBadgeStyle(woodColor: string) {
 </script>
 
 <template>
-  <!-- ═══ ШАГ 3: done ═══ -->
-  <div v-if="step === 'done'" :style="{ position: 'fixed', inset: 0, background: T.bg, zIndex: Z.fullscreenModal, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px', textAlign: 'center' }">
-    <div :style="{ width: '90px', height: '90px', borderRadius: '20px', background: T.green + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', marginBottom: '20px', animation: 'float 3s ease-in-out infinite' }">✓</div>
-    <div :style="{ fontSize: '22px', fontWeight: 700, color: T.green, marginBottom: '8px' }">План отправлен</div>
-    <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.7, maxWidth: '300px' }">
-      <template v-if="discountDetails">Скидка 3 000 ₽ на <span :style="{ color: T.text, fontWeight: 600 }">{{ discountDetails.woodName }} · {{ discountDetails.m.name }}</span>.</template>
-      Консультант WOODLED свяжется с вами
-    </div>
-    <button :style="{ marginTop: '24px', padding: '12px 40px', background: T.neutral, border: 'none', borderRadius: '8px', color: T.bg, cursor: 'pointer', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit' }" @click="emit('close')">Вернуться к лесу</button>
-  </div>
-
-  <!-- ═══ ШАГ 2: form ═══ -->
-  <div v-else-if="step === 'form'" :style="{ position: 'fixed', inset: 0, background: T.bg, zIndex: Z.fullscreenModal, overflow: 'auto' }">
-    <NavHeader title="Оставить заявку" back="Мой Лес" @back="step = 'list'" />
-    <div :style="{ padding: '20px', maxWidth: '400px', margin: '0 auto' }">
-      <div v-if="discountDetails" :style="{ background: T.green + '12', borderRadius: '10px', padding: '14px', marginBottom: '20px', border: `1px solid ${T.green}22` }">
-        <div :style="{ display: 'flex', alignItems: 'center', gap: '10px' }">
-          <div :style="{ width: '36px', height: '36px', borderRadius: '8px', background: WCOL[discountDetails.fx.wood ?? 'oak'] + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }"><Icon :name="fxIcName(discountDetails.m.type)" :color="WCOL[discountDetails.fx.wood ?? 'oak']" :size="20" /></div>
-          <div :style="{ flex: 1 }"><div :style="{ fontSize: '13px', fontWeight: 600, color: T.text }">{{ discountDetails.woodName }} · {{ discountDetails.m.name }}</div><div :style="{ fontSize: '12px', color: T.green, fontWeight: 600 }">Скидка 3 000 ₽</div></div>
-        </div>
-      </div>
-      <div :style="{ marginBottom: '14px' }"><div :style="{ fontSize: '11px', color: T.text, marginBottom: '6px', fontWeight: 600 }">Имя</div><input v-model="contact.name" placeholder="Как к вам обращаться" :style="{ width: '100%', padding: '10px 12px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '6px', color: T.text, fontSize: '14px', outline: 'none', boxSizing: 'border-box' }" /></div>
-      <div :style="{ marginBottom: '14px' }"><div :style="{ fontSize: '11px', color: T.text, marginBottom: '6px', fontWeight: 600 }">Телефон</div><input v-model="contact.phone" type="tel" placeholder="+7" :style="{ width: '100%', padding: '10px 12px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '6px', color: T.text, fontSize: '14px', outline: 'none', boxSizing: 'border-box' }" /></div>
-      <div :style="{ marginBottom: '20px' }"><div :style="{ fontSize: '11px', color: T.text, marginBottom: '6px', fontWeight: 600 }">Комментарий</div><textarea v-model="contact.comment" placeholder="Вопросы, пожелания" rows="3" :style="{ width: '100%', padding: '10px 12px', background: T.card, border: `1px solid ${T.border}`, borderRadius: '6px', color: T.text, fontSize: '14px', outline: 'none', boxSizing: 'border-box', resize: 'none' }" /></div>
-      <!-- batch11 #2 (#9): кнопка +3 кегля, padding пропорционально -->
-      <button :style="{ width: '100%', padding: '18px', background: '#FFFFFF', color: T.bg, border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '17px', fontFamily: 'inherit' }" @click="submitForm">Отправить план леса</button>
-      <div :style="{ fontSize: '11px', color: T.textDim, marginTop: '10px', textAlign: 'center' }">Консультант свяжется в течение часа</div>
-    </div>
-  </div>
-
-  <!-- ═══ ШАГ 1: list ═══ -->
-  <div v-else :style="{ position: 'fixed', inset: 0, background: T.bg, zIndex: Z.fullscreenModal, overflow: 'auto' }">
+  <!-- Шаг list — единственный. Старые form/done удалены: заявка идёт через
+       LeadModal (App.vue открывает её по @lead). -->
+  <div :style="{ position: 'fixed', inset: 0, background: T.bg, zIndex: Z.fullscreenModal, overflow: 'auto' }">
     <NavHeader title="Мой Лес" back="Домой" @back="emit('close')" />
 
     <div :style="{ padding: '16px', maxWidth: '480px', margin: '0 auto' }">
@@ -249,9 +218,3 @@ function woodBadgeStyle(woodColor: string) {
   </div>
 </template>
 
-<style>
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-</style>

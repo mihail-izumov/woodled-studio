@@ -43,7 +43,7 @@ interface Props {
   roomName?: string; roomTint?: string; isProvisional?: boolean
 }
 const props = withDefaults(defineProps<Props>(), { skipSize: false, backLabel: 'Назад', isProvisional: false })
-const emit = defineEmits<{ (e: 'save', fx: Fixture): void; (e: 'delete'): void; (e: 'close'): void; (e: 'feedback', msg: string): void }>()
+const emit = defineEmits<{ (e: 'save', fx: Fixture): void; (e: 'delete'): void; (e: 'close'): void; (e: 'feedback', msg: string): void; (e: 'lead'): void }>()
 
 const cfg = useConfigurator()
 
@@ -96,8 +96,20 @@ const touched = ref(new Set<StepId>())
    чтобы App.vue прятал SoundButton под ней (anyModalOpen). */
 function openPriceDetails() { cfg.showPriceDetails.value = true }
 function closePriceDetails() { cfg.showPriceDetails.value = false }
-/* Купить — пока no-op, реализация позже. */
-function onBuyClick() { /* TODO */ }
+/* Купить → открыть LeadModal на уровне App.vue с source='fixture'.
+   App.vue прочитает roomId+fxIdx из cfg.activeFx (мы сейчас активны).
+   Сборку соберёт engine/lead-text.ts из текущего fixture в реакт-сторе.
+   Если у юзера есть несохранённые правки (isDirty) — блокируем заявку
+   и подсвечиваем «Сохранить»: иначе менеджер получит снимок ДО правок
+   и будет рассинхрон по комплектации. */
+function onBuyClick() {
+  if (isDirty.value) {
+    emit('feedback', 'Сначала сохраните изменения')
+    scrollToSave()
+    return
+  }
+  emit('lead')
+}
 
 interface Build { m:ModelId;wood:Wood;mount:string;bowl:string;btemp:string;lamps:number;diffuser:boolean;moisture:boolean;bulbs:boolean;wire:string;baseColor:string;bulbOpt:string;steps:Record<string,StepStatus> }
 
@@ -511,7 +523,9 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     <!-- Sticky-низ (Tesla-паттерн, только на сводке): «{цена} ⌄» + «Купить».
          Ширина — мобильная (max 480px), центрирован на десктопе.
          Тап по плашке цены/шеврону открывает PriceDetailsModal.
-         «Купить» — пока no-op (позже подвяжем коммерческий поток). -->
+         «Купить» → emit('lead') → App.vue открывает LeadModal с
+         source='fixture' и текущим roomId/fxIdx (заголовок «Заявка на
+         светильник»). -->
     <div
       v-if="view==='summary'"
       :style="{

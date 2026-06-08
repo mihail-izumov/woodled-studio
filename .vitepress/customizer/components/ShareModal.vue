@@ -263,7 +263,7 @@ function onSendManager() {
               width="36"
               height="36"
               alt=""
-              src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27 fill=%27%231a1a1a%27%3E%3Cpath d=%27M68.58,7.28H31.42C12.41,7.28,0,23.83,0,42.77H0C0,55.86,8.2,67.13,20,72.28V84.12c0,3.64,1.44,5.6,3.63,5.6a7.46,7.46,0,0,0,4.61-2.2l14-12.26H68.58c19,0,31.42-16.55,31.42-32.49h0C100,23.83,87.59,7.28,68.58,7.28Zm0,62H40l-1.7,1.48L26,81.51V68.35l-3.6-1.57C12.44,62.43,4,53,4,42.77,4,26.16,16.75,13.28,31.42,13.28H68.58C83.25,13.28,96,26.16,96,42.77S83.25,69.26,68.58,69.26Z%27/%3E%3Ccircle cx=%2750%27 cy=%2744.5%27 r=%276.5%27/%3E%3Ccircle cx=%2729.77%27 cy=%2744.5%27 r=%276.5%27/%3E%3Ccircle cx=%2270.33%27 cy=%2744.5%27 r=%276.5%27/%3E%3C/svg%3E"
+              src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjMWExYTFhIj48cGF0aCBkPSJNNjguNTgsNy4yOEgzMS40MkMxMi40MSw3LjI4LDAsMjMuODMsMCw0Mi43N0gwQzAsNTUuODYsOC4yLDY3LjEzLDIwLDcyLjI4Vjg0LjEyYzAsMy42NCwxLjQ0LDUuNiwzLjYzLDUuNmE3LjQ2LDcuNDYsMCwwLDAsNC42MS0yLjJsMTQtMTIuMjZINjguNThjMTksMCwzMS40Mi0xNi41NSwzMS40Mi0zMi40OWgwQzEwMCwyMy44Myw4Ny41OSw3LjI4LDY4LjU4LDcuMjhabTAsNjJINDBsLTEuNywxLjQ4TDI2LDgxLjUxVjY4LjM1bC0zLjYtMS41N0MxMi40NCw2Mi40Myw0LDUzLDQsNDIuNzcsNCwyNi4xNiwxNi43NSwxMy4yOCwzMS40MiwxMy4yOEg2OC41OEM4My4yNSwxMy4yOCw5NiwyNi4xNiw5Niw0Mi43N1M4My4yNSw2OS4yNiw2OC41OCw2OS4yNloiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQ0LjUiIHI9IjYuNSIvPjxjaXJjbGUgY3g9IjI5Ljc3IiBjeT0iNDQuNSIgcj0iNi41Ii8+PGNpcmNsZSBjeD0iNzAuMzMiIGN5PSI0NC41IiByPSI2LjUiLz48L3N2Zz4="
             />
           </div>
           <span :style="{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }">Менеджеру</span>

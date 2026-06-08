@@ -125,14 +125,24 @@ export async function submitLead(payload: LeadPayload): Promise<boolean> {
   }
 }
 
-/* ──────────── Deep-link на бота ──────────── */
+/* ──────────── Прямой чат с менеджером ──────────── */
 
-const BOT_USERNAME = 'woodled_studio_bot'
+/**
+ * Username менеджера WOODLED в Telegram (без @).
+ * Менял-то это значение в одном месте.
+ *
+ * Почему не бот:
+ *   Telegram deep-link `?start=<payload>` срабатывает только при ПЕРВОМ
+ *   запуске бота юзером. У повторных пользователей payload игнорируется,
+ *   бот получает голый `/start` и не знает, какой лид прислать. Прямая
+ *   ссылка на менеджера всегда открывает чат стабильно — пусть и без
+ *   автоматического первого сообщения.
+ */
+const MANAGER_USERNAME = 'run_scale'
 
-/** Ссылка на запуск бота с привязкой к лиду — бот ответит юзеру первым сообщением. */
-export function botStartUrl(leadId: string): string {
-  const safe = encodeURIComponent(leadId)
-  return `https://t.me/${BOT_USERNAME}?start=${safe}`
+/** Прямая ссылка на чат с менеджером WOODLED. */
+export function managerChatUrl(): string {
+  return `https://t.me/${MANAGER_USERNAME}`
 }
 
 /* ──────────── Persist контакта в localStorage ──────────── */

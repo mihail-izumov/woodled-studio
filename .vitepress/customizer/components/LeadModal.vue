@@ -32,7 +32,7 @@ import {
 import { buildFixtureShareUrl, buildShareUrl } from '../engine/share'
 import { shortenLongUrl } from '../engine/shortener'
 import {
-  newLeadId, botStartUrl, submitLead,
+  newLeadId, managerChatUrl, submitLead,
   loadPersistedContact, savePersistedContact,
   type LeadSource,
 } from '../engine/lead-api'
@@ -61,6 +61,24 @@ const TITLE: Record<LeadSource, string> = {
   consult: 'WOODLED Студия — Консультация',
 }
 const title = TITLE[props.source]
+
+/* Онбординг «что дальше» — 3 коротких шага, чтобы клиент не путался:
+   не было сразу понятно — менеджер получил данные, нужно ждать или писать
+   самому. Третий шаг про прямую связь в TG. */
+const DONE_STEPS: Array<{ title: string; body: string }> = [
+  {
+    title: 'Менеджер получил заявку',
+    body: 'В групповой чат WOODLED Студии пришло сообщение с вашей комплектацией и контактом.',
+  },
+  {
+    title: 'Свяжемся в течение часа',
+    body: 'Менеджер позвонит по указанному телефону или напишет в Telegram.',
+  },
+  {
+    title: 'Можно начать переписку сами',
+    body: 'Откройте чат с менеджером в Telegram и просто скажите «Привет!» — он сразу подхватит вашу заявку.',
+  },
+]
 
 /* leadId генерируем один раз на mount — повторный сабмит с того же ID
    попадёт в дедуп на стороне GAS (не задвоит уведомление менеджеру). */
@@ -162,8 +180,9 @@ async function onSubmit() {
 
 function onOpenChat() {
   /* window.open с _blank — на iOS Safari/PWA это открывает приложение
-     Telegram если установлено, иначе t.me в браузере. */
-  window.open(botStartUrl(leadId), '_blank', 'noopener')
+     Telegram если установлено, иначе t.me в браузере. Открывает прямой
+     чат с менеджером — все данные у него уже в групповом чате с заявкой. */
+  window.open(managerChatUrl(), '_blank', 'noopener')
   emit('close')
 }
 
@@ -195,7 +214,9 @@ function labelStyle() {
 </script>
 
 <template>
-  <!-- ═══ step = done ═══ -->
+  <!-- ═══ step = done ═══
+       Онбординг «что дальше» 1-2-3: убирает путаницу — менеджер уже всё
+       видит, можно подождать звонка или сразу написать в TG.  -->
   <div
     v-if="step === 'done'"
     :style="{
@@ -204,19 +225,38 @@ function labelStyle() {
     }"
   >
     <NavHeader :title="title" :back="backLabel" @back="emit('close')" />
-    <div :style="{ padding: '32px 20px 40px', maxWidth: '400px', margin: '0 auto', textAlign: 'center' }">
+    <div :style="{ padding: '24px 20px 40px', maxWidth: '420px', margin: '0 auto', textAlign: 'center' }">
       <div :style="{
-        width: '88px', height: '88px', borderRadius: '20px',
+        width: '72px', height: '72px', borderRadius: '18px',
         background: T.green + '22', color: T.green,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '8px auto 24px', fontSize: '40px', lineHeight: 1,
+        margin: '4px auto 20px', fontSize: '34px', lineHeight: 1,
       }">✓</div>
-      <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '10px' }">
+      <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '8px' }">
         Заявка отправлена
       </div>
-      <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.55, marginBottom: '28px' }">
-        Менеджер уже видит вашу заявку. Откройте чат с ним — бот пришлёт первое сообщение со ссылкой, и можно начинать разговор.
+      <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.55, marginBottom: '24px' }">
+        Менеджер уже видит вашу комплектацию.
       </div>
+
+      <!-- Онбординг 1-2-3 -->
+      <div :style="{ textAlign: 'left', marginBottom: '28px' }">
+        <div v-for="(stepInfo, i) in DONE_STEPS" :key="i" :style="{
+          display: 'flex', gap: '14px', marginBottom: '16px', alignItems: 'flex-start',
+        }">
+          <div :style="{
+            flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%',
+            background: T.text, color: T.bg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '14px', fontWeight: 700, lineHeight: 1,
+          }">{{ i + 1 }}</div>
+          <div :style="{ flex: 1, paddingTop: '2px' }">
+            <div :style="{ fontSize: '14px', fontWeight: 600, color: T.text, marginBottom: '3px', lineHeight: 1.35 }">{{ stepInfo.title }}</div>
+            <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.5 }">{{ stepInfo.body }}</div>
+          </div>
+        </div>
+      </div>
+
       <button
         :style="{
           width: '100%', padding: '16px', border: 'none', borderRadius: '10px',
@@ -224,9 +264,9 @@ function labelStyle() {
           cursor: 'pointer', fontFamily: 'inherit',
         }"
         @click="onOpenChat"
-      >Открыть чат с менеджером</button>
-      <div :style="{ fontSize: '12px', color: T.textDim, marginTop: '14px', lineHeight: 1.5 }">
-        Если чат не открылся — найдите в Telegram бота @woodled_studio_bot и нажмите «Запустить».
+      >Написать менеджеру в Telegram</button>
+      <div :style="{ fontSize: '12px', color: T.textDim, marginTop: '12px', lineHeight: 1.5 }">
+        Если Telegram не открылся — найдите @run_scale вручную.
       </div>
     </div>
   </div>

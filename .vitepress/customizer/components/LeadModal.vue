@@ -316,19 +316,14 @@ const counts = computed<{ roomCount: number; fixtureCount: number }>(() => {
 })
 
 /* Prefetch короткой ссылки — пока юзер заполняет форму, шортнер прогревается.
-   Если до сабмита не успеет — submit подождёт ещё немного, потом fallback.
-   Для fixture-источника параллельно прогреваем и ссылку на весь дом. */
-const shortShareUrl = ref<string | null>(null)
-shortenLongUrl(longShareUrl.value)
-  .then((s) => { shortShareUrl.value = s })
-  .catch(() => { shortShareUrl.value = longShareUrl.value })
+   Храним именно промис: в submit будем ждать его, а не запускать вторую
+   попытку (иначе теряем 10-15 секунд при холодном Apps Script). */
+const shareShortPromise: Promise<string> = shortenLongUrl(longShareUrl.value)
+  .catch(() => longShareUrl.value)
 
-const shortHouseShareUrl = ref<string | null>(null)
-if (longHouseShareUrl.value) {
-  shortenLongUrl(longHouseShareUrl.value)
-    .then((s) => { shortHouseShareUrl.value = s })
-    .catch(() => { shortHouseShareUrl.value = longHouseShareUrl.value })
-}
+const houseShareShortPromise: Promise<string> = longHouseShareUrl.value
+  ? shortenLongUrl(longHouseShareUrl.value).catch(() => longHouseShareUrl.value)
+  : Promise.resolve('')
 
 /* ──────────── Lock scroll ──────────── */
 
@@ -356,20 +351,20 @@ async function onSubmit() {
 
   step.value = 'sending'
 
-  /* Подождём короткую ссылку, но не дольше 6 секунд — иначе уйдёт длинная.
-     На стороне менеджера длинная тоже работает, просто менее аккуратно. */
-  async function resolveShort(short: string | null, long: string): Promise<string> {
-    if (short) return short
-    if (!long) return ''
-    return await Promise.race<string>([
-      shortenLongUrl(long),
-      new Promise<string>((res) => setTimeout(() => res(long), 6000)),
+  /* Ждём уже запущенный prefetch — но не дольше 20 сек.
+     Apps Script-шортнер при холодном старте отвечает 10-25 сек; 20 — компромисс,
+     при котором юзер видит «отправляем» небольшую паузу, но менеджер получает
+     короткую ссылку, а не километровый хвост base64. На fallback уходит длинная. */
+  async function waitShort(prefetch: Promise<string>, long: string): Promise<string> {
+    return Promise.race<string>([
+      prefetch,
+      new Promise<string>((res) => setTimeout(() => res(long), 20000)),
     ])
   }
 
   const [shareUrl, houseShareUrl] = await Promise.all([
-    resolveShort(shortShareUrl.value, longShareUrl.value),
-    resolveShort(shortHouseShareUrl.value, longHouseShareUrl.value),
+    waitShort(shareShortPromise, longShareUrl.value),
+    waitShort(houseShareShortPromise, longHouseShareUrl.value),
   ])
 
   await submitLead({

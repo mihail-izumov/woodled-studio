@@ -201,7 +201,7 @@ function orbStyle(wood: Wood, size = 13) {
             position: 'relative',
             background: cardPhotoFor(it) ? L.muted : L.surface,
             borderRadius: '16px',
-            minHeight: '160px', cursor: 'pointer',
+            minHeight: '210px', cursor: 'pointer',
             overflow: 'hidden',
           }"
           @click="emit('edit', it._idx)"
@@ -238,19 +238,19 @@ function orbStyle(wood: Wood, size = 13) {
                чипы прижаты к низу. -->
           <div :style="{
             position: 'relative', zIndex: 1,
-            padding: '10px', minHeight: '160px',
+            padding: '10px', minHeight: '210px',
             display: 'flex', flexDirection: 'column',
           }">
             <div :style="{
-              padding: '9px 12px', borderRadius: '12px',
+              padding: '10px 12px 11px', borderRadius: '12px',
               background: 'rgba(255,255,255,0.5)',
               backdropFilter: 'blur(14px) saturate(140%)',
               WebkitBackdropFilter: 'blur(14px) saturate(140%)',
               border: '1px solid rgba(255,255,255,0.55)',
               boxShadow: '0 1px 8px rgba(0,0,0,0.08)',
             }">
-              <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.1 }">{{ fxNav(it.m) }}</div>
-              <div :style="{ fontSize: '9px', fontWeight: 700, color: L.text, letterSpacing: '1.6px', textTransform: 'uppercase', marginTop: '3px', lineHeight: 1 }">{{ fxLine(it.m) }}</div>
+              <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.22 }">{{ fxNav(it.m) }}</div>
+              <div :style="{ fontSize: '9px', fontWeight: 700, color: L.text, letterSpacing: '1.6px', textTransform: 'uppercase', marginTop: '8px', lineHeight: 1 }">{{ fxLine(it.m) }}</div>
             </div>
             <div :style="{ marginTop: 'auto', paddingTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }">
               <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">

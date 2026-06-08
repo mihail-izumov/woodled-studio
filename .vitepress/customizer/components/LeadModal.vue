@@ -57,7 +57,8 @@ const cfg = useConfigurator()
 
 /* Заголовок в NavHeader (верх):
    • fixture — конкретный светильник («Люстра огромная», «Бра горизонтальное»);
-   • forest  — «Новый Лес WOODLED»;
+   • forest  — РЕАЛЬНОЕ имя дома пользователя (cfg.name), fallback
+               «Новый Лес WOODLED» если имя не задано;
    • consult — «WOODLED Студия».
    Большой заголовок ниже («Заявка» / «Консультация») — отдельно. */
 const navTitle = computed<string>(() => {
@@ -66,7 +67,10 @@ const navTitle = computed<string>(() => {
     if (fx && fx.custom) return fx.custom.name || fx.custom.brand || 'Светильник'
     if (fx && MD[fx.m]) return fxTitle(fx.m)
   }
-  if (props.source === 'forest')  return 'Новый Лес WOODLED'
+  if (props.source === 'forest') {
+    const h = (props.houseName ?? '').trim()
+    return h || 'Новый Лес WOODLED'
+  }
   return 'WOODLED Студия'
 })
 
@@ -295,7 +299,7 @@ const summary = computed<string>(() => {
     /* Для fixture-режима передаём весь массив комнат — buildFixtureLead
        добавит в конец «В доме: N светильников» и ссылку на весь дом,
        чтобы менеджер видел контекст: одиночная заявка или часть набора. */
-    return buildFixtureLead(props.room, props.fxIdx, props.rooms, props.houseName)
+    return buildFixtureLead(props.room, props.fxIdx, props.rooms)
   }
   const rs = props.rooms ?? []
   if (props.source === 'forest') return buildForestLead(rs)
@@ -310,17 +314,38 @@ const longShareUrl = computed<string>(() => {
   return buildShareUrl(props.houseName ?? '', props.rooms ?? [])
 })
 
+/* Для fixture-источника считаем ВТОРУЮ ссылку — на весь дом.
+   Менеджеру удобно увидеть и конкретный светильник, и общий контекст
+   набора. Если у юзера в доме кроме этого светильника ничего нет —
+   houseLongShareUrl остаётся пустым, GAS не выведет лишнюю строку. */
+const longHouseShareUrl = computed<string>(() => {
+  if (props.source !== 'fixture') return ''
+  const rs = props.rooms ?? []
+  if (!rs.length) return ''
+  const totalFx = rs.reduce((s, r) => s + r.fixtures.length, 0)
+  if (totalFx <= 1) return ''
+  return buildShareUrl(props.houseName ?? '', rs)
+})
+
 const counts = computed<{ roomCount: number; fixtureCount: number }>(() => {
   if (props.source === 'fixture') return { roomCount: 1, fixtureCount: 1 }
   return leadCounts(props.rooms ?? [])
 })
 
 /* Prefetch короткой ссылки — пока юзер заполняет форму, шортнер прогревается.
-   Если до сабмита не успеет — submit подождёт ещё немного, потом fallback. */
+   Если до сабмита не успеет — submit подождёт ещё немного, потом fallback.
+   Для fixture-источника параллельно прогреваем и ссылку на весь дом. */
 const shortShareUrl = ref<string | null>(null)
 shortenLongUrl(longShareUrl.value)
   .then((s) => { shortShareUrl.value = s })
   .catch(() => { shortShareUrl.value = longShareUrl.value })
+
+const shortHouseShareUrl = ref<string | null>(null)
+if (longHouseShareUrl.value) {
+  shortenLongUrl(longHouseShareUrl.value)
+    .then((s) => { shortHouseShareUrl.value = s })
+    .catch(() => { shortHouseShareUrl.value = longHouseShareUrl.value })
+}
 
 /* ──────────── Lock scroll ──────────── */
 
@@ -350,14 +375,19 @@ async function onSubmit() {
 
   /* Подождём короткую ссылку, но не дольше 6 секунд — иначе уйдёт длинная.
      На стороне менеджера длинная тоже работает, просто менее аккуратно. */
-  const shareUrl: string = await (async () => {
-    if (shortShareUrl.value) return shortShareUrl.value
-    const long = longShareUrl.value
+  async function resolveShort(short: string | null, long: string): Promise<string> {
+    if (short) return short
+    if (!long) return ''
     return await Promise.race<string>([
       shortenLongUrl(long),
       new Promise<string>((res) => setTimeout(() => res(long), 6000)),
     ])
-  })()
+  }
+
+  const [shareUrl, houseShareUrl] = await Promise.all([
+    resolveShort(shortShareUrl.value, longShareUrl.value),
+    resolveShort(shortHouseShareUrl.value, longHouseShareUrl.value),
+  ])
 
   await submitLead({
     leadId,
@@ -367,6 +397,8 @@ async function onSubmit() {
     tgUsername: tg,
     summary: summary.value,
     shareUrl,
+    houseShareUrl: houseShareUrl || undefined,
+    houseName: (props.houseName ?? '').trim() || undefined,
     roomCount: counts.value.roomCount,
     fixtureCount: counts.value.fixtureCount,
   })
@@ -544,15 +576,13 @@ function labelStyle() {
         </div>
       </div>
 
-      <!-- Согласие 152-ФЗ. Без галки сабмит заблокирован.
-           Раскладка: галка и текст в одну строку (центрировано по высоте),
-           если текст переносится на мобилке — строки выравниваются по
-           центру относительно галки (text-align center в span). -->
+      <!-- Согласие 152-ФЗ. Раскладка: галка слева, текст слева же
+           (text-align left), но вертикально по центру относительно галки
+           (align-items center). На мобилке если переносится — обе строки
+           всё ещё слева, текст по высоте центрирован относительно галки. -->
       <label :style="{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '10px', margin: '0 auto 22px',
-        cursor: 'pointer', userSelect: 'none',
-        maxWidth: '380px',
+        display: 'flex', alignItems: 'center', gap: '10px',
+        marginBottom: '22px', cursor: 'pointer', userSelect: 'none',
       }">
         <input
           v-model="privacyConsent"
@@ -564,7 +594,7 @@ function labelStyle() {
         />
         <span :style="{
           fontSize: '13px', color: T.text, lineHeight: 1.45,
-          textAlign: 'center',
+          textAlign: 'left',
         }">
           Принимаю
           <a

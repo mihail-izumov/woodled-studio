@@ -64,8 +64,15 @@ export interface LeadPayload {
   tgUsername?: string
   /** Полный текст комплектации для менеджера (от engine/lead-text.ts). */
   summary: string
-  /** Share-URL (короткий, через shortener — заранее сгенерированный). */
+  /** Основная share-URL: короткая. Для fixture — ссылка на светильник;
+   *  для forest/consult — ссылка на весь дом. */
   shareUrl: string
+  /** Доп. ссылка на весь дом — присылается ТОЛЬКО для source='fixture'
+   *  и только если в доме есть кроме этого светильника ещё что-то.
+   *  Тоже короткая. */
+  houseShareUrl?: string
+  /** Имя дома (cfg.name). Менеджер видит его в заголовке forest-заявки. */
+  houseName?: string
   /** Сводные метрики для Sheet. */
   roomCount: number
   fixtureCount: number

@@ -32,7 +32,6 @@ import type { Fixture } from '../data/catalog'
 import { MD, fxTitle } from '../data/catalog'
 import { MATS, BTEMPS, BOWLS, MOUNTS, DEF_OPT } from '../data/materials'
 import { FURN } from '../data/furniture'
-import { buildShareUrl } from './share'
 
 /* ──────────── Словари для печати ──────────── */
 
@@ -261,14 +260,15 @@ function roomBlock(r: Room, withFixtures: boolean): string[] {
 /* ──────────── API ──────────── */
 
 /** Заявка на один светильник (с контекстом его комнаты).
- *  Если переданы allRooms — добавим внизу контекст дома: сколько всего
- *  светильников и ссылку на весь дом. Менеджеру это важно — он видит,
- *  одиночная это покупка или часть большого набора. */
+ *  Если переданы allRooms — добавим строку «В доме всего: …», чтобы
+ *  менеджер сразу видел, одиночная это покупка или часть большого
+ *  набора. Сама ссылка на дом не печатается тут — она уйдёт отдельным
+ *  полем payload.houseShareUrl и аккуратно отрендерится GAS-ом
+ *  (с уже сокращённым URL). */
 export function buildFixtureLead(
   room: Room,
   fxIdx: number,
   allRooms?: Room[],
-  houseName?: string,
 ): string {
   const fx = room.fixtures[fxIdx]
   if (!fx) return ''
@@ -281,23 +281,14 @@ export function buildFixtureLead(
   lines.push('')
   lines.push(...fixtureLines(fx))
 
-  // Контекст дома: общее количество и ссылка на весь дом.
   if (allRooms && allRooms.length) {
     const { roomCount, fixtureCount } = leadCounts(allRooms)
-    // Полезно только если в доме есть НЕ только этот один светильник —
-    // иначе блок повторяет уже сказанное.
     if (fixtureCount > 1) {
-      lines.push('')
-      lines.push('---')
       lines.push('')
       lines.push(
         `В доме всего: ${fixtureCount} ${pluralRu(fixtureCount, 'светильник', 'светильника', 'светильников')}` +
         ` в ${roomCount} ${pluralRu(roomCount, 'комнате', 'комнатах', 'комнатах')}`,
       )
-      try {
-        const houseUrl = buildShareUrl(houseName ?? '', allRooms)
-        if (houseUrl) lines.push(`Ссылка на весь дом: ${houseUrl}`)
-      } catch { /* SSR без window — игнорим */ }
     }
   }
 

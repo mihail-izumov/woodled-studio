@@ -84,16 +84,16 @@ const bigTitle = computed<string>(() =>
    самому. Третий шаг про прямую связь в TG. */
 const DONE_STEPS: Array<{ title: string; body: string }> = [
   {
-    title: 'Менеджер получил заявку',
-    body: 'В групповой чат WOODLED Студии пришло сообщение с вашей комплектацией и контактом.',
+    title: 'Видим ваш дом',
+    body: 'Менеджер уже видит комплектацию вашего дома.',
   },
   {
     title: 'Свяжемся в течение часа',
     body: 'Менеджер позвонит по указанному телефону или напишет в Telegram.',
   },
   {
-    title: 'Можно начать переписку сами',
-    body: 'Откройте чат с менеджером в Telegram и просто скажите «Привет!» — он сразу подхватит вашу заявку.',
+    title: 'Начните переписку',
+    body: 'Откройте чат с менеджером в Telegram и просто скажите «Привет!» — и эксперт WOODLED сразу подхватит вашу заявку.',
   },
 ]
 
@@ -456,15 +456,12 @@ function labelStyle() {
     <div :style="{ padding: '24px 20px 40px', maxWidth: '420px', margin: '0 auto', textAlign: 'center' }">
       <div :style="{
         width: '72px', height: '72px', borderRadius: '18px',
-        background: T.green + '22', color: T.green,
+        background: 'rgba(255,255,255,0.10)', color: '#FFFFFF',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         margin: '4px auto 20px', fontSize: '34px', lineHeight: 1,
       }">✓</div>
-      <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '8px' }">
+      <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '24px' }">
         Заявка отправлена
-      </div>
-      <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.55, marginBottom: '24px' }">
-        Менеджер уже видит вашу комплектацию.
       </div>
 
       <!-- Онбординг 1-2-3 -->

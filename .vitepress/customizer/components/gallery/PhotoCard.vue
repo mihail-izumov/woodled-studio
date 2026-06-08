@@ -87,6 +87,8 @@ function onImgError() { loaded.value = true; }
     <img
       :src="photo.src"
       :alt="photo.label"
+      loading="lazy"
+      decoding="async"
       draggable="false"
       @load="onImgLoad"
       @error="onImgError"

@@ -169,6 +169,8 @@ function close(e)           { if (e) e.stopPropagation(); emit('close'); }
       <img
         :src="photo.src"
         :alt="photo.label"
+        loading="lazy"
+        decoding="async"
         draggable="false"
         @click="stop"
         :style="{

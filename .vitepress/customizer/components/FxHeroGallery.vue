@@ -105,10 +105,34 @@ const idx = ref(0)
 // Сброс индекса при смене подборки (юзер сменил дерево → фото поменялись).
 watch(photos, () => { idx.value = 0 })
 
+/* Клампим вместо wrap — на крайних слайдах стрелки скрыты, и попытка
+   уехать в «никуда» (например, тапом по уже скрытой стрелке через keyboard
+   или delayed touch) безопасно игнорируется. */
 function nudge(delta: number) {
   const n = totalSlides.value
   if (n < 2) return
-  idx.value = (idx.value + delta + n) % n
+  const next = idx.value + delta
+  if (next < 0 || next >= n) return
+  idx.value = next
+}
+const canPrev = computed(() => totalSlides.value > 1 && idx.value > 0)
+const canNext = computed(() => totalSlides.value > 1 && idx.value < totalSlides.value - 1)
+
+/* Swipe-навигация по фото. Учитываем только горизонтальные жесты:
+   если по Y движение больше чем по X — это скролл страницы, не свайп. */
+let touchStartX = 0
+let touchStartY = 0
+function onTouchStart(e: TouchEvent) {
+  const t = e.changedTouches[0]
+  touchStartX = t.clientX
+  touchStartY = t.clientY
+}
+function onTouchEnd(e: TouchEvent) {
+  const t = e.changedTouches[0]
+  const dx = t.clientX - touchStartX
+  const dy = t.clientY - touchStartY
+  if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return
+  nudge(dx < 0 ? 1 : -1)
 }
 
 // Lightbox state — простой fullscreen overlay, без переиспользования Lightbox.vue
@@ -150,7 +174,10 @@ const accent = computed(() => props.tint || T.neutral)
         width: '100%',
         aspectRatio: '1',
         background: '#000',
+        touchAction: 'pan-y',
       }"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
     >
       <!-- Фото-слайд (обычные кадры) -->
       <img
@@ -220,29 +247,37 @@ const accent = computed(() => props.tint || T.neutral)
         </span>
       </div>
 
-      <!-- Прев / след стрелки (если слайдов >1) -->
+      <!-- Прев / след стрелки: вытянутые прямоугольники во весь ~2/3 высоты Hero.
+           На мобайле удобнее тапать чем по 36×36 кругам. На крайних слайдах
+           соответствующая стрелка скрыта (no-wrap навигация). -->
       <button
-        v-if="totalSlides > 1"
+        v-if="canPrev"
         @click.stop="nudge(-1)"
         :style="{
-          position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)',
-          width: '36px', height: '36px', borderRadius: '50%',
-          background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white',
-          fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'absolute', top: '16.7%', left: 0, height: '66.6%',
+          width: '40px', borderRadius: '0 10px 10px 0', border: 'none',
+          background: 'rgba(0,0,0,0.42)', color: 'white', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 0,
         }"
         aria-label="Предыдущее"
-      >‹</button>
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <button
-        v-if="totalSlides > 1"
+        v-if="canNext"
         @click.stop="nudge(1)"
         :style="{
-          position: 'absolute', top: '50%', right: '10px', transform: 'translateY(-50%)',
-          width: '36px', height: '36px', borderRadius: '50%',
-          background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white',
-          fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'absolute', top: '16.7%', right: 0, height: '66.6%',
+          width: '40px', borderRadius: '10px 0 0 10px', border: 'none',
+          background: 'rgba(0,0,0,0.42)', color: 'white', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 0,
         }"
         aria-label="Следующее"
-      >›</button>
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
 
       <!-- Бейдж слоя (partial / woodSubstitute) — только на фото-слайдах -->
       <div
@@ -301,16 +336,25 @@ const accent = computed(() => props.tint || T.neutral)
       </button>
     </div>
 
-    <!-- Disclaimer -->
-    <div
-      :style="{
-        padding: '10px 14px', fontSize: '11px', color: T.textDim,
-        textAlign: 'center', lineHeight: '1.5',
-      }"
-    >
+  </section>
+
+  <!-- Disclaimer как отдельная плашка под Hero: фон чуть светлее T.bg,
+       текст крупнее и читается двумя строками на мобильной ширине. -->
+  <aside
+    :style="{
+      marginTop: '10px',
+      background: T.cardAlt,
+      border: `1px solid ${T.border}`,
+      borderRadius: '12px',
+      padding: '12px 14px',
+      display: 'flex', alignItems: 'flex-start', gap: '10px',
+    }"
+  >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color: T.textSec, flexShrink: 0, marginTop: '1px'}"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <div :style="{fontSize: '13px', color: T.textSec, lineHeight: 1.5}">
       {{ HERO_DISCLAIMER }}
     </div>
-  </section>
+  </aside>
 
   <!-- Минимальный fullscreen lightbox (свайпы — позже, сейчас базовая навигация) -->
   <div
@@ -323,6 +367,8 @@ const accent = computed(() => props.tint || T.neutral)
   >
     <img
       :src="photos[lbIdx].photo.src"
+      loading="lazy"
+      decoding="async"
       :style="{ maxWidth: '92vw', maxHeight: '92vh', objectFit: 'contain' }"
       @click.stop
     />

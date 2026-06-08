@@ -325,11 +325,20 @@ function onSendManager() {
 
 .share-buttons {
   display: flex;
-  justify-content: center;
-  gap: 22px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
 }
 
+/* flex: 1 1 0 — каждая кнопка получает равную долю ширины родителя,
+   независимо от длины лейбла. Без этого «Скопировать» (95px) +
+   «Поделиться» (85px) + «Менеджеру» (80px) + 2 gap'а вылазили за
+   рамки карточки на узких экранах, и третья кнопка визуально терялась
+   (хотя в DOM была). min-width: 0 — стандартный flex-fix чтобы дочерний
+   контент не блокировал shrink. */
 .share-action {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;

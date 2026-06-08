@@ -79,23 +79,6 @@ const bigTitle = computed<string>(() =>
   props.source === 'consult' ? 'Консультация' : 'Заявка'
 )
 
-/* Онбординг «что дальше» — 3 коротких шага, чтобы клиент не путался:
-   не было сразу понятно — менеджер получил данные, нужно ждать или писать
-   самому. Третий шаг про прямую связь в TG. */
-const DONE_STEPS: Array<{ title: string; body: string }> = [
-  {
-    title: 'Видим ваш дом',
-    body: 'Менеджер уже видит комплектацию вашего дома.',
-  },
-  {
-    title: 'Свяжемся в течение часа',
-    body: 'Менеджер позвонит по указанному телефону или напишет в Telegram.',
-  },
-  {
-    title: 'Начните переписку',
-    body: 'Откройте чат с менеджером в Telegram и просто скажите «Привет!» — и эксперт WOODLED сразу подхватит вашу заявку.',
-  },
-]
 
 /* leadId генерируем один раз на mount — повторный сабмит с того же ID
    попадёт в дедуп на стороне GAS (не задвоит уведомление менеджеру). */
@@ -460,26 +443,11 @@ function labelStyle() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         margin: '4px auto 20px', fontSize: '34px', lineHeight: 1,
       }">✓</div>
-      <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '24px' }">
-        Заявка отправлена
+      <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '10px' }">
+        Видим Ваш Дом
       </div>
-
-      <!-- Онбординг 1-2-3 -->
-      <div :style="{ textAlign: 'left', marginBottom: '28px' }">
-        <div v-for="(stepInfo, i) in DONE_STEPS" :key="i" :style="{
-          display: 'flex', gap: '14px', marginBottom: '16px', alignItems: 'flex-start',
-        }">
-          <div :style="{
-            flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%',
-            background: T.text, color: T.bg,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '14px', fontWeight: 700, lineHeight: 1,
-          }">{{ i + 1 }}</div>
-          <div :style="{ flex: 1, paddingTop: '2px' }">
-            <div :style="{ fontSize: '14px', fontWeight: 600, color: T.text, marginBottom: '3px', lineHeight: 1.35 }">{{ stepInfo.title }}</div>
-            <div :style="{ fontSize: '13px', color: T.textSec, lineHeight: 1.5 }">{{ stepInfo.body }}</div>
-          </div>
-        </div>
+      <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.55, marginBottom: '28px' }">
+        Эксперт WOODLED позвонит по указанному телефону или напишет в Telegram.
       </div>
 
       <button
@@ -490,6 +458,9 @@ function labelStyle() {
         }"
         @click="onOpenChat"
       >Написать в Telegram</button>
+      <div :style="{ fontSize: '12px', color: T.textSec, marginTop: '14px', lineHeight: 1.55 }">
+        Начните переписку — просто скажите «Привет!», и мы сразу подхватим вашу заявку
+      </div>
     </div>
   </div>
 

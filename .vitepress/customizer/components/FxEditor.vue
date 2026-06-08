@@ -111,6 +111,16 @@ function onBuyClick() {
   emit('lead')
 }
 
+/* «Менеджеру» в ShareModal изнутри FxEditor: ШareModal сам закроется
+   (@close), параллельно эмитим 'lead' наверх в App.vue — он откроет
+   LeadModal с source='fixture' (заявка по этому светильнику). Без этой
+   ре-эмиссии клик «Менеджеру» внутри FxEditor бесполезно закрывал
+   ShareModal и не открывал форму. */
+function onShareLead() {
+  showShare.value = false
+  emit('lead')
+}
+
 interface Build { m:ModelId;wood:Wood;mount:string;bowl:string;btemp:string;lamps:number;diffuser:boolean;moisture:boolean;bulbs:boolean;wire:string;baseColor:string;bulbOpt:string;steps:Record<string,StepStatus> }
 
 function getSteps(modelId:ModelId):StepId[] {
@@ -642,6 +652,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       :shareText="`Посмотрите светильник ${fxTitle(build.m)} WOODLED`"
       @close="showShare=false"
       @feedback="(msg) => emit('feedback', msg)"
+      @lead="onShareLead"
     />
   </div>
 </template>

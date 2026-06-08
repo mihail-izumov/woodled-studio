@@ -2,13 +2,16 @@
  * lead-api.ts — Клиент GAS-эндпоинта приёма лидов.
  *
  * Архитектура:
- *   Frontend → GET ?data=<json> на GAS Web App → GAS пишет в Sheet
+ *   Frontend → POST на GAS Web App (body = JSON) → GAS пишет в Sheet
  *   и шлёт уведомление менеджеру в Telegram-группу. Бот делает второй шаг —
  *   на /start <leadId> присылает юзеру первое сообщение со ссылкой.
  *
- * Почему GET, а не POST:
- *   GAS Web App при POST даёт 302-редирект, при котором браузер теряет тело.
- *   Тот же паттерн используется в shortener.ts. См. TELEGRAM-BOT-SETUP.md.
+ * Почему POST, а не GET:
+ *   Длинный лес (10+ комнат, 14+ светильников) даёт сериализованный summary
+ *   на 4-8K символов. GET-URL у Google Apps Script ограничен ~8K и возвращает
+ *   400 при превышении. POST с `Content-Type: text/plain;charset=utf-8` —
+ *   это «simple request» по CORS-спеке (нет preflight) и не имеет лимита
+ *   размера. GAS doPost(e) читает тело из e.postData.contents.
  *
  * Почему URL в base64:
  *   GAS Web App URL — не секрет (токен бота живёт внутри скрипта), но прятать
@@ -88,7 +91,7 @@ export function newLeadId(): string {
 /* ──────────── Отправка лида ──────────── */
 
 /**
- * Шлёт лид на GAS через GET + no-cors. Fire-and-forget — ответ непрозрачный,
+ * Шлёт лид на GAS через POST + no-cors. Fire-and-forget — ответ непрозрачный,
  * мы не ждём json. Возвращает true если запрос ушёл, false если URL не
  * сконфигурирован (или ошибка сети до отправки).
  *
@@ -106,9 +109,16 @@ export async function submitLead(payload: LeadPayload): Promise<boolean> {
     return false
   }
   try {
-    const data = encodeURIComponent(JSON.stringify(payload))
-    // no-cors — браузер не блокирует, ответ opaque.
-    await fetch(url + '?data=' + data, { mode: 'no-cors' })
+    /* Content-Type text/plain — это «simple request» по CORS-спеке, браузер
+       не делает preflight, и GAS принимает запрос напрямую. no-cors просто
+       подавляет чтение opaque-ответа; запрос всё равно уходит. Тело читается
+       в GAS через e.postData.contents. */
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    })
     return true
   } catch {
     return false

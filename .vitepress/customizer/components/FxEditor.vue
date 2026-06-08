@@ -133,22 +133,22 @@ const showLeaveConfirm = ref(false)
    правок: иначе пользователь может уйти, думая что «добавил», и потерять его. */
 function requestClose(){ if(isDirty.value||props.isProvisional){ showLeaveConfirm.value=true } else { emit('close') } }
 function confirmLeave(){ showLeaveConfirm.value=false; emit('close') }
-/* iOS large-title pattern: на summary заголовок навбара пустой, пока видна
-   плашка с именем; когда плашка ушла вверх — fxNav плавно появляется в
-   навбаре. На step view заголовок показываем всегда (плашки там нет). */
-const plateEl = ref<HTMLDivElement|null>(null)
-const plateScrolledOut = ref(false)
-let plateObserver: IntersectionObserver|null = null
-watch(plateEl, (el) => {
-  plateObserver?.disconnect(); plateObserver = null
-  if (!el) { plateScrolledOut.value = false; return }
-  plateObserver = new IntersectionObserver(
-    ([entry]) => { plateScrolledOut.value = !entry.isIntersecting },
+/* iOS large-title pattern: на summary заголовок навбара пустой, пока виден
+   большой title-блок над Hero; когда он уехал под NavHeader — fxNav плавно
+   появляется в навбаре. На step view заголовок показываем всегда. */
+const titleEl = ref<HTMLDivElement|null>(null)
+const titleScrolledOut = ref(false)
+let titleObserver: IntersectionObserver|null = null
+watch(titleEl, (el) => {
+  titleObserver?.disconnect(); titleObserver = null
+  if (!el) { titleScrolledOut.value = false; return }
+  titleObserver = new IntersectionObserver(
+    ([entry]) => { titleScrolledOut.value = !entry.isIntersecting },
     { rootMargin: '-44px 0px 0px 0px', threshold: 0 },
   )
-  plateObserver.observe(el)
+  titleObserver.observe(el)
 })
-const navTitleVisible = computed(() => view.value === 'steps' || plateScrolledOut.value)
+const navTitleVisible = computed(() => view.value === 'steps' || titleScrolledOut.value)
 
 /* Плашка «несохранённые изменения» скроллит к нижней кнопке «Сохранить»
    (единая логика с RoomSettings). Нижняя кнопка — единственная точка сохранения. */
@@ -164,7 +164,7 @@ function scrollToSave(){
   if(highlightTimer)clearTimeout(highlightTimer)
   highlightTimer=setTimeout(()=>{highlightSave.value=false},2000)
 }
-onUnmounted(()=>{ if(highlightTimer)clearTimeout(highlightTimer); plateObserver?.disconnect(); cfg.showPriceDetails.value = false })
+onUnmounted(()=>{ if(highlightTimer)clearTimeout(highlightTimer); titleObserver?.disconnect(); cfg.showPriceDetails.value = false })
 
 const model=computed(()=>MD[mid.value]); const steps=computed(()=>getSteps(mid.value))
 const curStep=computed(()=>steps.value[stepIdx.value]); const meta=computed(()=>SM[curStep.value]||{name:'',desc:''})
@@ -294,6 +294,17 @@ function spw(n:number){const a=Math.abs(n),l=a%10,t=a%100;if(t>=11&&t<=19)return
 function slw(n:number){const a=Math.abs(n),l=a%10,t=a%100;if(t>=11&&t<=19)return'лампочек';if(l===1)return'лампочка';if(l>=2&&l<=4)return'лампочки';return'лампочек'}
 function bowlName(){return ALL_BOWLS.find(x=>x.id===build.value.bowl)?.name??'—'}
 function btempK(){const bt=BTEMPS.find(x=>x.id===build.value.btemp);return bt?bt.kelvin+'К':'—'}
+
+/* Имя шага в Комплектации: для выбранного шага «Дерево» показываем породу
+   («Дуб»/«Орех»/«Чёрный дуб») — короче и сразу видно что выбрано.
+   На остальных шагах оставляем общее имя из SM (Размер/Крепление/…). */
+function stepDisplayName(s: StepId): string {
+  const b = build.value
+  if (s === 'wood' && b.steps.wood === 'chosen') {
+    return simMats.value.find(m => m.id === b.wood)?.name ?? SM[s]?.name ?? ''
+  }
+  return SM[s]?.name ?? ''
+}
 function bulbTotal(){const bp=model.value.bulbPrice??OPT_PRICE.bulbsPerLamp*model.value.lamps;return Math.round((bp*build.value.lamps)/model.value.lamps)}
 function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice/model.value.lamps):OPT_PRICE.bulbsPerLamp}
 </script>
@@ -326,8 +337,17 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 
       <!-- SUMMARY -->
       <template v-if="view==='summary'">
+        <!-- Большой заголовок над Hero (Tesla/Apple паттерн).
+             Название во всю ширину, коллекция-строкой под ним.
+             IntersectionObserver на этот блок — как только он уходит под
+             NavHeader, заголовок проявляется в навбаре (см. titleScrolledOut). -->
+        <div ref="titleEl" :style="{marginBottom:'18px'}">
+          <h1 :style="{margin:0,fontSize:'34px',fontWeight:700,color:T.text,lineHeight:1.05,letterSpacing:'-.015em'}">{{ fxTitle(build.m) }}</h1>
+          <div :style="{fontSize:'11px',fontWeight:700,color:props.roomTint||T.neutral,marginTop:'10px',textTransform:'uppercase',letterSpacing:'.9px'}">{{ fxLine(build.m) }}</div>
+        </div>
+
         <!-- Hero-блок: реактивный к build, показывает фото под выбор юзера -->
-        <div :style="{marginBottom:'16px'}">
+        <div :style="{marginBottom:'20px'}">
           <FxHeroGallery
             :build="build"
             :tint="props.roomTint"
@@ -335,26 +355,9 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
             :interior-thumbs="galleryDisplayItems.slice(0, 6).map(i => i.src)"
           />
         </div>
-
-        <!-- Plate: только название + чипы (дерево/статус).
-             Цена и «Мой выбор» переехали в PriceDetailsModal (открывается из sticky-низа). -->
-        <div ref="plateEl" :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">
-          <div :style="{display:'flex',alignItems:'center',gap:'12px'}">
-            <!-- batch11 #1: fxIcName(model.type) вместо захардкоженного "ceiling" -->
-            <div :style="{width:'52px',height:'52px',borderRadius:'12px',background:WCOL[build.wood]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}"><Icon :name="fxIcName(model.type)" :color="WCOL[build.wood]" :size="26"/></div>
-            <div :style="{flex:1,minWidth:0}">
-              <div :style="{fontSize:'17px',fontWeight:600,color:T.text,lineHeight:1.2}">{{ fxTitle(build.m) }}</div>
-              <div :style="{fontSize:'10px',fontWeight:700,color:props.roomTint||T.neutral,marginTop:'3px',marginBottom:'7px',textTransform:'uppercase',letterSpacing:'0.6px'}">{{ fxLine(build.m) }}</div>
-              <div :style="{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}">
-                <span :style="{display:'inline-flex',alignItems:'center',gap:'5px',padding:'2px 10px 2px 4px',borderRadius:'12px',background:WCOL[build.wood]+'22',fontSize:'11px',fontWeight:600,color:T.text}"><span :style="{width:'14px',height:'14px',borderRadius:'50%',background:WCOL[build.wood],flexShrink:0}"/>{{ simMats.find(x=>x.id===build.wood)?.name }}</span>
-                <span :style="{display:'inline-block',padding:'2px 10px',borderRadius:'12px',border:`1px solid ${sc}55`,background:'transparent',fontSize:'11px',fontWeight:600,color:sc}">{{ status }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
         <div :style="{background:T.card,border:`1px solid ${T.border}`,borderRadius:'16px',padding:'16px',marginBottom:'16px'}">
-          <div :style="{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}"><span :style="{fontSize:'17px',fontWeight:600,color:T.text}">Комплектация</span><span :style="{fontSize:'13px',fontWeight:600,color:isDone?T.green:T.textSec}">{{ isDone?'Готово':`${progress.done} из ${progress.total}` }}</span></div>
-          <div :style="{height:'5px',background:T.border,borderRadius:'4px',overflow:'hidden',marginBottom:'14px'}"><div :style="{height:'100%',width:progress.pct+'%',background:isDone?T.green:T.text,borderRadius:'4px',transition:'width .3s'}"/></div>
+          <div :style="{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}"><span :style="{fontSize:'17px',fontWeight:600,color:T.text}">Комплектация</span><span :style="{fontSize:'13px',fontWeight:600,color:isDone?T.text:T.textSec}">{{ isDone?'Готово':`${progress.done} из ${progress.total}` }}</span></div>
+          <div :style="{height:'5px',background:T.border,borderRadius:'4px',overflow:'hidden',marginBottom:'14px'}"><div :style="{height:'100%',width:progress.pct+'%',background:T.text,borderRadius:'4px',transition:'width .3s'}"/></div>
 
           <!-- Гид по сборке: заметная плашка на первом новом светильнике -->
           <button v-if="showGuidedCTA" :style="{display:'flex',alignItems:'center',gap:'12px',width:'100%',padding:'13px 14px',marginBottom:'14px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.18)',borderRadius:'12px',cursor:'pointer',textAlign:'left',fontFamily:'inherit'}" @click="launchGuided">
@@ -367,9 +370,9 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           </button>
 
           <button v-for="(s,i) in steps" :key="s" :style="{display:'flex',alignItems:'center',gap:'12px',width:'100%',padding:'12px 0',background:'none',border:'none',cursor:'pointer',borderBottom:i<steps.length-1?`1px solid ${T.border}`:'none',textAlign:'left',fontFamily:'inherit'}" @click="goToStep(i)">
-            <Icon :name="SM[s]?.icon??'sun'" :size="20" :color="build.steps[s]==='chosen'?T.green:T.textDim"/>
-            <span :style="{flex:1,fontSize:'15px',color:T.text}">{{ SM[s]?.name }}</span>
-            <span :style="{fontSize:'12px',padding:'6px 12px',borderRadius:'8px',fontWeight:600,background:build.steps[s]==='chosen'?T.green+'22':'transparent',border:build.steps[s]==='chosen'?'1px solid transparent':`1px solid ${T.border}`,color:build.steps[s]==='chosen'?T.green:T.textSec}">{{ build.steps[s]==='chosen'?'Готово':'Выбрать' }}</span>
+            <Icon :name="SM[s]?.icon??'sun'" :size="20" :color="build.steps[s]==='chosen'?T.text:T.textDim"/>
+            <span :style="{flex:1,fontSize:'15px',color:T.text}">{{ stepDisplayName(s) }}</span>
+            <span :style="{fontSize:'12px',padding:'6px 12px',borderRadius:'8px',fontWeight:600,background:build.steps[s]==='chosen'?T.text+'18':'transparent',border:build.steps[s]==='chosen'?'1px solid transparent':`1px solid ${T.border}`,color:build.steps[s]==='chosen'?T.text:T.textSec}">{{ build.steps[s]==='chosen'?'Готово':'Выбрать' }}</span>
           </button>
 
           <!-- Тихая ссылка на гид — когда плашки нет и сборка не завершена -->
@@ -457,17 +460,22 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
     </div>
 
     <!-- Sticky-низ (Tesla-паттерн, только на сводке): «{цена} ⌄» + «Купить».
+         Ширина — мобильная (max 480px), центрирован на десктопе.
          Тап по плашке цены/шеврону открывает PriceDetailsModal.
          «Купить» — пока no-op (позже подвяжем коммерческий поток). -->
     <div
       v-if="view==='summary'"
       :style="{
-        position:'fixed', left:0, right:0, bottom:0, zIndex:8,
+        position:'fixed', left:'50%', bottom:0, zIndex:8,
+        width:'100%', maxWidth:'480px',
+        transform:'translateX(-50%)',
         background:T.card,
         borderTop:`1px solid ${T.border}`,
+        borderTopLeftRadius:'14px', borderTopRightRadius:'14px',
         boxShadow:'0 -8px 24px rgba(0,0,0,0.35)',
-        padding:`10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,
+        padding:`12px 16px calc(12px + env(safe-area-inset-bottom, 0px))`,
         display:'flex', alignItems:'center', gap:'12px',
+        boxSizing:'border-box',
       }"
     >
       <button
@@ -476,16 +484,16 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         :style="{
           display:'flex', flexDirection:'column', alignItems:'flex-start',
           background:'none', border:'none', cursor:'pointer',
-          padding:'6px 8px', color:T.text, flex:'0 0 auto',
+          padding:'4px 6px', color:T.text, flex:'0 0 auto',
           fontFamily:'inherit',
         }"
         @click="openPriceDetails"
       >
-        <span :style="{fontSize:'10px',fontWeight:700,color:T.textSec,textTransform:'uppercase',letterSpacing:'.6px'}">Цена</span>
-        <span :style="{display:'flex',alignItems:'center',gap:'5px',marginTop:'2px'}">
-          <span :style="{fontSize:'19px',fontWeight:700,color:T.text,fontVariantNumeric:'tabular-nums',lineHeight:1}">{{ fmt(price) }} ₽</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textSec}"><polyline points="6 9 12 15 18 9"/></svg>
+        <span :style="{display:'flex',alignItems:'center',gap:'7px'}">
+          <span :style="{fontSize:'26px',fontWeight:500,color:T.text,fontVariantNumeric:'tabular-nums',lineHeight:1,letterSpacing:'-.01em'}">{{ fmt(price) }} ₽</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </span>
+        <span :style="{fontSize:'13px',fontWeight:400,color:T.textSec,marginTop:'4px',letterSpacing:'.1px'}">Предзаказ</span>
       </button>
       <button
         type="button"

@@ -146,11 +146,18 @@ function onOverlayClick() {
 
 function onSendManager() {
   /* «Отправить менеджеру» — закрываем эту модалку и пробрасываем emit('lead')
-     наверх. App.vue откроет LeadModal с source='consult'. Заявка пойдёт
+     наверх. App.vue откроет LeadModal with source='consult'. Заявка пойдёт
      как консультация, а не покупка — менеджер видит другой приоритет. */
   emit('lead')
   emit('close')
 }
+
+/* Hover/press для третьей кнопки. Первые две используют scoped CSS
+   (.share-action:hover/active), но третья инлайн-стилизована (см. историю
+   бага с невидимой кнопкой). Hover-эффект эмулируем через Vue-стейт +
+   обработчики мыши/тача. */
+const managerHover = ref(false)
+const managerPressed = ref(false)
 </script>
 
 <template>
@@ -244,13 +251,24 @@ function onSendManager() {
             cursor: 'pointer',
             padding: 0,
             fontFamily: 'inherit',
+            transform: managerPressed ? 'scale(0.96)' : 'none',
+            transition: 'transform 0.1s',
           }"
           @click="onSendManager"
+          @mouseenter="managerHover = true"
+          @mouseleave="managerHover = false; managerPressed = false"
+          @mousedown="managerPressed = true"
+          @mouseup="managerPressed = false"
+          @touchstart.passive="managerPressed = true"
+          @touchend.passive="managerPressed = false"
+          @touchcancel.passive="managerPressed = false"
         >
           <div :style="{
             width: '64px', height: '64px', borderRadius: '50%',
-            background: '#f5f5f5', border: '1px solid #e8e8e8',
+            background: managerHover ? '#ececec' : '#f5f5f5',
+            border: '1px solid #e8e8e8',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.15s',
           }">
             <!-- Иконка пузыря-чата с тремя точками (Noun Project, ID 945232),
                  встроена как data-URI. Vue-компилятор разметку внутри src
@@ -277,7 +295,12 @@ function onSendManager() {
 .share-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.55);
+  /* Размытие фона за модалкой. Снижаем непрозрачность затемнения с 0.75
+     до 0.55, чтобы blur был заметен — иначе чёрная пелена доминирует.
+     -webkit-backdrop-filter — для Safari (iOS/macOS). */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 100;
   display: flex;
   align-items: center;

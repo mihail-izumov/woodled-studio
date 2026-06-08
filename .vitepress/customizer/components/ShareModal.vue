@@ -224,6 +224,13 @@ function onSendManager() {
           <span class="share-action-label">Поделиться</span>
         </button>
 
+        <!-- Третья кнопка: «Отправить менеджеру» (консультация).
+             ВНИМАНИЕ: специально стилизована инлайном, БЕЗ scoped-классов
+             share-action/share-action-circle — две предыдущие итерации
+             с этими классами рендерились как невидимый блок (SVG-контент
+             исчезал, причина в scoped CSS до конца не выяснена).
+             Инлайн стили обходят всю эту магию и стабильно показывают
+             кнопку на всех экранах. -->
         <button
           :style="{
             flex: '1 1 0',
@@ -232,7 +239,7 @@ function onSendManager() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: '10px',
-            background: 'red',
+            background: 'none',
             border: 'none',
             cursor: 'pointer',
             padding: 0,
@@ -246,7 +253,15 @@ function onSendManager() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#1a1a1a',
           }">
-            <span :style="{ fontSize: '24px', fontWeight: 700 }">М</span>
+            <svg width="28" height="28" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="13" rx="2" />
+              <path d="M8 17v3l-4-3" />
+              <circle cx="8" cy="11" r="1" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
+              <circle cx="16" cy="11" r="1" fill="currentColor" stroke="none" />
+            </svg>
           </div>
           <span :style="{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }">Менеджеру</span>
         </button>

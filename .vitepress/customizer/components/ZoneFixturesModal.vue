@@ -224,18 +224,19 @@ function orbStyle(wood: Wood, size = 13) {
             />
             <div
               v-if="!isPhotoLoaded(cardPhotoFor(it))"
-              class="gallery-skeleton"
+              class="zone-skeleton"
               :style="{
                 position: 'absolute', inset: 0,
-                background: 'linear-gradient(90deg, #EBE4D81F 0%, #EBE4D838 25%, #EBE4D866 50%, #EBE4D838 75%, #EBE4D81F 100%)',
+                background: 'linear-gradient(90deg, rgba(168,152,120,.18) 0%, rgba(168,152,120,.38) 25%, rgba(168,152,120,.72) 50%, rgba(168,152,120,.38) 75%, rgba(168,152,120,.18) 100%)',
                 backgroundSize: '250% 100%',
+                animationDelay: `-${(it._idx * 0.7).toFixed(1)}s`,
               }"
             />
-            <!-- Кремовый градиент только сверху на 1/3 (цвет модалки L.bg) -->
+            <!-- Кремовый градиент сверху до ~половины карточки (цвет модалки L.bg) -->
             <div
               :style="{
-                position: 'absolute', top: 0, left: 0, right: 0, height: '33%',
-                background: 'linear-gradient(180deg, rgba(251,250,247,1) 0%, rgba(251,250,247,.7) 55%, rgba(251,250,247,0) 100%)',
+                position: 'absolute', top: 0, left: 0, right: 0, height: '48%',
+                background: 'linear-gradient(180deg, rgba(251,250,247,1) 0%, rgba(251,250,247,.9) 35%, rgba(251,250,247,.55) 70%, rgba(251,250,247,0) 100%)',
                 pointerEvents: 'none',
               }"
             />
@@ -249,7 +250,7 @@ function orbStyle(wood: Wood, size = 13) {
           }">
             <div :style="{ flex: '0 0 auto' }">
               <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.1 }">{{ fxNav(it.m) }}</div>
-              <div :style="{ fontSize: '9px', fontWeight: 700, color: L.textSec, letterSpacing: '1.6px', textTransform: 'uppercase', marginTop: '3px', lineHeight: 1 }">{{ fxLine(it.m) }}</div>
+              <div :style="{ fontSize: '9px', fontWeight: 700, color: L.text, letterSpacing: '1.6px', textTransform: 'uppercase', marginTop: '3px', lineHeight: 1 }">{{ fxLine(it.m) }}</div>
             </div>
             <div :style="{ marginTop: 'auto', paddingTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }">
               <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
@@ -327,3 +328,20 @@ function orbStyle(wood: Wood, size = 13) {
     </div>
   </div>
 </template>
+
+<style>
+/* Skeleton-перелив для фото-карточек светильников. Свои keyframes — не
+   полагаемся на PhotoCard.vue (он может быть не смонтирован к моменту
+   открытия модалки). Анимация: shimmer 5s + pulse 6s. */
+@keyframes zoneSkeletonShimmer {
+  0%   { background-position: 150% 0; }
+  100% { background-position: -150% 0; }
+}
+@keyframes zoneSkeletonPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1;    }
+}
+.zone-skeleton {
+  animation: zoneSkeletonShimmer 5s ease-in-out infinite, zoneSkeletonPulse 6s ease-in-out infinite;
+}
+</style>

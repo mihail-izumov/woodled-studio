@@ -22,6 +22,7 @@ import { zoneLm, zoneFxCount } from '../engine/zone-engine'
 import { occupiedPhrase } from '../engine/i18n'
 import { useConfigurator } from '../store/configurator'
 import Icon, { fxIcName } from './ui/Icons.vue'
+import { pickFxPhotos, fxToConfig, activeHeroPhotos } from '../engine/fx-gallery'
 
 interface Props {
   zone: Zone
@@ -78,6 +79,18 @@ const zFx = computed(() =>
     .filter((it) => (it.zone ?? 'ceiling') === props.zone.id),
 )
 
+/* Hero-фото для фона модалки. Берём первое доступное фото первого WOODLED-
+   фикстура в зоне (кастомы пропускаем — у них нет тегированных снимков). */
+const heroBgPhoto = computed<string | null>(() => {
+  for (const fx of zFx.value) {
+    if (fx.custom) continue
+    const result = pickFxPhotos(fxToConfig(fx), 'hero')
+    const photos = activeHeroPhotos(result)
+    if (photos.length > 0) return photos[0].photo.src
+  }
+  return null
+})
+
 const used = computed(() => zoneFxCount(props.fixtures, props.zone.id))
 const lamps = computed(() =>
   zFx.value.reduce((s, it) => s + (it.l ?? MD[it.m]?.lamps ?? 0) * (it.q ?? 1), 0),
@@ -127,15 +140,22 @@ function orbStyle(wood: Wood, size = 13) {
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
       backdropFilter: 'blur(2px)', zIndex: Z.fullscreenModal,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+      touchAction: 'none', overscrollBehavior: 'contain',
     }"
     @click="emit('close')"
+    @touchmove.prevent
   >
     <div
       :style="{
-        width: '100%', maxWidth: '420px', maxHeight: '86vh', background: L.bg,
+        width: '100%', maxWidth: '420px', maxHeight: '86vh',
+        background: heroBgPhoto
+          ? `linear-gradient(rgba(255,250,242,.88), rgba(255,250,242,.88)), url('${heroBgPhoto}') center/cover no-repeat, ${L.bg}`
+          : L.bg,
         borderRadius: '24px', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+        touchAction: 'pan-y', overscrollBehavior: 'contain',
       }"
       @click.stop
+      @touchmove.stop
     >
       <!-- Хедер: заголовок + крестик, ниже тёмные баблы -->
       <div :style="{ padding: '20px 20px 0' }">

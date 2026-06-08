@@ -255,28 +255,28 @@ const accent = computed(() => props.tint || T.neutral)
         @click.stop="nudge(-1)"
         :style="{
           position: 'absolute', top: '16.7%', left: 0, height: '66.6%',
-          width: '40px', borderRadius: '0 10px 10px 0', border: 'none',
-          background: 'rgba(0,0,0,0.42)', color: 'white', cursor: 'pointer',
+          width: '44px', borderRadius: '0 10px 10px 0', border: 'none',
+          background: 'rgba(0,0,0,0.14)', color: 'white', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 0,
         }"
         aria-label="Предыдущее"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="{filter:'drop-shadow(0 1px 4px rgba(0,0,0,.5))'}"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <button
         v-if="canNext"
         @click.stop="nudge(1)"
         :style="{
           position: 'absolute', top: '16.7%', right: 0, height: '66.6%',
-          width: '40px', borderRadius: '10px 0 0 10px', border: 'none',
-          background: 'rgba(0,0,0,0.42)', color: 'white', cursor: 'pointer',
+          width: '44px', borderRadius: '10px 0 0 10px', border: 'none',
+          background: 'rgba(0,0,0,0.14)', color: 'white', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 0,
         }"
         aria-label="Следующее"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="{filter:'drop-shadow(0 1px 4px rgba(0,0,0,.5))'}"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
       <!-- Бейдж слоя (partial / woodSubstitute) — только на фото-слайдах -->

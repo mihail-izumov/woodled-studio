@@ -338,12 +338,12 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       <!-- SUMMARY -->
       <template v-if="view==='summary'">
         <!-- Большой заголовок над Hero (Tesla/Apple паттерн).
-             Название во всю ширину, коллекция-строкой под ним.
+             Сверху — коллекция в bubble (room tint), под ним название.
              IntersectionObserver на этот блок — как только он уходит под
              NavHeader, заголовок проявляется в навбаре (см. titleScrolledOut). -->
-        <div ref="titleEl" :style="{marginBottom:'18px'}">
-          <h1 :style="{margin:0,fontSize:'34px',fontWeight:700,color:T.text,lineHeight:1.05,letterSpacing:'-.015em'}">{{ fxTitle(build.m) }}</h1>
-          <div :style="{fontSize:'11px',fontWeight:700,color:props.roomTint||T.neutral,marginTop:'10px',textTransform:'uppercase',letterSpacing:'.9px'}">{{ fxLine(build.m) }}</div>
+        <div ref="titleEl" :style="{marginBottom:'18px',textAlign:'center'}">
+          <span :style="{display:'inline-block',padding:'8px 18px',borderRadius:'24px',background:(props.roomTint||T.neutral)+'22',border:`1px solid ${(props.roomTint||T.neutral)}44`,fontSize:'22px',fontWeight:700,color:props.roomTint||T.neutral,textTransform:'uppercase',letterSpacing:'.6px',marginBottom:'14px',lineHeight:1}">{{ fxLine(build.m) }}</span>
+          <h1 :style="{margin:0,fontSize:'34px',fontWeight:700,color:T.text,lineHeight:1.05,letterSpacing:'-.015em',textAlign:'center'}">{{ fxTitle(build.m) }}</h1>
         </div>
 
         <!-- Hero-блок: реактивный к build, показывает фото под выбор юзера -->
@@ -372,13 +372,13 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           <button v-for="(s,i) in steps" :key="s" :style="{display:'flex',alignItems:'center',gap:'12px',width:'100%',padding:'12px 0',background:'none',border:'none',cursor:'pointer',borderBottom:i<steps.length-1?`1px solid ${T.border}`:'none',textAlign:'left',fontFamily:'inherit'}" @click="goToStep(i)">
             <Icon :name="SM[s]?.icon??'sun'" :size="20" :color="build.steps[s]==='chosen'?T.text:T.textDim"/>
             <span :style="{flex:1,fontSize:'15px',color:T.text}">{{ stepDisplayName(s) }}</span>
-            <span :style="{fontSize:'12px',padding:'6px 12px',borderRadius:'8px',fontWeight:600,background:build.steps[s]==='chosen'?T.text+'18':'transparent',border:build.steps[s]==='chosen'?'1px solid transparent':`1px solid ${T.border}`,color:build.steps[s]==='chosen'?T.text:T.textSec}">{{ build.steps[s]==='chosen'?'Готово':'Выбрать' }}</span>
+            <span :style="{display:'inline-block',minWidth:'88px',textAlign:'center',boxSizing:'border-box',fontSize:'12px',padding:'6px 12px',borderRadius:'8px',fontWeight:600,background:build.steps[s]==='chosen'?T.text+'18':'transparent',border:build.steps[s]==='chosen'?'1px solid transparent':`1px solid ${T.border}`,color:build.steps[s]==='chosen'?T.text:T.textSec}">{{ build.steps[s]==='chosen'?'Готово':'Выбрать' }}</span>
           </button>
 
           <!-- Тихая ссылка на гид — когда плашки нет и сборка не завершена -->
           <button v-if="!showGuidedCTA&&!isDone" :style="{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',width:'100%',marginTop:'4px',paddingTop:'14px',background:'none',border:'none',borderTop:`1px solid ${T.border}`,cursor:'pointer',fontFamily:'inherit'}" @click="launchGuided">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textSec,flexShrink:0}"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h6a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h6"/></svg>
-            <span :style="{fontSize:'15px',color:T.textSec}">Собрать с гидом по шагам</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.text,flexShrink:0}"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h6a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h6"/></svg>
+            <span :style="{fontSize:'15px',color:T.text,fontWeight:600}">Собрать с гидом по шагам</span>
           </button>
         </div>
 
@@ -489,11 +489,11 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         }"
         @click="openPriceDetails"
       >
-        <span :style="{display:'flex',alignItems:'center',gap:'7px'}">
+        <span :style="{display:'flex',alignItems:'center',gap:'6px'}">
           <span :style="{fontSize:'26px',fontWeight:500,color:T.text,fontVariantNumeric:'tabular-nums',lineHeight:1,letterSpacing:'-.01em'}">{{ fmt(price) }} ₽</span>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </span>
-        <span :style="{fontSize:'13px',fontWeight:400,color:T.textSec,marginTop:'4px',letterSpacing:'.1px'}">Предзаказ</span>
+        <span :style="{fontSize:'13px',fontWeight:400,color:T.textSec,marginTop:'1px',letterSpacing:'.1px',lineHeight:1.1}">Предзаказ</span>
       </button>
       <button
         type="button"

@@ -113,9 +113,9 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Из чего складывается -->
+          <!-- Что внутри: разбиение базы + дельты опций -->
           <div :style="{ marginBottom: '20px' }">
-            <div :style="{ fontSize: '11px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: '10px' }">Из чего складывается</div>
+            <div :style="{ fontSize: '11px', fontWeight: 700, color: T.textSec, textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: '10px' }">Что внутри</div>
             <div :style="{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }">
               <div
                 v-for="(row, i) in props.breakdown"

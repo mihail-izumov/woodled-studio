@@ -14,7 +14,7 @@
  * Это отдельный компонент — дизайн правится здесь, не трогая ZoneCard.
  */
 
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Z } from '../theme/tokens'
 import { MD, type Fixture, type Zone, fxNav, fxLine } from '../data/catalog'
 import { MATS, WCOL, type Wood } from '../data/materials'
@@ -87,6 +87,18 @@ function cardPhotoFor(fx: Fixture): string | null {
   const result = pickFxPhotos(fxToConfig(fx), 'hero')
   const photos = activeHeroPhotos(result)
   return photos.length > 0 ? photos[0].photo.src : null
+}
+
+/* Отслеживаем загруженные src — пока не пришёл, рисуем skeleton-пульс
+   (тот же класс `gallery-skeleton` что в PhotoCard ниже на странице). */
+const loadedPhotos = ref<Set<string>>(new Set())
+function onPhotoLoad(src: string) {
+  const next = new Set(loadedPhotos.value)
+  next.add(src)
+  loadedPhotos.value = next
+}
+function isPhotoLoaded(src: string | null | undefined): boolean {
+  return !src || loadedPhotos.value.has(src)
 }
 
 const used = computed(() => zoneFxCount(props.fixtures, props.zone.id))
@@ -186,28 +198,67 @@ function orbStyle(wood: Wood, size = 13) {
           v-for="it in zFx"
           :key="it._idx"
           :style="{
-            background: cardPhotoFor(it)
-              ? `linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.78) 28%, rgba(255,255,255,0) 58%), url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
-              : L.surface,
+            position: 'relative',
+            background: cardPhotoFor(it) ? L.muted : L.surface,
             borderRadius: '16px',
-            padding: '14px', minHeight: '160px', cursor: 'pointer',
-            display: 'flex', flexDirection: 'column',
+            minHeight: '160px', cursor: 'pointer',
+            overflow: 'hidden',
           }"
           @click="emit('edit', it._idx)"
         >
-          <!-- Название сверху + сразу под ним прямоугольный непрозрачный бейдж коллекции -->
-          <div :style="{ flex: '0 0 auto' }">
-            <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.15 }">{{ fxNav(it.m) }}</div>
-            <span :style="{ display: 'inline-block', marginTop: '6px', padding: '1.5px 7px', borderRadius: '4px', background: L.surface, color: L.text, fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', boxShadow: '0 1px 3px rgba(0,0,0,.10)' }">{{ fxLine(it.m) }}</span>
-          </div>
-          <!-- Чипы прижимаются к низу -->
-          <div :style="{ marginTop: 'auto', paddingTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }">
-            <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
-              <span :style="orbStyle(it.wood, 13)" />{{ WOOD_NAME[it.wood] }}
-            </span>
-            <span :style="{ padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
-              {{ fxLamps(it) }} {{ lampWord(fxLamps(it)) }}
-            </span>
+          <!-- Lazy-load фото + скелетон пока не загрузилось -->
+          <template v-if="cardPhotoFor(it)">
+            <img
+              :src="cardPhotoFor(it)!"
+              loading="lazy"
+              decoding="async"
+              alt=""
+              :style="{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'cover',
+                opacity: isPhotoLoaded(cardPhotoFor(it)) ? 1 : 0,
+                transition: 'opacity .6s ease-out',
+              }"
+              @load="onPhotoLoad(cardPhotoFor(it)!)"
+              @error="onPhotoLoad(cardPhotoFor(it)!)"
+            />
+            <div
+              v-if="!isPhotoLoaded(cardPhotoFor(it))"
+              class="gallery-skeleton"
+              :style="{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(90deg, #EBE4D81F 0%, #EBE4D838 25%, #EBE4D866 50%, #EBE4D838 75%, #EBE4D81F 100%)',
+                backgroundSize: '250% 100%',
+              }"
+            />
+            <!-- Кремовый градиент только сверху на 1/3 (цвет модалки L.bg) -->
+            <div
+              :style="{
+                position: 'absolute', top: 0, left: 0, right: 0, height: '33%',
+                background: 'linear-gradient(180deg, rgba(251,250,247,1) 0%, rgba(251,250,247,.7) 55%, rgba(251,250,247,0) 100%)',
+                pointerEvents: 'none',
+              }"
+            />
+          </template>
+
+          <!-- Контент: название + сразу под ним коллекция как plain-текст -->
+          <div :style="{
+            position: 'relative', zIndex: 1,
+            padding: '14px', minHeight: '160px',
+            display: 'flex', flexDirection: 'column',
+          }">
+            <div :style="{ flex: '0 0 auto' }">
+              <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.1 }">{{ fxNav(it.m) }}</div>
+              <div :style="{ fontSize: '9px', fontWeight: 700, color: L.textSec, letterSpacing: '1.6px', textTransform: 'uppercase', marginTop: '3px', lineHeight: 1 }">{{ fxLine(it.m) }}</div>
+            </div>
+            <div :style="{ marginTop: 'auto', paddingTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }">
+              <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
+                <span :style="orbStyle(it.wood, 13)" />{{ WOOD_NAME[it.wood] }}
+              </span>
+              <span :style="{ padding: '4px 10px', borderRadius: '999px', background: L.chip, color: L.text, fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }">
+                {{ fxLamps(it) }} {{ lampWord(fxLamps(it)) }}
+              </span>
+            </div>
           </div>
         </div>
 

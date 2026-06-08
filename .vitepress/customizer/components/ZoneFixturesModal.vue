@@ -188,7 +188,7 @@ function orbStyle(wood: Wood, size = 13) {
           :key="it._idx"
           :style="{
             background: cardPhotoFor(it)
-              ? `linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)), url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
+              ? `linear-gradient(180deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.55) 55%, rgba(255,255,255,.92) 100%), url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
               : L.surface,
             border: `1px solid ${L.border}`, borderRadius: '16px',
             padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px',

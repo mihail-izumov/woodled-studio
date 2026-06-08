@@ -446,8 +446,8 @@ function labelStyle() {
       <div :style="{ fontSize: '22px', fontWeight: 700, color: T.text, marginBottom: '10px' }">
         Видим Ваш Дом
       </div>
-      <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.55, marginBottom: '28px' }">
-        Эксперт WOODLED позвонит по указанному телефону или напишет в Telegram.
+      <div :style="{ fontSize: '14px', color: T.text, fontWeight: 600, lineHeight: 1.55, marginBottom: '28px' }">
+        Эксперт WOODLED позвонит по указанному телефону или напишет в Telegram
       </div>
 
       <button

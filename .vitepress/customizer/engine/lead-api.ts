@@ -145,7 +145,7 @@ export async function submitLead(payload: LeadPayload): Promise<boolean> {
  *   ссылка на менеджера всегда открывает чат стабильно — пусть и без
  *   автоматического первого сообщения.
  */
-const MANAGER_USERNAME = 'run_scale'
+const MANAGER_USERNAME = 'WOODLEDINFO'
 
 /** Прямая ссылка на чат с менеджером WOODLED. */
 export function managerChatUrl(): string {

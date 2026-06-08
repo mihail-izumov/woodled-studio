@@ -5,6 +5,51 @@ sidebar: false
 aside: false
 ---
 
+<style>
+/* Страница политики — тёмная тема WOODLED. Глобальный стиль скоупится
+   через класс .wl-privacy: VitePress markdown-it парсит контент внутри
+   блочного <div>, если перед/после стоят пустые строки. */
+.wl-privacy {
+  color: #ffffff;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wl-privacy h1,
+.wl-privacy h2,
+.wl-privacy h3,
+.wl-privacy h4 {
+  color: #ffffff;
+  border-bottom: none;
+  font-weight: 700;
+  margin-top: 32px;
+  margin-bottom: 12px;
+}
+.wl-privacy h1 { font-size: 26px; margin-top: 16px; }
+.wl-privacy h2 { font-size: 19px; }
+.wl-privacy p,
+.wl-privacy li {
+  color: #ffffff;
+}
+.wl-privacy a {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.95;
+}
+.wl-privacy a:hover { opacity: 1; }
+.wl-privacy hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  margin: 28px 0;
+}
+.wl-privacy strong { color: #ffffff; }
+</style>
+
+<div class="wl-privacy">
+
 # Политика обработки персональных данных
 
 ## 1. Общие положения
@@ -207,3 +252,5 @@ aside: false
 14.2. В данном документе будут отражены любые изменения политики обработки персональных данных Оператором. Политика действует бессрочно до замены её новой версией.
 
 14.3. Актуальная версия Политики в свободном доступе расположена в сети Интернет по адресу [https://woodled-studio.ru/privacy](https://woodled-studio.ru/privacy).
+
+</div>

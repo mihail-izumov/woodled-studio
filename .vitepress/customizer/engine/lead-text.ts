@@ -32,6 +32,7 @@ import type { Fixture } from '../data/catalog'
 import { MD, fxTitle } from '../data/catalog'
 import { MATS, BTEMPS, BOWLS, MOUNTS, DEF_OPT } from '../data/materials'
 import { FURN } from '../data/furniture'
+import { buildShareUrl } from './share'
 
 /* ──────────── Словари для печати ──────────── */
 
@@ -259,8 +260,16 @@ function roomBlock(r: Room, withFixtures: boolean): string[] {
 
 /* ──────────── API ──────────── */
 
-/** Заявка на один светильник (с контекстом его комнаты). */
-export function buildFixtureLead(room: Room, fxIdx: number): string {
+/** Заявка на один светильник (с контекстом его комнаты).
+ *  Если переданы allRooms — добавим внизу контекст дома: сколько всего
+ *  светильников и ссылку на весь дом. Менеджеру это важно — он видит,
+ *  одиночная это покупка или часть большого набора. */
+export function buildFixtureLead(
+  room: Room,
+  fxIdx: number,
+  allRooms?: Room[],
+  houseName?: string,
+): string {
   const fx = room.fixtures[fxIdx]
   if (!fx) return ''
   const lines: string[] = []
@@ -271,7 +280,38 @@ export function buildFixtureLead(room: Room, fxIdx: number): string {
   lines.push(...roomBlock(room, false))
   lines.push('')
   lines.push(...fixtureLines(fx))
+
+  // Контекст дома: общее количество и ссылка на весь дом.
+  if (allRooms && allRooms.length) {
+    const { roomCount, fixtureCount } = leadCounts(allRooms)
+    // Полезно только если в доме есть НЕ только этот один светильник —
+    // иначе блок повторяет уже сказанное.
+    if (fixtureCount > 1) {
+      lines.push('')
+      lines.push('---')
+      lines.push('')
+      lines.push(
+        `В доме всего: ${fixtureCount} ${pluralRu(fixtureCount, 'светильник', 'светильника', 'светильников')}` +
+        ` в ${roomCount} ${pluralRu(roomCount, 'комнате', 'комнатах', 'комнатах')}`,
+      )
+      try {
+        const houseUrl = buildShareUrl(houseName ?? '', allRooms)
+        if (houseUrl) lines.push(`Ссылка на весь дом: ${houseUrl}`)
+      } catch { /* SSR без window — игнорим */ }
+    }
+  }
+
   return lines.join('\n')
+}
+
+/** Плюрализатор для русских числительных (1 / 2-4 / 5+). */
+function pluralRu(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(n) % 100
+  const n1 = abs % 10
+  if (abs > 10 && abs < 20) return many
+  if (n1 > 1 && n1 < 5) return few
+  if (n1 === 1) return one
+  return many
 }
 
 /** Заявка на весь лес (все комнаты со всеми светильниками). */

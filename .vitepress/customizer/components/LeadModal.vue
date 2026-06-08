@@ -25,6 +25,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { Room } from '../data/rooms'
 import { T, Z } from '../theme/tokens'
 import { useConfigurator } from '../store/configurator'
+import { MD, fxTitle } from '../data/catalog'
 import NavHeader from './ui/NavHeader.vue'
 import {
   buildFixtureLead, buildForestLead, buildConsultLead, leadCounts,
@@ -33,7 +34,6 @@ import { buildFixtureShareUrl, buildShareUrl } from '../engine/share'
 import { shortenLongUrl } from '../engine/shortener'
 import {
   newLeadId, managerChatUrl, submitLead,
-  loadPersistedContact, savePersistedContact,
   type LeadSource,
 } from '../engine/lead-api'
 
@@ -55,12 +55,25 @@ const emit = defineEmits<{ close: []; feedback: [msg: string] }>()
 
 const cfg = useConfigurator()
 
-const TITLE: Record<LeadSource, string> = {
-  fixture: 'Заявка на светильник',
-  forest:  'Новый Лес WOODLED',
-  consult: 'WOODLED Студия — Консультация',
-}
-const title = TITLE[props.source]
+/* Заголовок в NavHeader (верх):
+   • fixture — конкретный светильник («Люстра огромная», «Бра горизонтальное»);
+   • forest  — «Новый Лес WOODLED»;
+   • consult — «WOODLED Студия».
+   Большой заголовок ниже («Заявка» / «Консультация») — отдельно. */
+const navTitle = computed<string>(() => {
+  if (props.source === 'fixture' && props.room && props.fxIdx != null) {
+    const fx = props.room.fixtures[props.fxIdx]
+    if (fx && fx.custom) return fx.custom.name || fx.custom.brand || 'Светильник'
+    if (fx && MD[fx.m]) return fxTitle(fx.m)
+  }
+  if (props.source === 'forest')  return 'Новый Лес WOODLED'
+  return 'WOODLED Студия'
+})
+
+/** Большой заголовок под NavHeader — что юзер сейчас делает. */
+const bigTitle = computed<string>(() =>
+  props.source === 'consult' ? 'Консультация' : 'Заявка'
+)
 
 /* Онбординг «что дальше» — 3 коротких шага, чтобы клиент не путался:
    не было сразу понятно — менеджер получил данные, нужно ждать или писать
@@ -86,11 +99,14 @@ const leadId = newLeadId()
 
 /* ──────────── Форма ──────────── */
 
-const persisted = loadPersistedContact()
+/* Форма стартует пустой каждый раз — никакого автозаполнения из прошлых
+   сабмитов. Раньше использовался localStorage-persisted, но это создавало
+   ощущение «данные не сбросились»: юзер открывал модалку повторно и видел
+   свои предыдущие имя/телефон/TG. Пустая форма предсказуемее. */
 const form = ref({
-  name: persisted.name,
-  phone: persisted.phone,
-  tg: persisted.tgUsername,
+  name: '',
+  phone: '',
+  tg: '',
 })
 
 /* Согласие с политикой конфиденциальности — обязательно по 152-ФЗ.
@@ -108,13 +124,9 @@ const step = ref<'form' | 'sending' | 'done'>('form')
 
 const contactInput = ref<HTMLInputElement | null>(null)
 
-/* Извлекаем цифры из сохранённого телефона; если пусто — стартуем с '7'
-   (российский префикс по умолчанию). */
-const phoneDigits = ref<string>(
-  persisted.phone
-    ? persisted.phone.replace(/\D/g, '').substring(0, 15) || '7'
-    : '7',
-)
+/* Стартуем с '7' — российский префикс по умолчанию (UI покажет +7(...).
+   Если юзер введёт первую другую цифру — режим переключится на free (+XX...). */
+const phoneDigits = ref<string>('7')
 const phoneMode = computed<'mask' | 'free'>(() =>
   phoneDigits.value.length > 0 && phoneDigits.value[0] === '7' ? 'mask' : 'free',
 )
@@ -280,7 +292,10 @@ const canSubmit = computed<boolean>(() =>
 
 const summary = computed<string>(() => {
   if (props.source === 'fixture' && props.room && props.fxIdx != null) {
-    return buildFixtureLead(props.room, props.fxIdx)
+    /* Для fixture-режима передаём весь массив комнат — buildFixtureLead
+       добавит в конец «В доме: N светильников» и ссылку на весь дом,
+       чтобы менеджер видел контекст: одиночная заявка или часть набора. */
+    return buildFixtureLead(props.room, props.fxIdx, props.rooms, props.houseName)
   }
   const rs = props.rooms ?? []
   if (props.source === 'forest') return buildForestLead(rs)
@@ -356,7 +371,6 @@ async function onSubmit() {
     fixtureCount: counts.value.fixtureCount,
   })
 
-  savePersistedContact({ name, phone, tgUsername: tg })
   step.value = 'done'
 }
 
@@ -406,7 +420,7 @@ function labelStyle() {
       zIndex: Z.leadModal, overflow: 'auto',
     }"
   >
-    <NavHeader :title="title" :back="backLabel" @back="emit('close')" />
+    <NavHeader :title="navTitle" :back="backLabel" @back="emit('close')" />
     <div :style="{ padding: '24px 20px 40px', maxWidth: '420px', margin: '0 auto', textAlign: 'center' }">
       <div :style="{
         width: '72px', height: '72px', borderRadius: '18px',
@@ -446,10 +460,7 @@ function labelStyle() {
           cursor: 'pointer', fontFamily: 'inherit',
         }"
         @click="onOpenChat"
-      >Написать менеджеру в Telegram</button>
-      <div :style="{ fontSize: '12px', color: T.textDim, marginTop: '12px', lineHeight: 1.5 }">
-        Если Telegram не открылся — найдите @run_scale вручную.
-      </div>
+      >Написать в Telegram</button>
     </div>
   </div>
 
@@ -481,10 +492,17 @@ function labelStyle() {
       zIndex: Z.leadModal, overflow: 'auto',
     }"
   >
-    <NavHeader :title="title" :back="backLabel" @back="emit('close')" />
-    <div :style="{ padding: '16px 20px 32px', maxWidth: '420px', margin: '0 auto' }">
-      <div :style="{ fontSize: '14px', color: T.textSec, lineHeight: 1.55, marginBottom: '20px' }">
-        Оставьте контакты — менеджер свяжется с вами и поможет с подбором и заказом.
+    <NavHeader :title="navTitle" :back="backLabel" @back="emit('close')" />
+    <div :style="{ padding: '12px 20px 32px', maxWidth: '420px', margin: '0 auto' }">
+      <!-- Большой заголовок «Заявка» / «Консультация» + интро по центру.
+           Заголовок — белый, без точки в конце; интро — белый, центр. -->
+      <div :style="{ textAlign: 'center', marginBottom: '24px' }">
+        <div :style="{ fontSize: '28px', fontWeight: 700, color: T.text, lineHeight: 1.15, marginBottom: '10px' }">
+          {{ bigTitle }}
+        </div>
+        <div :style="{ fontSize: '14px', color: T.text, lineHeight: 1.55, opacity: 0.9 }">
+          Оставьте контакты — менеджер свяжется с вами и поможет с подбором и заказом
+        </div>
       </div>
 
       <div :style="{ marginBottom: '14px' }">
@@ -526,27 +544,35 @@ function labelStyle() {
         </div>
       </div>
 
-      <!-- Согласие 152-ФЗ. Без галки сабмит заблокирован. -->
+      <!-- Согласие 152-ФЗ. Без галки сабмит заблокирован.
+           Раскладка: галка и текст в одну строку (центрировано по высоте),
+           если текст переносится на мобилке — строки выравниваются по
+           центру относительно галки (text-align center в span). -->
       <label :style="{
-        display: 'flex', alignItems: 'flex-start', gap: '10px',
-        marginBottom: '20px', cursor: 'pointer', userSelect: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '10px', margin: '0 auto 22px',
+        cursor: 'pointer', userSelect: 'none',
+        maxWidth: '380px',
       }">
         <input
           v-model="privacyConsent"
           type="checkbox"
           :style="{
-            width: '18px', height: '18px', flexShrink: 0, marginTop: '2px',
-            accentColor: T.text, cursor: 'pointer',
+            width: '18px', height: '18px', flexShrink: 0,
+            accentColor: '#FFFFFF', cursor: 'pointer',
           }"
         />
-        <span :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">
-          Согласен с
+        <span :style="{
+          fontSize: '13px', color: T.text, lineHeight: 1.45,
+          textAlign: 'center',
+        }">
+          Принимаю
           <a
             href="/privacy"
             target="_blank"
             rel="noopener"
             :style="{ color: T.text, textDecoration: 'underline' }"
-          >политикой обработки персональных данных</a>.
+          >политику обработки персональных данных</a>
         </span>
       </label>
 
@@ -563,10 +589,6 @@ function labelStyle() {
         }"
         @click="onSubmit"
       >Отправить</button>
-
-      <div :style="{ fontSize: '11px', color: T.textDim, marginTop: '12px', lineHeight: 1.55, textAlign: 'center' }">
-        Менеджер свяжется с вами по указанным контактам.
-      </div>
     </div>
   </div>
 </template>

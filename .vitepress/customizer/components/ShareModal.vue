@@ -227,8 +227,10 @@ function onSendManager() {
         <!-- Третья кнопка — отправить менеджеру (консультация).
              Доступна всегда: для неё не нужна короткая ссылка, заявка летит
              через LeadModal на бэкенд, а ссылка сгенерируется там же.
-             Иконка lucide message-square-more — квадратный пузырь с тремя
-             точками, ассоциируется с «начать переписку». -->
+             Квадратный пузырь сообщения с тремя точками — пересобран из
+             простых примитивов (rect/path/circle), чтобы не зависеть от
+             длинного lucide-path с компактным синтаксисом (потенциальный
+             источник проблем у парсера/SSR). -->
         <button
           class="share-action"
           @click="onSendManager"
@@ -239,10 +241,11 @@ function onSendManager() {
               fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round"
             >
-              <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
-              <path d="M12 11h.01" />
-              <path d="M16 11h.01" />
-              <path d="M8 11h.01" />
+              <rect x="3" y="4" width="18" height="13" rx="2" />
+              <path d="M8 17v3l-4-3" />
+              <circle cx="8" cy="11" r="1" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
+              <circle cx="16" cy="11" r="1" fill="currentColor" stroke="none" />
             </svg>
           </div>
           <span class="share-action-label">Менеджеру</span>

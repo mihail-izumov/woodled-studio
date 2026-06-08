@@ -187,18 +187,18 @@ function orbStyle(wood: Wood, size = 13) {
           :key="it._idx"
           :style="{
             background: cardPhotoFor(it)
-              ? `url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
+              ? `linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.78) 28%, rgba(255,255,255,0) 58%), url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
               : L.surface,
-            border: `1px solid ${L.border}`, borderRadius: '16px',
+            borderRadius: '16px',
             padding: '14px', minHeight: '160px', cursor: 'pointer',
             display: 'flex', flexDirection: 'column',
           }"
           @click="emit('edit', it._idx)"
         >
-          <!-- Название сверху + сразу под ним непрозрачная пилюля коллекции -->
+          <!-- Название сверху + сразу под ним прямоугольный непрозрачный бейдж коллекции -->
           <div :style="{ flex: '0 0 auto' }">
-            <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.15, textShadow: '0 0 10px rgba(255,255,255,.85), 0 1px 2px rgba(255,255,255,.6)' }">{{ fxNav(it.m) }}</div>
-            <span :style="{ display: 'inline-block', marginTop: '5px', padding: '3px 9px', borderRadius: '999px', background: L.surface, color: L.text, fontSize: '9px', fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }">{{ fxLine(it.m) }}</span>
+            <div :style="{ fontSize: '16px', fontWeight: 700, color: L.text, lineHeight: 1.15 }">{{ fxNav(it.m) }}</div>
+            <span :style="{ display: 'inline-block', marginTop: '6px', padding: '1.5px 7px', borderRadius: '4px', background: L.surface, color: L.text, fontSize: '9px', fontWeight: 700, letterSpacing: '1.6px', textTransform: 'uppercase', boxShadow: '0 1px 3px rgba(0,0,0,.10)' }">{{ fxLine(it.m) }}</span>
           </div>
           <!-- Чипы прижимаются к низу -->
           <div :style="{ marginTop: 'auto', paddingTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }">

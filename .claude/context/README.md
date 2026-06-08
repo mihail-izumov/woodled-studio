@@ -19,6 +19,7 @@
 | `WOODLED_прелоадеры.md` | Спека всех трёх preloader'ов (inline boot-loader, Vue Preloader.vue, PageFade). Матрица контекстов десктоп/PWA/iOS, поведение на медленном интернете, грабли с standalone-детектом и `__wlBoot.clear()`. | Перед правкой `config.mts` head-блока, `Preloader.vue`, `PageFade.vue`, `ReloadButton.vue` или любого `__wlBoot.clear()` в onMounted. |
 | `NON_WOODLED_FIXTURES.md` | UI/UX-принципы пользовательских светильников: почему не ставим ярлык «СВОЙ», как разница WOODLED ↔ пользовательский считывается через плотность карточки. | Перед правкой UI карточек зон, плашек бренда, текстов при добавлении не-WOODLED светильников. |
 | `WOODLED_кастомные_светильники_тех.md` | Техническая реализация: `Fixture.custom: CustomSpec`, рантайм-регистрация в `MD`, 5 точек регистрации, фильтры «леса», шаринг через `PackedFixture.c`, `inputs` для UI-state. | Перед правкой `CustomFxEditor.vue`, `engine/custom-registry.ts`, добавлением полей в `CustomSpec`, фильтрацией кастомов в forest/story. |
+| `WOODLED_hero_и_галерея_светильника.md` | Hero-блок и нижняя галерея на FxEditor: алгоритм `pickFxPhotos` с двумя режимами (`hero` / `gallery`), `HERO_FIELDS` / `GALLERY_FIELDS`, иерархия «курация (`byFixture`) → seed-подкачка (`seedInteriorsForBuild`) → relaxed-wood fallback», CTA-слайд, плашки слоёв, disclaimer. | Перед правкой `FxHeroGallery.vue`, `engine/fx-gallery.ts`, `data/fx-photos.ts`, обёртки `byFixture`/`seedInteriorsForBuild` в `gallery-engine.ts`, секции галереи в `FxEditor.vue`. |
 
 ### 📐 Рационал и архитектура (для понимания «почему так»)
 

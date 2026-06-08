@@ -144,6 +144,12 @@ const showShare = ref(false)
 const showRoomSettings = ref(false)
 /** Открыта модалка деталей зоны (ZoneFixturesModal) — скрывает StickyBar. */
 const showZoneModal = ref(false)
+/**
+ * Открыта модалка «Детали сборки» на странице светильника
+ * (PriceDetailsModal). FxEditor сам управляет своей жизнью, но App.vue
+ * читает флаг чтобы скрыть SoundButton под модалкой (anyModalOpen).
+ */
+const showPriceDetails = ref(false)
 
 const fb = ref<string | null>(null)
 /** Иконка тоста: 'check' → зелёный чекмарк «сделано». null → без иконки. */
@@ -416,6 +422,7 @@ function resetAll(): void {
   showMoodDetail.value = null
   showRoomSettings.value = false
   showZoneModal.value = false
+  showPriceDetails.value = false
   picker.value = false
   if (typeof window !== 'undefined') {
     try {
@@ -441,6 +448,7 @@ export function useConfigurator() {
     showShare,
     showRoomSettings,
     showZoneModal,
+    showPriceDetails,
     fb,
     fbIcon,
     discountFx,

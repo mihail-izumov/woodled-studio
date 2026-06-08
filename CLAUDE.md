@@ -38,6 +38,7 @@
 - `WOODLED_tone_of_voice.md` — голос (спокойный · тёплый · по делу, «вы», без AI-штампов).
 - `WOODLED_аудит_текстов_настроений.md` — чек-лист аудита перед сложными правками.
 - `WOODLED_проверка_фичей_чек-лист.md` — методика верификации фичи без dev-сервера (парсинг + mental-симуляция). Применять после любой правки `Fixture`/`Room`/store/share.
+- `WOODLED_hero_и_галерея_светильника.md` — Hero-блок и нижняя галерея на FxEditor. Алгоритм `pickFxPhotos`, HERO_FIELDS/GALLERY_FIELDS, CTA-слайд, иерархия «курация + seed подкачка», карта файлов (`fx-photos.ts` / `fx-gallery.ts` / `FxHeroGallery.vue`).
 
 ## Карта папок (`.vitepress/customizer/`)
 - `components/` — все Vue-компоненты (экраны, карточки, модалки). UI-примитивы в `components/ui/`.
@@ -47,6 +48,7 @@
   - `materials.ts` — дерево (`MATS`, `WCOL`, тип `Wood`: oak/walnut/black), цвета, температуры (`BTEMPS`), `DEF_OPT`.
   - `furniture.ts` — `FURN[id].ab` (поглощение света мебелью), **`FURN_HINT`** (привязка мебели к зоне-источнику + фразе «где»/«польза»), **`FURN_GEN`** (родительный падеж имени мебели), `furnText`, `gword`.
   - `templates.ts`, `gallery.ts`, `moods.ts` (только шкала BRIGHT — старый mood-модуль почти мёртв, см. ниже).
+  - **`fx-photos.ts`** — типизированный датасет интерьерных/студийных фото светильников (179 шт, автоген из `public/photo-tagging/_seed.js`). Источник для Hero и для seed-подкачки нижней галереи. См. `WOODLED_hero_и_галерея_светильника.md`.
 - `engine/` — логика:
   - `brightness.ts` — норма и сумма: `baseLm` (UF×MF), `fxLm`, `fxLamps`, `getArea`, `ratioOf`, `furnPct`. Константы `WORK_PLANE`, `MAINT_FACTOR`, `SUSPENSION_DROP`, `UF_CURVE`, `WALL_UF_MULT`.
   - `zone-engine.ts` — `zoneLm`, `zoneFxCount` (точки = Σ `q`), `roomZones`, `GLOW_POS`, `glowOpacity`, `opacityToHex`.
@@ -55,6 +57,8 @@
   - `copy.ts` — детерминированный сборщик подсказок дашборда: `lightState`, `lightHint`, `actionReaction`. Пороги синхронны с BRIGHT (`0.5/0.8/1.2/1.5`).
   - `i18n.ts` — склонения: `pw`/`lw`/`rw`/`tw` (точка/лампа/комната/дерево), **`kindWord(type, n)`** (люстра/торшер/настольная/спот/бра), **`woodWord(wood, n)`** (дуб/орех/чёрный дуб), **`joinList(arr)`** (через «и»), `woodNames` (агрегат «6 орехов и 3 дуба»).
   - `autosize.ts`, `gallery-engine.ts`, `story-engine.ts` (см. ниже).
+  - **`fx-gallery.ts`** — алгоритм Hero и нижней галереи на FxEditor: `pickFxPhotos(config, mode)` + `fxToConfig(fx)` + константы `HERO_FIELDS` / `GALLERY_FIELDS` / `FAMILIES` (где `spot_s ≠ spot_l` — разные fixture) / `MATCH_BADGE` / `HERO_DISCLAIMER`. Порт из `public/photo-tagging/tagger.html` (источник правды для алгоритма). Полная спека — `WOODLED_hero_и_галерея_светильника.md`.
+  - `gallery-engine.ts` дополнен: `byFixture(build)` — strict-фильтр `model+wood` (заменяет `byModel` в FxEditor); `seedInteriorsForBuild(build, offset, opts?)` — добивка из `fx-photos.ts` когда курация пуста (правило «курация главная»: seed не добавляется если у `gallery.ts` есть фото для этого fixture+wood); `preloadSeedAspects(urls)`.
   - **`share.ts`** — сериализация в URL-хеш (#s=/#fx=). Формат v2 (lz-string). `packRoom`/`unpackRoom` + `packFixture`/`unpackFixture`. **Любое новое поле в `Room`/`Fixture`/`FxOpts` обязано появиться здесь** — иначе шаринг сломается беззвучно (получатель увидит дефолт). Спека и чек-лист — `WOODLED_шаринг.md`.
 - `store/configurator.ts` — глобальное состояние (Vue refs): комнаты, активная комната/светильник,
   и **флаги модалок** (`showBuy`, `showStory`, `showShare`, `showRoomSettings`, `showZoneModal`, …).
@@ -89,7 +93,8 @@
 - `AddFxModal.vue` — выбор коллекции/модели для добавления. `RoomSettings.vue` — параметры комнаты
   (заголовок «Параметры комнаты», эталон паттерна «скрыть StickyBar + lock scroll», см. ниже).
   **Последняя карточка слайдера = «Другой бренд»** (плюс по центру, без подписи), `emit('addCustom', zone)` вместо `emit('add', fx)` → `RoomDetail.addCustomFx()` создаёт placeholder, регистрирует кастом в MD, открывает `CustomFxEditor`.
-- `FxEditor.vue` — страница светильника (см. «Поток добавления светильника» ниже). Сравнивает `getBright(...).name` со строками «Темно/Полусвет/Светло/Ярко/Праздник» — при переименовании статусов синхронизировать.
+- `FxEditor.vue` — страница светильника (см. «Поток добавления светильника» ниже). Сравнивает `getBright(...).name` со строками «Темно/Полусвет/Светло/Ярко/Праздник» — при переименовании статусов синхронизировать. Сверху страницы — **`FxHeroGallery`** (реактивная подборка фото под `build`), снизу — `GallerySection` с id="fx-interiors" (якорь CTA-слайда). См. `WOODLED_hero_и_галерея_светильника.md`.
+- **`FxHeroGallery.vue`** — Hero-блок: квадрат-герой со слайдером clean BG фото, плашки слоёв (`partial`/`woodSubstitute`), CTA-слайд в конце при ≤2 фото (адаптивная сетка миниатюр 3×2 / 2×2 / строка, пустые cells цвета комнаты), глобальный disclaimer внизу, мини-lightbox. Реактивно подписан на `build` через computed → `pickFxPhotos`. Принимает `:build`, `:tint`, `:interior-count`, `:interior-thumbs`.
 - **`CustomFxEditor.vue`** — параллельная страница для светильников другого бренда (не WOODLED). Открывается из `App.vue` через `v-if="activeFxData.fx.custom"` вместо обычного `FxEditor`. Свой набор полей (название/бренд/тип/цвет/источник света/мощность/корпус/температура). Паттерны как у FxEditor: NavHeader iOS large-title (через `IntersectionObserver` на `plateEl`), sticky-плашка «несохранённые изменения» (ТОЛЬКО при редактировании, для нового provisional её нет), спотлайт-кнопка `scrollToSave`, LeaveConfirmModal на back. Полная тех. спека — `WOODLED_кастомные_светильники_тех.md`.
 - **`BuyModal.vue`** (он же «Мой Лес», открывается из StickyBar) — каталог заказа. Заголовок «Освещение в доме WOODLED». Фильтрует кастомов из списка через хелперы `woodledFx(r)` / `woodledEntries(r)` — кастомов нельзя заказать по WOODLED, у них цена 0₽. `woodledEntries` возвращает `{fx, idx}` с ОРИГИНАЛЬНЫМИ индексами из `r.fixtures` (нужно для discount/openFx).
 - **`StoryModal.vue`** — модалка «Посмотрите на свой лес», 8 слайдов про дом целиком. На лесных сценах (не на старых mood). Слайд 3 — «Три места леса» (поляна/роща/чаща), слайд 4 — карта дома с именами `scene.name`, слайд 5 — контраст по `place`, слайд 8 — лампы + цоколи. Тексты собираются `engine/story-engine.ts` (`buildStorySlides`, `buildStoryContext`). Story НЕ дублирует ForestMood: ForestMood — про комнату с конкретикой, Story — верхнеуровневый взгляд на дом.

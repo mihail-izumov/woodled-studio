@@ -34,6 +34,8 @@ import { byModel, byFixture, toDisplayItem, preloadAspects, seedInteriorsForBuil
 import { useConfigurator } from '../store/configurator'
 /* Новый Hero-блок: реактивная подборка фото под текущий выбор юзера */
 import FxHeroGallery from './FxHeroGallery.vue'
+/* Модалка «Детали сборки» — открывается из sticky-низа (Tesla-паттерн) */
+import PriceDetailsModal from './PriceDetailsModal.vue'
 
 interface Props {
   item: Fixture; defWood?: Wood; skipSize?: boolean; backLabel?: string
@@ -90,7 +92,12 @@ const view = ref<'steps'|'summary'>('summary')
 const showHelp = ref(false)
 const showDeleteConfirm = ref(false)
 const touched = ref(new Set<StepId>())
-const priceOpen = ref(false)
+/* Sticky-низ + модалка «Детали сборки»: показ управляется через cfg.showPriceDetails,
+   чтобы App.vue прятал SoundButton под ней (anyModalOpen). */
+function openPriceDetails() { cfg.showPriceDetails.value = true }
+function closePriceDetails() { cfg.showPriceDetails.value = false }
+/* Купить — пока no-op, реализация позже. */
+function onBuyClick() { /* TODO */ }
 
 interface Build { m:ModelId;wood:Wood;mount:string;bowl:string;btemp:string;lamps:number;diffuser:boolean;moisture:boolean;bulbs:boolean;wire:string;baseColor:string;bulbOpt:string;steps:Record<string,StepStatus> }
 
@@ -157,7 +164,7 @@ function scrollToSave(){
   if(highlightTimer)clearTimeout(highlightTimer)
   highlightTimer=setTimeout(()=>{highlightSave.value=false},2000)
 }
-onUnmounted(()=>{ if(highlightTimer)clearTimeout(highlightTimer); plateObserver?.disconnect() })
+onUnmounted(()=>{ if(highlightTimer)clearTimeout(highlightTimer); plateObserver?.disconnect(); cfg.showPriceDetails.value = false })
 
 const model=computed(()=>MD[mid.value]); const steps=computed(()=>getSteps(mid.value))
 const curStep=computed(()=>steps.value[stepIdx.value]); const meta=computed(()=>SM[curStep.value]||{name:'',desc:''})
@@ -315,7 +322,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       <span :style="{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,background:T.text,color:T.bg,padding:'6px 12px',borderRadius:'8px',fontSize:'13px',fontWeight:700,cursor:'pointer'}" @click="scrollToSave">{{ props.isProvisional?'Добавить':'Сохранить' }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
     </div>
 
-    <div :style="{maxWidth:'480px',margin:'0 auto',padding:'16px 20px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
+    <div :style="{maxWidth:'480px',margin:'0 auto',padding:view==='summary'?'16px 20px 110px':'16px 20px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
 
       <!-- SUMMARY -->
       <template v-if="view==='summary'">
@@ -329,6 +336,8 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           />
         </div>
 
+        <!-- Plate: только название + чипы (дерево/статус).
+             Цена и «Мой выбор» переехали в PriceDetailsModal (открывается из sticky-низа). -->
         <div ref="plateEl" :style="{background:T.card,border:`1px solid ${isDone?sc+'44':T.border}`,borderRadius:'14px',padding:'14px',marginBottom:'16px'}">
           <div :style="{display:'flex',alignItems:'center',gap:'12px'}">
             <!-- batch11 #1: fxIcName(model.type) вместо захардкоженного "ceiling" -->
@@ -339,28 +348,6 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
               <div :style="{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}">
                 <span :style="{display:'inline-flex',alignItems:'center',gap:'5px',padding:'2px 10px 2px 4px',borderRadius:'12px',background:WCOL[build.wood]+'22',fontSize:'11px',fontWeight:600,color:T.text}"><span :style="{width:'14px',height:'14px',borderRadius:'50%',background:WCOL[build.wood],flexShrink:0}"/>{{ simMats.find(x=>x.id===build.wood)?.name }}</span>
                 <span :style="{display:'inline-block',padding:'2px 10px',borderRadius:'12px',border:`1px solid ${sc}55`,background:'transparent',fontSize:'11px',fontWeight:600,color:sc}">{{ status }}</span>
-              </div>
-            </div>
-            <button :style="{background:'none',border:'none',cursor:'pointer',padding:'4px',display:'flex',flexDirection:'column',alignItems:'flex-end',color:T.neutral,flexShrink:0}" @click="priceOpen=!priceOpen">
-              <span :style="{fontSize:'15px',fontWeight:800,fontVariantNumeric:'tabular-nums'}">{{ fmt(price) }} ₽</span>
-              <span :style="{fontSize:'12px',color:T.textSec,display:'flex',alignItems:'center',gap:'4px',marginTop:'2px',fontWeight:500}">{{ priceOpen?'Скрыть':'Детали' }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{transform:priceOpen?'rotate(180deg)':'none',transition:'transform .2s'}"><polyline points="6 9 12 15 18 9"/></svg></span>
-            </button>
-          </div>
-          <div v-if="priceOpen" :style="{marginTop:'12px',paddingTop:'12px',borderTop:`1px solid ${T.border}`}">
-            <div v-for="(row,i) in priceBreakdown" :key="i" :style="{display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:'12px',padding:'3px 0'}"><span :style="{color:T.textSec}">{{ row.label }}</span><span :style="{color:i===0?T.text:T.yellow,fontWeight:600,fontVariantNumeric:'tabular-nums'}">{{ i===0?'':'+' }}{{ fmt(row.amount) }} ₽</span></div>
-            <div :style="{display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:'13px',fontWeight:800,color:T.text,marginTop:'6px',paddingTop:'8px',borderTop:`1px solid ${T.border}`}"><span>Итого</span><span :style="{color:T.neutral,fontVariantNumeric:'tabular-nums'}">{{ fmt(price) }} ₽</span></div>
-          </div>
-          <div :style="{borderTop:`1px solid ${T.border}`,marginTop:'12px',paddingTop:'10px'}">
-            <div :style="{fontSize:'10px',fontWeight:700,color:T.neutral,textTransform:'uppercase',letterSpacing:'.8px',marginBottom:'8px'}">Мой выбор</div>
-            <div :style="{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'10px'}">
-              <span :style="{padding:'4px 10px',borderRadius:'6px',background:T.neutral+'18',fontSize:'11px',fontWeight:600,color:T.text}">{{ build.lamps }} {{ spw(build.lamps) }}</span>
-              <span :style="{padding:'4px 10px',borderRadius:'6px',background:T.neutral+'18',fontSize:'11px',fontWeight:600,color:T.text}">{{ fmt(Math.round(build.lamps*model.lmPer*diffMult())) }} лм</span>
-              <span :style="{padding:'4px 10px',borderRadius:'6px',background:T.neutral+'18',fontSize:'11px',fontWeight:600,color:T.text}">{{ btempK() }}</span>
-            </div>
-            <div :style="{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'3px'}">
-              <div v-for="([k,v]) in myChoicesNoLight" :key="k" :style="{padding:'3px 8px 4px',background:T.cardAlt,borderRadius:'5px'}">
-                <div :style="{fontSize:'10px',color:T.textDim,lineHeight:1.2}">{{ k }}</div>
-                <div :style="{fontSize:'12px',fontWeight:600,color:T.text,lineHeight:1.2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}">{{ v }}</div>
               </div>
             </div>
           </div>
@@ -468,6 +455,62 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         <button :style="{width:'100%',marginTop:'14px',padding:'14px',border:'none',borderRadius:'10px',cursor:'pointer',fontWeight:700,fontSize:'14px',background:isTouched?T.text:T.neutral+'33',color:isTouched?T.bg:T.neutral}" @click="doCommit(isTouched)">{{ isTouched?'Готово':'Пропустить' }}</button>
       </template>
     </div>
+
+    <!-- Sticky-низ (Tesla-паттерн, только на сводке): «{цена} ⌄» + «Купить».
+         Тап по плашке цены/шеврону открывает PriceDetailsModal.
+         «Купить» — пока no-op (позже подвяжем коммерческий поток). -->
+    <div
+      v-if="view==='summary'"
+      :style="{
+        position:'fixed', left:0, right:0, bottom:0, zIndex:8,
+        background:T.card,
+        borderTop:`1px solid ${T.border}`,
+        boxShadow:'0 -8px 24px rgba(0,0,0,0.35)',
+        padding:`10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,
+        display:'flex', alignItems:'center', gap:'12px',
+      }"
+    >
+      <button
+        type="button"
+        :aria-label="'Открыть детали сборки'"
+        :style="{
+          display:'flex', flexDirection:'column', alignItems:'flex-start',
+          background:'none', border:'none', cursor:'pointer',
+          padding:'6px 8px', color:T.text, flex:'0 0 auto',
+          fontFamily:'inherit',
+        }"
+        @click="openPriceDetails"
+      >
+        <span :style="{fontSize:'10px',fontWeight:700,color:T.textSec,textTransform:'uppercase',letterSpacing:'.6px'}">Цена</span>
+        <span :style="{display:'flex',alignItems:'center',gap:'5px',marginTop:'2px'}">
+          <span :style="{fontSize:'19px',fontWeight:700,color:T.text,fontVariantNumeric:'tabular-nums',lineHeight:1}">{{ fmt(price) }} ₽</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" :style="{color:T.textSec}"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <button
+        type="button"
+        :style="{
+          flex:1, padding:'14px', border:'none', borderRadius:'12px',
+          background: props.roomTint || T.text, color:T.bg,
+          cursor:'pointer', fontSize:'16px', fontWeight:700,
+          fontFamily:'inherit', letterSpacing:'.2px',
+        }"
+        @click="onBuyClick"
+      >Купить</button>
+    </div>
+
+    <PriceDetailsModal
+      v-if="cfg.showPriceDetails.value"
+      :price="price"
+      :breakdown="priceBreakdown"
+      :lamps-chip="`${build.lamps} ${spw(build.lamps)}`"
+      :lm-chip="`${fmt(Math.round(build.lamps*model.lmPer*diffMult()))} лм`"
+      :btemp-chip="btempK()"
+      :choices="myChoicesNoLight"
+      :tint="props.roomTint"
+      title="Детали сборки"
+      @close="closePriceDetails"
+    />
 
     <div v-if="showDeleteConfirm" :style="{position:'fixed',inset:0,zIndex:60,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}" @click.self="showDeleteConfirm=false">
       <div :style="{width:'100%',maxWidth:'340px',background:T.bg,borderRadius:'16px',border:`1px solid ${T.border}`,padding:'24px 20px',textAlign:'center'}">

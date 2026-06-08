@@ -207,7 +207,7 @@ function onResetConfirm() { cfg.resetAll(); showResetConfirm.value = false }
 function onResetCancel() { showResetConfirm.value = false }
 function onSaveShareLink() { cfg.showShare.value = true }
 
-const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value)
+const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value || cfg.showPriceDetails.value)
 
 /* Главный экран (список комнат): нет открытого светильника, нет активной комнаты,
    приветствие уже показано. На вложенных экранах reload-кнопку не показываем. */

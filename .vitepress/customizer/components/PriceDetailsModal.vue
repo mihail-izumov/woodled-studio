@@ -17,7 +17,7 @@
  * чтобы прятать SoundButton (см. anyModalOpen).
  */
 
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { T } from '../theme/tokens'
 
 interface PriceRow { label: string; amount: number }
@@ -33,9 +33,36 @@ const props = defineProps<{
   title?: string
 }>()
 
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [] }>()
 
 const fmt = (n: number) => n.toLocaleString('ru-RU')
+
+/* ─── Swipe-down to close (iOS sheet pattern) ───
+   Палец вниз > 100px → закрываем. Маленькие движения отыгрываются обратно.
+   Touch ловим на хедере (drag-handle + title): пробрасывать на весь sheet
+   опасно — заденет скролл контента. */
+const dragY = ref(0)
+const dragging = ref(false)
+let startY = 0
+function onSheetTouchStart(e: TouchEvent) {
+  startY = e.touches[0].clientY
+  dragging.value = true
+  dragY.value = 0
+}
+function onSheetTouchMove(e: TouchEvent) {
+  if (!dragging.value) return
+  const dy = e.touches[0].clientY - startY
+  // Тянем только вниз; вверх — игнорим.
+  dragY.value = Math.max(0, dy)
+}
+function onSheetTouchEnd() {
+  dragging.value = false
+  if (dragY.value > 100) {
+    emit('close')
+  } else {
+    dragY.value = 0
+  }
+}
 
 /* Lock body scroll пока модалка открыта (паттерн RoomSettings/SmartHelpModal). */
 let prevBodyOverflow = ''
@@ -81,11 +108,21 @@ onUnmounted(() => {
           borderTopRightRadius: '18px',
           borderTop: `1px solid ${T.border}`,
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          transform: `translateY(${dragY}px)`,
+          transition: dragging ? 'none' : 'transform .25s ease',
+          touchAction: 'pan-y',
         }"
       >
-        <!-- Хедер: drag-handle + title + close X -->
-        <div :style="{ position: 'sticky', top: 0, background: T.bg, padding: '10px 20px 14px', zIndex: 2 }">
-          <div :style="{ width: '36px', height: '4px', borderRadius: '2px', background: T.border, margin: '0 auto 14px' }" />
+        <!-- Хедер: drag-handle + title + close X. На хедере висит swipe-down handler:
+             свайп вниз > 100px закрывает модалку, < 100 — снэп обратно. -->
+        <div
+          :style="{ position: 'sticky', top: 0, background: T.bg, padding: '10px 20px 14px', zIndex: 2, cursor: 'grab' }"
+          @touchstart.passive="onSheetTouchStart"
+          @touchmove.passive="onSheetTouchMove"
+          @touchend.passive="onSheetTouchEnd"
+          @touchcancel.passive="onSheetTouchEnd"
+        >
+          <div :style="{ width: '44px', height: '5px', borderRadius: '3px', background: T.textSec, opacity: 0.55, margin: '2px auto 14px' }" />
           <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }">
             <div :style="{ fontSize: '20px', fontWeight: 700, color: T.text, letterSpacing: '-.01em' }">{{ props.title || 'Детали сборки' }}</div>
             <button

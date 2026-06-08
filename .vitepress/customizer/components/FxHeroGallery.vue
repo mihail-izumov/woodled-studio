@@ -105,6 +105,27 @@ const idx = ref(0)
 // Сброс индекса при смене подборки (юзер сменил дерево → фото поменялись).
 watch(photos, () => { idx.value = 0 })
 
+/* Отслеживаем загруженные URL'ы. Пока src не пришёл — рендерим скелетон-pulse
+   (тот же класс gallery-skeleton что в PhotoCard ниже). После onload — фейдим. */
+const loadedSrcs = ref<Set<string>>(new Set())
+function onImgLoad(src: string) {
+  const next = new Set(loadedSrcs.value)
+  next.add(src)
+  loadedSrcs.value = next
+}
+const currentSrc = computed(() => {
+  if (onCtaSlide.value) return null
+  return photos.value[idx.value]?.photo.src ?? null
+})
+const currentLoaded = computed(() =>
+  onCtaSlide.value || (currentSrc.value !== null && loadedSrcs.value.has(currentSrc.value))
+)
+/* Случайный negative-delay на скелетон, чтобы при смене дерева/фото пульсация
+   не «начиналась с нуля» — выглядит мягче. */
+const skeletonStyle = computed(() => ({
+  animationDelay: `-${(Math.random() * 5).toFixed(2)}s`,
+}))
+
 /* Клампим вместо wrap — на крайних слайдах стрелки скрыты, и попытка
    уехать в «никуда» (например, тапом по уже скрытой стрелке через keyboard
    или delayed touch) безопасно игнорируется. */
@@ -179,14 +200,36 @@ const accent = computed(() => props.tint || T.neutral)
       @touchstart.passive="onTouchStart"
       @touchend.passive="onTouchEnd"
     >
-      <!-- Фото-слайд (обычные кадры) -->
+      <!-- Скелетон-пульс пока фото не загружено (тот же класс что в галерее ниже) -->
+      <div
+        v-if="!onCtaSlide && !currentLoaded"
+        class="gallery-skeleton"
+        :style="{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(90deg, '
+            + accent + '14 0%, '
+            + accent + '28 25%, '
+            + accent + '52 50%, '
+            + accent + '28 75%, '
+            + accent + '14 100%)',
+          backgroundSize: '250% 100%',
+          ...skeletonStyle,
+        }"
+      />
+
+      <!-- Фото-слайд (обычные кадры) — fade-in после полной загрузки, zoom отключён -->
       <img
         v-if="!onCtaSlide"
         :src="photos[idx].photo.src"
         loading="lazy"
+        decoding="async"
         alt=""
-        :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }"
-        @click="openLightbox(idx)"
+        :style="{
+          width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+          opacity: currentLoaded ? 1 : 0,
+          transition: 'opacity 1.0s ease-out',
+        }"
+        @load="onImgLoad(photos[idx].photo.src)"
       />
 
       <!-- CTA-слайд: заголовок · компактная сетка миниатюр · кнопка. Весь блок кликабелен.
@@ -290,22 +333,24 @@ const accent = computed(() => props.tint || T.neutral)
         }"
       >{{ badge }}</div>
 
-      <!-- Пагинация-точки -->
+      <!-- Пагинация баром: каждый слайд = равная полоска во всю ширину Hero. -->
       <div
         v-if="totalSlides > 1"
         :style="{
-          position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', gap: '6px',
+          position: 'absolute', top: '14px', left: '5%', right: '5%',
+          display: 'flex', gap: '4px',
+          pointerEvents: 'none',
         }"
       >
         <span
           v-for="i in totalSlides"
           :key="i"
           :style="{
-            width: (i-1) === idx ? '20px' : '6px', height: '6px',
-            borderRadius: '3px',
-            background: (i-1) === idx ? 'white' : 'rgba(255,255,255,0.5)',
-            transition: 'width .2s',
+            flex: '1', height: '3px',
+            borderRadius: '2px',
+            background: (i-1) === idx ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.32)',
+            transition: 'background .2s',
+            boxShadow: (i-1) === idx ? '0 1px 3px rgba(0,0,0,.45)' : 'none',
           }"
         />
       </div>

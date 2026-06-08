@@ -300,18 +300,29 @@ function btempK(){const bt=BTEMPS.find(x=>x.id===build.value.btemp);return bt?bt
 interface SphereStops { hi: string; mid: string; lo: string; glow: string }
 function bowlSphere(id: string): SphereStops | null {
   if (!id || id === 'none') return null
-  if (id.startsWith('chrome') || id === 'hook_10') return { hi: '#FFFFFF', mid: '#C8CACE', lo: '#5F6369', glow: 'rgba(0,0,0,0)' }
-  if (id === 'black_8')  return { hi: '#6A6A6C', mid: '#26262A', lo: '#08080A', glow: 'rgba(0,0,0,0)' }
-  if (id === 'white_8')  return { hi: '#FFFFFF', mid: '#F0EEE8', lo: '#9A958C', glow: 'rgba(0,0,0,0)' }
-  if (id === 'nickel')   return { hi: '#E4E1D9', mid: '#A6A097', lo: '#56524B', glow: 'rgba(0,0,0,0)' }
+  // Хром — холодный металлик с резким бликом, явно отличим от матового белого.
+  if (id.startsWith('chrome') || id === 'hook_10') return { hi: '#FFFFFF', mid: '#A2ADBA', lo: '#28323E', glow: 'rgba(0,0,0,0)' }
+  if (id === 'black_8')  return { hi: '#5C5D60', mid: '#202024', lo: '#050507', glow: 'rgba(0,0,0,0)' }
+  // Белая — тёплый матовый, более жёлтый по тонам чтобы не сливался с хромом.
+  if (id === 'white_8')  return { hi: '#FAF6EC', mid: '#EAE3D2', lo: '#8C8474', glow: 'rgba(0,0,0,0)' }
+  // Никель — тёплый графит с золотистым подтоном, отчётливо отличается от хрома/белой.
+  if (id === 'nickel')   return { hi: '#D8C6A6', mid: '#8E785A', lo: '#34291F', glow: 'rgba(0,0,0,0)' }
   if (id === 'wood_8')   return { hi: '#E5BC7E', mid: '#A57E48', lo: '#5C4220', glow: 'rgba(0,0,0,0)' }
   return null
 }
+
+/* Разбор имени чаши на базу + диаметр. «Хром Ø8» → { base: 'Хром', diameter: 'Ø8' }. */
+function bowlNameParts(name: string): { base: string; diameter: string } {
+  const m = name.match(/^(.+?)\s*(Ø\d+)\s*$/)
+  if (m) return { base: m[1].trim(), diameter: m[2] }
+  return { base: name, diameter: '' }
+}
 function tempSphere(kelvin: number): SphereStops {
-  // Приближённый planckian locus для визуализации тёплого/нейтрального.
-  if (kelvin <= 2700) return { hi: '#FFF1CC', mid: '#FFB060', lo: '#A04D10', glow: 'rgba(255,160,80,.55)' }
-  if (kelvin <= 3000) return { hi: '#FFF5D9', mid: '#FFC889', lo: '#A86A1E', glow: 'rgba(255,180,100,.45)' }
-  return { hi: '#FFFCEE', mid: '#FFE8B8', lo: '#A88C42', glow: 'rgba(255,225,160,.35)' }
+  // LED-индустриальный стандарт (Philips/Osram упаковка):
+  // 2700K — насыщенный амбер · 3000K — мёд · 4000K — почти белый с лёгким тёплым подсветом.
+  if (kelvin <= 2700) return { hi: '#FFC180', mid: '#FF8E2E', lo: '#7B3000', glow: 'rgba(255,140,50,.65)' }
+  if (kelvin <= 3000) return { hi: '#FFE2AA', mid: '#FFB855', lo: '#955208', glow: 'rgba(255,180,80,.45)' }
+  return { hi: '#FFFCF0', mid: '#FFF1D8', lo: '#A89172', glow: 'rgba(255,235,200,.22)' }
 }
 function sphereStyle(s: SphereStops, size = 36): Record<string, string> {
   return {
@@ -362,7 +373,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
       <span :style="{display:'flex',alignItems:'center',gap:'5px',flexShrink:0,background:T.text,color:T.bg,padding:'6px 12px',borderRadius:'8px',fontSize:'13px',fontWeight:700,cursor:'pointer'}" @click="scrollToSave">{{ props.isProvisional?'Добавить':'Сохранить' }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
     </div>
 
-    <div :style="{maxWidth:'480px',margin:'0 auto',padding:view==='summary'?'16px 20px 110px':'16px 20px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
+    <div :style="{maxWidth:'480px',margin:'0 auto',padding:view==='summary'?'16px 20px 110px':'16px 20px 100px',fontFamily:`'Segoe UI', system-ui, sans-serif`,color:T.text,boxSizing:'border-box'}">
 
       <!-- SUMMARY -->
       <template v-if="view==='summary'">
@@ -446,7 +457,7 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
             <Icon :name="meta.icon" :color="T.textSec" :size="18"/>
             <span :style="{fontSize:'16px',fontWeight:700}">{{ meta.name }}</span>
             <span :style="{flex:1}"/>
-            <span :style="{padding:'3px 10px',borderRadius:'10px',background:T.text+'15',fontSize:'10px',color:T.textSec,fontWeight:600,letterSpacing:'.3px'}">{{ stepIdx+1 }}/{{ steps.length }}</span>
+            <span :style="{padding:'5px 12px',borderRadius:'10px',background:T.text+'18',fontSize:'13px',color:T.text,fontWeight:700,letterSpacing:'.3px'}">{{ stepIdx+1 }}/{{ steps.length }}</span>
           </div>
           <div v-if="curStep!=='size'" :style="{fontSize:'12px',color:T.textSec}">{{ meta.desc }}</div>
         </div>
@@ -480,7 +491,12 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
 
           <div v-else-if="curStep==='wood'" :style="{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px'}"><button v-for="mt in simMats" :key="mt.id" :style="{padding:'16px 8px',minHeight:'170px',borderRadius:'10px',cursor:'pointer',border:build.wood===mt.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.wood===mt.id?T.text+'15':T.card,textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start'}" @click="upBuild({wood:mt.id})"><div :style="{width:'40px',height:'40px',borderRadius:'50%',background:mt.color,border:mt.id==='black'?`2px solid ${T.textDim}`:'none'}"/><div :style="{fontSize:'17px',fontWeight:700,color:T.text,marginTop:'12px',lineHeight:1.2}">{{ mt.name }}</div><div v-if="mt.tip" :style="{fontSize:'12px',color:T.textSec,marginTop:'8px',lineHeight:1.4}">{{ mt.tip }}</div></button></div>
           <div v-else-if="curStep==='mount'" :style="{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}"><button v-for="mt in SIM_MOUNTS" :key="mt.id" :style="{padding:'20px 14px',minHeight:'160px',borderRadius:'8px',cursor:'pointer',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',border:build.mount===mt.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.mount===mt.id?T.text+'15':T.card,color:T.text}" @click="upBuild({mount:mt.id})"><div :style="{marginBottom:'10px',display:'flex',justifyContent:'center'}"><Icon :name="mt.id==='pendant'?'fxPendant':'fxFlush'" :size="32" :color="build.mount===mt.id?T.text:T.textSec"/></div><div :style="{fontSize:'17px',fontWeight:700,color:T.text,lineHeight:1.2}">{{ mt.name }}</div><div :style="{fontSize:'12px',color:T.textSec,marginTop:'8px',lineHeight:1.4}">{{ mt.tip }}</div></button></div>
-          <div v-else-if="curStep==='bowl'"><div v-if="freeBowls.length>0"><div :style="{fontSize:'10px',fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'.8px',marginBottom:'6px'}">{{ paidBowls.length>0?'Стандарт · входит в цену':'Выберите чашу' }}</div><div :style="{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))',gap:'6px'}"><button v-for="b in freeBowls" :key="b.id" :style="{padding:'12px 10px',minHeight:'110px',borderRadius:'8px',cursor:'pointer',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'10px',border:build.bowl===b.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.bowl===b.id?T.text+'15':T.card,color:T.text}" @click="upBuild({bowl:b.id})"><div v-if="bowlSphere(b.id)" :style="sphereStyle(bowlSphere(b.id)!, 32)"/><div :style="{fontSize:'15px',fontWeight:700,color:T.text,lineHeight:1.25}">{{ b.name }}</div></button></div></div><div v-if="paidBowls.length>0" :style="{marginTop:freeBowls.length>0?'12px':'0'}"><div :style="{fontSize:'10px',fontWeight:700,color:T.textSec,textTransform:'uppercase',letterSpacing:'.8px',marginBottom:'6px'}">С доплатой</div><div :style="{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))',gap:'6px'}"><button v-for="b in paidBowls" :key="b.id" :style="{padding:'12px 10px',minHeight:'128px',borderRadius:'8px',cursor:'pointer',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'8px',border:build.bowl===b.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.bowl===b.id?T.text+'15':T.card,color:T.text}" @click="upBuild({bowl:b.id})"><div v-if="bowlSphere(b.id)" :style="sphereStyle(bowlSphere(b.id)!, 34)"/><div :style="{fontSize:'15px',fontWeight:700,color:T.text,lineHeight:1.25}">{{ b.name }}</div><div :style="{fontSize:'12px',color:T.textSec}">+{{ fmt(b.price) }} ₽</div></button></div></div></div>
+          <div v-else-if="curStep==='bowl'">
+            <!-- Стандарт + пилюля «входит в цену» (бабл чуть тише) -->
+            <div v-if="freeBowls.length>0"><div :style="{display:'flex',alignItems:'center',gap:'8px',marginBottom:'10px'}"><span :style="{fontSize:'12px',fontWeight:800,color:T.text,textTransform:'uppercase',letterSpacing:'.8px'}">Стандарт</span><span v-if="paidBowls.length>0" :style="{fontSize:'10px',fontWeight:500,color:T.textSec,padding:'3px 9px',borderRadius:'8px',background:T.text+'10',letterSpacing:'.2px'}">входит в цену</span></div><div :style="{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))',gap:'6px'}"><button v-for="b in freeBowls" :key="b.id" :style="{padding:'12px 10px',minHeight:'124px',borderRadius:'8px',cursor:'pointer',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',gap:'8px',border:build.bowl===b.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.bowl===b.id?T.text+'15':T.card,color:T.text}" @click="upBuild({bowl:b.id})"><div v-if="bowlSphere(b.id)" :style="sphereStyle(bowlSphere(b.id)!, 32)"/><div v-if="bowlNameParts(b.name).diameter" :style="{padding:'2px 8px',borderRadius:'6px',background:bowlSphere(b.id)?(bowlSphere(b.id)!.mid+'33'):(T.text+'12'),border:`1px solid ${bowlSphere(b.id)?(bowlSphere(b.id)!.mid+'66'):(T.text+'22')}`,fontSize:'10px',fontWeight:700,color:T.text,letterSpacing:'.3px'}">{{ bowlNameParts(b.name).diameter }}</div><div :style="{fontSize:'15px',fontWeight:700,color:T.text,lineHeight:1.25}">{{ bowlNameParts(b.name).base }}</div></button></div></div>
+            <!-- С доплатой — белая прописная -->
+            <div v-if="paidBowls.length>0" :style="{marginTop:freeBowls.length>0?'14px':'0'}"><div :style="{fontSize:'12px',fontWeight:800,color:T.text,textTransform:'uppercase',letterSpacing:'.8px',marginBottom:'10px'}">С доплатой</div><div :style="{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))',gap:'6px'}"><button v-for="b in paidBowls" :key="b.id" :style="{padding:'12px 10px',minHeight:'148px',borderRadius:'8px',cursor:'pointer',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',gap:'8px',border:build.bowl===b.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.bowl===b.id?T.text+'15':T.card,color:T.text}" @click="upBuild({bowl:b.id})"><div v-if="bowlSphere(b.id)" :style="sphereStyle(bowlSphere(b.id)!, 34)"/><div v-if="bowlNameParts(b.name).diameter" :style="{padding:'2px 8px',borderRadius:'6px',background:bowlSphere(b.id)?(bowlSphere(b.id)!.mid+'33'):(T.text+'12'),border:`1px solid ${bowlSphere(b.id)?(bowlSphere(b.id)!.mid+'66'):(T.text+'22')}`,fontSize:'10px',fontWeight:700,color:T.text,letterSpacing:'.3px'}">{{ bowlNameParts(b.name).diameter }}</div><div :style="{fontSize:'15px',fontWeight:700,color:T.text,lineHeight:1.25}">{{ bowlNameParts(b.name).base }}</div><div :style="{fontSize:'12px',color:T.textSec,marginTop:'2px'}">+{{ fmt(b.price) }} ₽</div></button></div></div>
+          </div>
           <div v-else-if="curStep==='temp'" :style="{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'6px'}"><button v-for="bt in BTEMPS" :key="bt.id" :style="{padding:'16px 8px 14px',minHeight:'180px',borderRadius:'8px',cursor:'pointer',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',gap:'8px',border:build.btemp===bt.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.btemp===bt.id?T.text+'15':T.card,color:T.text}" @click="upBuild({btemp:bt.id})"><div :style="sphereStyle(tempSphere(bt.kelvin), 34)"/><div :style="{fontSize:'15px',fontWeight:700,color:T.text,lineHeight:1.2,marginTop:'2px'}">{{ bt.label }}</div><div :style="{fontSize:'12px',color:T.textSec}">{{ bt.kelvin }}К</div><div v-if="bt.tip" :style="{fontSize:'12px',color:T.textSec,marginTop:'4px',lineHeight:1.4}">{{ bt.tip }}</div></button></div>
           <div v-else-if="curStep==='patrons'"><div :style="{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'8px'}"><button v-for="v in lampOpts()" :key="v" :style="{padding:'14px 6px',borderRadius:'10px',cursor:'pointer',textAlign:'center',border:build.lamps===v?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.lamps===v?T.text+'15':T.card,transition:'all .15s'}" @click="upBuild({lamps:v})"><div :style="{display:'inline-block',padding:'2px 8px',borderRadius:'4px',background:T.text+'12',fontSize:'11px',fontWeight:700,color:T.textSec,marginBottom:'8px'}">{{ v }} {{ spw(v) }}</div><div :style="{fontSize:'20px',fontWeight:800,color:T.text}">{{ fmt(Math.round(v*model.lmPer*diffMult())) }} <span :style="{fontSize:'12px',fontWeight:400,color:T.textDim}">лм</span></div><div v-if="v===model.lamps" :style="{fontSize:'10px',color:T.textSec,marginTop:'6px'}">стандарт</div><div v-if="(v-model.lamps)*model.sur>0" :style="{fontSize:'11px',color:T.textSec,marginTop:'4px',fontWeight:700}">+{{ fmt((v-model.lamps)*model.sur) }} ₽</div></button></div></div>
           <div v-else-if="curStep==='diffuser'" :style="{display:'flex',flexDirection:'column',gap:'8px'}"><button :style="{width:'100%',padding:'16px',minHeight:'92px',borderRadius:'10px',cursor:'pointer',textAlign:'left',border:build.diffuser?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.diffuser?T.text+'12':T.cardAlt,color:T.text,display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px'}" @click="upBuild({diffuser:true})"><div :style="{flex:1,minWidth:0}"><div :style="{fontSize:'16px',fontWeight:700,color:T.text,lineHeight:1.25}">Добавить рассеиватель</div><div :style="{fontSize:'12px',color:T.textSec,marginTop:'6px',lineHeight:1.4}">{{ OPT_TIPS.diffuser.on }}</div></div><span :style="{fontSize:'14px',fontWeight:700,color:T.textSec,flexShrink:0}">+{{ fmt(OPT_PRICE.diffuser) }} ₽</span></button><button :style="{width:'100%',padding:'16px',minHeight:'62px',borderRadius:'10px',cursor:'pointer',textAlign:'left',border:!build.diffuser?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:!build.diffuser?T.text+'12':T.cardAlt,color:T.textSec,fontSize:'14px',lineHeight:1.4}" @click="upBuild({diffuser:false})">{{ OPT_TIPS.diffuser.off }}</button></div>
@@ -489,7 +505,6 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
           <div v-else-if="curStep==='bulbs'&&model.bulbOpts" :style="{display:'flex',flexDirection:'column',gap:'6px'}"><button v-for="bo in model.bulbOpts" :key="bo.id" :style="{textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'12px',padding:'16px',minHeight:'68px',borderRadius:'8px',cursor:'pointer',border:build.bulbOpt===bo.id?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.bulbOpt===bo.id?T.text+'15':T.card,color:T.text}" @click="upBuild({bulbOpt:bo.id})"><span :style="{fontSize:'16px',fontWeight:700,color:T.text,lineHeight:1.25,flex:1,minWidth:0}">{{ bo.label }}</span><span v-if="bo.price>0" :style="{fontSize:'13px',fontWeight:700,color:T.textSec,flexShrink:0}">+{{ fmt(bo.price) }} ₽</span></button></div>
           <div v-else-if="curStep==='bulbs'" :style="{display:'flex',flexDirection:'column',gap:'8px'}"><button :style="{width:'100%',padding:'16px',minHeight:'92px',borderRadius:'10px',cursor:'pointer',textAlign:'left',border:build.bulbs?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:build.bulbs?T.text+'12':T.cardAlt,color:T.text,display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px'}" @click="upBuild({bulbs:true})"><div :style="{flex:1,minWidth:0}"><div :style="{fontSize:'16px',fontWeight:700,color:T.text,lineHeight:1.25}">Да, {{ build.lamps }} {{ slw(build.lamps) }} в комплекте</div><div :style="{fontSize:'13px',color:T.text,marginTop:'6px',lineHeight:1.4,opacity:.85}">{{ build.lamps }} {{ spw(build.lamps) }} × {{ fmt(bulbPer()) }} ₽</div></div><span :style="{fontSize:'14px',fontWeight:700,color:T.textSec,flexShrink:0}">+{{ fmt(bulbTotal()) }} ₽</span></button><button :style="{width:'100%',padding:'16px',minHeight:'68px',borderRadius:'10px',cursor:'pointer',textAlign:'left',border:!build.bulbs?(isTouched?'2px solid #fff':`2px solid ${T.text}`):`1px solid ${T.border}`,background:!build.bulbs?T.text+'12':T.cardAlt,color:T.text,fontSize:'16px',fontWeight:700,lineHeight:1.25}" @click="upBuild({bulbs:false})">Подберу свои лампочки</button></div>
         </div>
-        <button :style="{width:'100%',marginTop:'14px',padding:'14px',border:'none',borderRadius:'10px',cursor:'pointer',fontWeight:700,fontSize:'14px',background:isTouched?T.text:T.text+'18',color:isTouched?T.bg:T.textSec}" @click="doCommit(isTouched)">{{ isTouched?'Готово':'Пропустить' }}</button>
       </template>
     </div>
 
@@ -539,6 +554,34 @@ function bulbPer(){return model.value.bulbPrice?Math.round(model.value.bulbPrice
         }"
         @click="onBuyClick"
       >Купить</button>
+    </div>
+
+    <!-- Sticky-низ STEP-вида: «Готово»/«Пропустить» одной высоты с «Сохранить».
+         Размер тот же — 480px max, центрирован, safe-area aware. -->
+    <div
+      v-if="view==='steps'"
+      :style="{
+        position:'fixed', left:'50%', bottom:0, zIndex:8,
+        width:'100%', maxWidth:'480px',
+        transform:'translateX(-50%)',
+        background:T.card,
+        borderTop:`1px solid ${T.border}`,
+        borderTopLeftRadius:'14px', borderTopRightRadius:'14px',
+        boxShadow:'0 -8px 24px rgba(0,0,0,0.35)',
+        padding:`12px 16px calc(12px + env(safe-area-inset-bottom, 0px))`,
+        boxSizing:'border-box',
+      }"
+    >
+      <button
+        :style="{
+          width:'100%', padding:'14px', border:'none', borderRadius:'10px',
+          cursor:'pointer', fontWeight:600, fontSize:'17px',
+          background:isTouched?T.text:T.text+'18',
+          color:isTouched?T.bg:T.textSec,
+          fontFamily:'inherit',
+        }"
+        @click="doCommit(isTouched)"
+      >{{ isTouched?'Готово':'Пропустить' }}</button>
     </div>
 
     <PriceDetailsModal

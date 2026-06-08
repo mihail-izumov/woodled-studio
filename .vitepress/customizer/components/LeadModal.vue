@@ -21,7 +21,7 @@
  * Lock scroll + флаг cfg.showLead — App.vue прячет StickyBar и SoundButton.
  */
 
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { Room } from '../data/rooms'
 import { T, Z } from '../theme/tokens'
 import { useConfigurator } from '../store/configurator'
@@ -93,7 +93,188 @@ const form = ref({
   tg: persisted.tgUsername,
 })
 
+/* Согласие с политикой конфиденциальности — обязательно по 152-ФЗ.
+   Сабмит заблокирован пока не отмечено. */
+const privacyConsent = ref<boolean>(false)
+
 const step = ref<'form' | 'sending' | 'done'>('form')
+
+/* ──────────── Маска телефона (портирована из BookMyLaunch.vue) ──────────── */
+/* Алгоритм:
+   • Если первая цифра '7' — режим маски +7(XXX)XXX-XX-XX, ровно 11 цифр.
+   • Если другая (например 380, 1, 49) — free-режим +XXXXXXX до 15 цифр.
+   • Backspace/Delete двигают курсор по цифрам, пропуская разделители.
+   • Любая нецифровая клавиша заблокирована. */
+
+const contactInput = ref<HTMLInputElement | null>(null)
+
+/* Извлекаем цифры из сохранённого телефона; если пусто — стартуем с '7'
+   (российский префикс по умолчанию). */
+const phoneDigits = ref<string>(
+  persisted.phone
+    ? persisted.phone.replace(/\D/g, '').substring(0, 15) || '7'
+    : '7',
+)
+const phoneMode = computed<'mask' | 'free'>(() =>
+  phoneDigits.value.length > 0 && phoneDigits.value[0] === '7' ? 'mask' : 'free',
+)
+const maxDigits = computed(() => (phoneMode.value === 'mask' ? 11 : 15))
+
+function formatMask(digits: string): string {
+  if (digits.length === 0) return '+'
+  let r = '+' + digits[0]
+  if (digits.length > 1) r += '(' + digits.substring(1, 4)
+  if (digits.length >= 4) r += ')'
+  if (digits.length > 4) r += digits.substring(4, 7)
+  if (digits.length > 7) r += '-' + digits.substring(7, 9)
+  if (digits.length > 9) r += '-' + digits.substring(9, 11)
+  return r
+}
+function formatFree(digits: string): string {
+  return digits.length === 0 ? '+' : '+' + digits
+}
+function formatCurrent(): string {
+  return phoneMode.value === 'mask'
+    ? formatMask(phoneDigits.value)
+    : formatFree(phoneDigits.value)
+}
+
+function cursorToDigitIndex(pos: number, formatted: string): number {
+  let idx = 0
+  for (let i = 0; i < pos && i < formatted.length; i++) {
+    if (/\d/.test(formatted[i])) idx++
+  }
+  return idx
+}
+function digitIndexToCursor(digitIdx: number, formatted: string): number {
+  let count = 0
+  for (let i = 0; i < formatted.length; i++) {
+    if (count === digitIdx) return i
+    if (/\d/.test(formatted[i])) count++
+  }
+  return formatted.length
+}
+
+function syncFormContact() {
+  form.value.phone = formatCurrent()
+}
+syncFormContact()
+
+function onPhoneInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  const allDigits = input.value.replace(/\D/g, '').substring(0, 15)
+  phoneDigits.value = allDigits
+  const formatted =
+    allDigits.length > 0 && allDigits[0] === '7'
+      ? formatMask(allDigits.substring(0, 11))
+      : formatFree(allDigits)
+  form.value.phone = formatted
+  nextTick(() => {
+    input.value = formatted
+    input.setSelectionRange(formatted.length, formatted.length)
+  })
+}
+
+function onPhoneKeydown(e: KeyboardEvent) {
+  const input = e.target as HTMLInputElement
+  const pos = input.selectionStart ?? 0
+  const formatted = input.value
+  const isMask = phoneMode.value === 'mask'
+
+  if (e.key === 'Backspace') {
+    e.preventDefault()
+    if (isMask) {
+      const digitIdx = cursorToDigitIndex(pos, formatted)
+      if (digitIdx <= 0) return
+      const d = phoneDigits.value
+      phoneDigits.value = d.substring(0, digitIdx - 1) + d.substring(digitIdx)
+      const newFormatted = formatCurrent()
+      form.value.phone = newFormatted
+      const newCursor = phoneMode.value === 'mask'
+        ? digitIndexToCursor(digitIdx - 1, newFormatted)
+        : Math.max(1, newFormatted.length)
+      nextTick(() => { input.value = newFormatted; input.setSelectionRange(newCursor, newCursor) })
+    } else {
+      if (pos <= 1) return
+      const idx = pos - 1
+      const d = phoneDigits.value
+      if (idx <= 0 || idx > d.length) return
+      phoneDigits.value = d.substring(0, idx - 1) + d.substring(idx)
+      const newFormatted = formatCurrent()
+      form.value.phone = newFormatted
+      const nc = Math.min(pos - 1, newFormatted.length)
+      nextTick(() => { input.value = newFormatted; input.setSelectionRange(nc, nc) })
+    }
+    return
+  }
+
+  if (e.key === 'Delete') {
+    e.preventDefault()
+    if (isMask) {
+      const digitIdx = cursorToDigitIndex(pos, formatted)
+      const d = phoneDigits.value
+      if (digitIdx >= d.length) return
+      phoneDigits.value = d.substring(0, digitIdx) + d.substring(digitIdx + 1)
+      const newFormatted = formatCurrent()
+      form.value.phone = newFormatted
+      const nc = digitIndexToCursor(digitIdx, newFormatted)
+      nextTick(() => { input.value = newFormatted; input.setSelectionRange(nc, nc) })
+    } else {
+      const idx = pos - 1
+      const d = phoneDigits.value
+      if (idx < 0 || idx >= d.length) return
+      phoneDigits.value = d.substring(0, idx) + d.substring(idx + 1)
+      const newFormatted = formatCurrent()
+      form.value.phone = newFormatted
+      nextTick(() => { input.value = newFormatted; input.setSelectionRange(pos, pos) })
+    }
+    return
+  }
+
+  if (['Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return
+  if (e.ctrlKey || e.metaKey) return
+
+  if (!/^\d$/.test(e.key)) { e.preventDefault(); return }
+  if (phoneDigits.value.length >= maxDigits.value) { e.preventDefault(); return }
+
+  e.preventDefault()
+
+  if (isMask) {
+    const digitIdx = cursorToDigitIndex(pos, formatted)
+    const d = phoneDigits.value
+    phoneDigits.value = d.substring(0, digitIdx) + e.key + d.substring(digitIdx)
+    const newFormatted = formatCurrent()
+    form.value.phone = newFormatted
+    const nc = phoneMode.value === 'mask'
+      ? digitIndexToCursor(digitIdx + 1, newFormatted)
+      : newFormatted.length
+    nextTick(() => { input.value = newFormatted; input.setSelectionRange(nc, nc) })
+  } else {
+    const idx = pos - 1
+    const d = phoneDigits.value
+    const insertAt = Math.max(0, Math.min(idx, d.length))
+    phoneDigits.value = d.substring(0, insertAt) + e.key + d.substring(insertAt)
+    const newFormatted = formatCurrent()
+    form.value.phone = newFormatted
+    if (phoneMode.value === 'mask') {
+      const nc = digitIndexToCursor(insertAt + 1, newFormatted)
+      nextTick(() => { input.value = newFormatted; input.setSelectionRange(nc, nc) })
+    } else {
+      const nc = insertAt + 2
+      nextTick(() => { input.value = newFormatted; input.setSelectionRange(nc, nc) })
+    }
+  }
+}
+
+const phoneComplete = computed<boolean>(() =>
+  phoneMode.value === 'mask'
+    ? phoneDigits.value.length === 11
+    : phoneDigits.value.length >= 7,
+)
+
+const canSubmit = computed<boolean>(() =>
+  form.value.name.trim().length > 0 && phoneComplete.value && privacyConsent.value,
+)
 
 /* ──────────── Контекст (summary + ссылка) ──────────── */
 
@@ -147,7 +328,8 @@ async function onSubmit() {
   const tg = form.value.tg.trim().replace(/^@+/, '')
 
   if (!name) { emit('feedback', 'Укажите имя'); return }
-  if (!phone) { emit('feedback', 'Укажите телефон'); return }
+  if (!phoneComplete.value) { emit('feedback', 'Введите телефон полностью'); return }
+  if (!privacyConsent.value) { emit('feedback', 'Подтвердите согласие с политикой'); return }
 
   step.value = 'sending'
 
@@ -318,15 +500,19 @@ function labelStyle() {
       <div :style="{ marginBottom: '14px' }">
         <div :style="labelStyle()">Телефон</div>
         <input
-          v-model="form.phone"
+          ref="contactInput"
+          :value="form.phone"
           type="tel"
-          placeholder="+7"
+          inputmode="tel"
           autocomplete="tel"
+          placeholder="+7(___) ___-__-__"
           :style="inputStyle()"
+          @input="onPhoneInput"
+          @keydown="onPhoneKeydown"
         />
       </div>
 
-      <div :style="{ marginBottom: '24px' }">
+      <div :style="{ marginBottom: '20px' }">
         <div :style="labelStyle()">Telegram <span :style="{ color: T.textDim, fontWeight: 400 }">— необязательно</span></div>
         <input
           v-model="form.tg"
@@ -340,17 +526,46 @@ function labelStyle() {
         </div>
       </div>
 
+      <!-- Согласие 152-ФЗ. Без галки сабмит заблокирован. -->
+      <label :style="{
+        display: 'flex', alignItems: 'flex-start', gap: '10px',
+        marginBottom: '20px', cursor: 'pointer', userSelect: 'none',
+      }">
+        <input
+          v-model="privacyConsent"
+          type="checkbox"
+          :style="{
+            width: '18px', height: '18px', flexShrink: 0, marginTop: '2px',
+            accentColor: T.text, cursor: 'pointer',
+          }"
+        />
+        <span :style="{ fontSize: '12px', color: T.textSec, lineHeight: 1.5 }">
+          Согласен с
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener"
+            :style="{ color: T.text, textDecoration: 'underline' }"
+          >политикой обработки персональных данных</a>.
+        </span>
+      </label>
+
       <button
+        :disabled="!canSubmit"
         :style="{
           width: '100%', padding: '16px', border: 'none', borderRadius: '10px',
-          background: '#FFFFFF', color: T.bg, fontSize: '16px', fontWeight: 700,
-          cursor: 'pointer', fontFamily: 'inherit',
+          background: canSubmit ? '#FFFFFF' : T.card,
+          color: canSubmit ? T.bg : T.textDim,
+          fontSize: '16px', fontWeight: 700,
+          cursor: canSubmit ? 'pointer' : 'not-allowed',
+          fontFamily: 'inherit',
+          transition: 'background .15s, color .15s',
         }"
         @click="onSubmit"
       >Отправить</button>
 
       <div :style="{ fontSize: '11px', color: T.textDim, marginTop: '12px', lineHeight: 1.55, textAlign: 'center' }">
-        Нажимая «Отправить», вы соглашаетесь, что менеджер WOODLED свяжется с вами по указанным контактам.
+        Менеджер свяжется с вами по указанным контактам.
       </div>
     </div>
   </div>

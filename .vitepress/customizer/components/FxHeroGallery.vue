@@ -305,7 +305,7 @@ const accent = computed(() => props.tint || T.neutral)
         }"
         aria-label="Предыдущее"
       >
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="{filter:'drop-shadow(0 1px 4px rgba(0,0,0,.5))'}"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <button
         v-if="canNext"
@@ -319,7 +319,7 @@ const accent = computed(() => props.tint || T.neutral)
         }"
         aria-label="Следующее"
       >
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" :style="{filter:'drop-shadow(0 1px 4px rgba(0,0,0,.5))'}"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
       <!-- Бейдж слоя (partial / woodSubstitute) — только на фото-слайдах -->

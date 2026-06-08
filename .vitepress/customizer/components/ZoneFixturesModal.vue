@@ -79,17 +79,16 @@ const zFx = computed(() =>
     .filter((it) => (it.zone ?? 'ceiling') === props.zone.id),
 )
 
-/* Hero-фото для фона модалки. Берём первое доступное фото первого WOODLED-
-   фикстура в зоне (кастомы пропускаем — у них нет тегированных снимков). */
-const heroBgPhoto = computed<string | null>(() => {
-  for (const fx of zFx.value) {
-    if (fx.custom) continue
-    const result = pickFxPhotos(fxToConfig(fx), 'hero')
-    const photos = activeHeroPhotos(result)
-    if (photos.length > 0) return photos[0].photo.src
-  }
-  return null
-})
+/* Фото-фон для КАЖДОЙ карточки светильника — чтобы юзер визуально узнал,
+   что за модель. Считаем через те же Hero-правила (pickFxPhotos: strict →
+   partial → woodSubstitute). Кастомы пропускаем — у них нет тегированных
+   снимков. */
+function cardPhotoFor(fx: Fixture): string | null {
+  if (fx.custom) return null
+  const result = pickFxPhotos(fxToConfig(fx), 'hero')
+  const photos = activeHeroPhotos(result)
+  return photos.length > 0 ? photos[0].photo.src : null
+}
 
 const used = computed(() => zoneFxCount(props.fixtures, props.zone.id))
 const lamps = computed(() =>
@@ -147,10 +146,7 @@ function orbStyle(wood: Wood, size = 13) {
   >
     <div
       :style="{
-        width: '100%', maxWidth: '420px', maxHeight: '86vh',
-        background: heroBgPhoto
-          ? `linear-gradient(rgba(255,250,242,.88), rgba(255,250,242,.88)), url('${heroBgPhoto}') center/cover no-repeat, ${L.bg}`
-          : L.bg,
+        width: '100%', maxWidth: '420px', maxHeight: '86vh', background: L.bg,
         borderRadius: '24px', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
         touchAction: 'pan-y', overscrollBehavior: 'contain',
       }"
@@ -191,7 +187,10 @@ function orbStyle(wood: Wood, size = 13) {
           v-for="it in zFx"
           :key="it._idx"
           :style="{
-            background: L.surface, border: `1px solid ${L.border}`, borderRadius: '16px',
+            background: cardPhotoFor(it)
+              ? `linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)), url('${cardPhotoFor(it)}') center/cover no-repeat, ${L.surface}`
+              : L.surface,
+            border: `1px solid ${L.border}`, borderRadius: '16px',
             padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px',
           }"
           @click="emit('edit', it._idx)"

@@ -251,17 +251,20 @@ function onSendManager() {
             width: '64px', height: '64px', borderRadius: '50%',
             background: '#f5f5f5', border: '1px solid #e8e8e8',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#1a1a1a',
           }">
-            <svg width="28" height="28" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="13" rx="2" />
-              <path d="M8 17v3l-4-3" />
-              <circle cx="8" cy="11" r="1" fill="currentColor" stroke="none" />
-              <circle cx="12" cy="11" r="1" fill="currentColor" stroke="none" />
-              <circle cx="16" cy="11" r="1" fill="currentColor" stroke="none" />
-            </svg>
+            <!-- Иконка пузыря-чата с тремя точками (Noun Project, ID 945232),
+                 встроена как data-URI. Vue-компилятор разметку внутри src
+                 не парсит, поэтому третья кнопка не теряется при рендере
+                 (см. историю с инлайн-svg).
+                 viewBox 0 0 100 100 — пропорции исходника, нижняя
+                 атрибуция «Created by i cons / Noun Project» вырезана.
+                 Цвет #1a1a1a через img, currentColor не пробрасывается. -->
+            <img
+              width="28"
+              height="28"
+              alt=""
+              src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27 fill=%27%231a1a1a%27%3E%3Cpath d=%27M65.58,10.28H34.42C15.41,10.28,0,24.83,0,42.77H0C0,55.86,8.2,67.13,20,72.28V84.12c0,3.64,1.44,5.6,3.63,5.6a7.46,7.46,0,0,0,4.61-2.2l14-12.26H65.58c19,0,34.42-14.55,34.42-32.49h0C100,24.83,84.59,10.28,65.58,10.28Zm0,59H40l-1.7,1.48L26,81.51V68.35l-3.6-1.57C12.44,62.43,6,53,6,42.77,6,28.16,18.75,16.28,34.42,16.28H65.58C81.25,16.28,94,28.16,94,42.77S81.25,69.26,65.58,69.26Z%27/%3E%3Ccircle cx=%2750%27 cy=%2744.5%27 r=%275.75%27/%3E%3Ccircle cx=%2729.77%27 cy=%2744.5%27 r=%275.75%27/%3E%3Ccircle cx=%2770.33%27 cy=%2744.5%27 r=%275.75%27/%3E%3C/svg%3E"
+            />
           </div>
           <span :style="{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }">Менеджеру</span>
         </button>

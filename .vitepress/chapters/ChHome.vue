@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { C, DEMO, WCOL, WNAME, fixtureIconPath } from '../woodled-data.js'
+import { C, DEMO, WCOL, fixtureIconPath } from '../woodled-data.js'
 import Gauge from '../Gauge.vue'
 
 const props = defineProps({
   active: { type: Boolean, required: true }
 })
+const emit = defineEmits(['story-done'])
 
 const phase = ref(-1)
 const idx = ref(0)
@@ -96,6 +97,10 @@ watch([playing, done], ([play, isDone]) => {
 })
 
 onUnmounted(clearAll)
+
+/* done=true — на экране сводка («Лес оживает» + карточки комнат).
+   Родителю — сигнал показать «Супер!». */
+watch(done, (v) => { if (v) emit('story-done') })
 
 const d = computed(() => DEMO[idx.value])
 const gP = { ceiling: '30% 25%', wall: '70% 25%', floor: '30% 75%', table: '70% 75%' }
@@ -209,25 +214,26 @@ const C_REF = C
               boxShadow: `inset 0 0 30px ${rm.mc}15`
             }"
           >
-            <div class="scb" :style="{ background: `${rm.mc}30` }">{{ rm.name }}</div>
-            <div class="scm" :style="{ color: rm.mc }">{{ rm.mood }}</div>
+            <!-- Имя комнаты — цветной заголовок (без mood/wood badges).
+                 Цвет = mc (mood-color), визуально комната получает идентичность. -->
+            <div class="scard-title" :style="{ color: rm.mc }">{{ rm.name }}</div>
             <div class="scfx">
               <div v-for="(fx, j) in rm.fixtures" :key="j" class="scf">
                 <div class="scfc" :style="{ background: WCOL[fx.w] }">
                   <svg
-                    width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    width="22" height="22" viewBox="0 0 24 24" fill="none"
                     :stroke="C_REF.bg" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round"
                     v-html="fixtureIconPath(fx.t)"
                   />
                 </div>
-                <div class="scfw">{{ WNAME[fx.w] }}</div>
               </div>
             </div>
           </div>
-          <div class="scard acard" :style="{ borderColor: `${C_REF.dim}33` }">
-            <div :style="{ fontSize: '28px', color: C_REF.dim }">+</div>
-            <div :style="{ fontSize: '11px', color: C_REF.dim }">Добавить<br>комнату</div>
+          <!-- «Добавить комнату» — крупный + на всю карточку, манит к действию -->
+          <div class="scard acard" :style="{ borderColor: `${C_REF.dim}55` }">
+            <div class="acard-plus" :style="{ color: C_REF.text2 }">+</div>
+            <div class="acard-text" :style="{ color: C_REF.text2 }">Добавить комнату</div>
           </div>
         </div>
       </div>

@@ -5,9 +5,13 @@ import { C, IMG } from '../woodled-data.js'
 const props = defineProps({
   active: { type: Boolean, required: true }
 })
+const emit = defineEmits(['story-done'])
 
 // Phase progression: -1 (initial), 0..5 (story → tree fades → lamel → text)
 const p = ref(-1)
+/* p=5 — финальная подпись «Дерево продолжает светить» уже на экране.
+   Родитель по этому моменту показывает кнопку «Тронуло». */
+watch(p, (v) => { if (v >= 5) emit('story-done') })
 let timers = []
 
 function clearTimers() {

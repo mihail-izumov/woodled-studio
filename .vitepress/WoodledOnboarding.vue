@@ -15,6 +15,11 @@ const muted = ref(true)
 const showSoundHint = ref(true)
 const audioRef = ref(null)
 const splash = ref(true)
+/* Главы эмитят 'story-done' когда финальный кадр истории показан.
+   До этого .bn скрыта (opacity:0) — пользователь видит весь сюжет.
+   Кнопка .sk (Пропустить) видна всегда. */
+const stepStoryDone = ref(false)
+function onStoryDone() { stepStoryDone.value = true }
 
 let goToTimeout = null
 let hintTimer = null
@@ -22,6 +27,7 @@ let hintTimer = null
 function goTo(target) {
   if (target === step.value || target < 0 || target > 3) return
   fading.value = true
+  stepStoryDone.value = false
   if (goToTimeout) clearTimeout(goToTimeout)
   goToTimeout = setTimeout(() => {
     step.value = target
@@ -144,14 +150,14 @@ onUnmounted(() => {
     </nav>
 
     <div :class="['cw', { fd: fading }]">
-      <ChForest v-if="step === 0" :active="!fading" />
-      <ChLight  v-else-if="step === 1" :active="!fading" @ready="lightReady = $event" />
-      <ChHome   v-else-if="step === 2" :active="!fading" />
+      <ChForest v-if="step === 0" :active="!fading" @story-done="onStoryDone" />
+      <ChLight  v-else-if="step === 1" :active="!fading" @ready="lightReady = $event" @story-done="onStoryDone" />
+      <ChHome   v-else-if="step === 2" :active="!fading" @story-done="onStoryDone" />
       <ChRotor  v-else-if="step === 3" :active="!fading" @start="onCtaStart" />
     </div>
 
     <div v-if="step < 3" class="bb">
-      <button class="bn" @click="goTo(step + 1)">{{ BTN_LABELS[step] || 'Далее' }}</button>
+      <button class="bn" :class="{ 'bn-pending': !stepStoryDone }" @click="goTo(step + 1)">{{ BTN_LABELS[step] || 'Далее' }}</button>
       <!-- Только слово «Пропустить» кликабельное (не вся ширина),
            чтобы случайно не задеть мимо «Дальше». -->
       <div class="sk">
@@ -268,10 +274,13 @@ onUnmounted(() => {
   color: var(--bg);
   font-size: 15px; font-weight: 600;
   font-family: inherit;
+  line-height: 1.4;
   cursor: pointer;
-  transition: all .4s;
+  transition: opacity 1s ease, transform .4s, box-shadow .4s;
   box-shadow: 0 4px 24px rgba(255, 255, 255, .12);
 }
+/* Прячем до окончания анимации главы; место остаётся (margin .sk не плывёт). */
+.bn.bn-pending { opacity: 0; pointer-events: none; transform: translateY(4px); }
 .bn:active { transform: translateY(1px); box-shadow: 0 2px 12px rgba(255, 255, 255, .08); }
 /* .sk — визуальный контейнер той же высоты что .bn (без border, тот же padding);
    pointer-events:none — кликает только .sk-text внутри. */
@@ -290,10 +299,13 @@ onUnmounted(() => {
   pointer-events: auto;
   background: none;
   border: none;
-  padding: 4px 18px;
+  /* padding только по горизонтали — высоту даёт padding .sk (16px 0),
+     совпадает 1-в-1 с .bn. */
+  padding: 0 18px;
   color: var(--text);
   font-size: 15px; font-weight: 600;
   font-family: inherit;
+  line-height: 1.4;
   cursor: pointer;
   border-radius: 8px;
   transition: opacity .2s, transform .2s;
@@ -639,14 +651,48 @@ onUnmounted(() => {
 
 .d5sum { text-align: center; animation: fu 2s cubic-bezier(0.4, 0, 0.2, 1) both; }
 .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
-.scard { border-radius: 14px; padding: 14px; text-align: center; border: 1px solid; transition: all .3s; }
-.acard { border-style: dashed; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: var(--card); line-height: 1.2; }
-.scb { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-.scm { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.scard {
+  border-radius: 14px;
+  padding: 16px 12px;
+  text-align: center;
+  border: 1px solid;
+  transition: all .3s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px;
+  min-height: 150px;
+}
+/* Имя комнаты как заголовок (без бейджа). Цвет = mood-color. */
+.scard-title {
+  font-size: 17px; font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.01em;
+}
 .scfx { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.scf { text-align: center; width: 38px; }
-.scfc { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
-.scfw { font-size: 8px; color: var(--dim); margin-top: 3px; line-height: 1.2; }
+.scf { text-align: center; width: auto; }
+.scfc {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto;
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, .25), 0 2px 8px rgba(0, 0, 0, .3);
+}
+/* «Добавить комнату» — большой + во весь блок карточки. */
+.acard {
+  border-style: dashed;
+  background: var(--card);
+  gap: 6px;
+}
+.acard-plus {
+  font-size: 72px;
+  font-weight: 300;
+  line-height: 1;
+  margin-top: -8px;
+}
+.acard-text {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .2px;
+}
 .d5cta {
   position: fixed; bottom: 0; left: 0; right: 0;
   padding: 0 24px 28px;

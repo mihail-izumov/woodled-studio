@@ -5,9 +5,13 @@ import { C, FIG, IMG, BIRD_ICON_LG } from '../woodled-data.js'
 const props = defineProps({
   active: { type: Boolean, required: true }
 })
-const emit = defineEmits(['ready'])
+const emit = defineEmits(['ready', 'story-done'])
 
 const p = ref(-1)
+/* p=4 — финальный кадр: ламели в круге + появляется кнопка-птица.
+   Родителю этого достаточно, чтобы показать «Дышу» рядом с птицей —
+   юзер выбирает либо посмотреть лес-с-животными, либо двигаться дальше. */
+watch(p, (v) => { if (v >= 4) emit('story-done') })
 const sw = ref(false)
 const fi = ref(0)
 const rotorLoaded = ref(false)

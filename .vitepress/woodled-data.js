@@ -80,8 +80,8 @@ export const CHAPTERS = [
 // Породы: Гостиная — чёрный дуб, Спальня — орех, Детская — дуб.
 export const DEMO = [
   {
-    name: 'Гостиная', mood: 'Ясный день', mc: C.noon, pct: 96,
-    lm: '3 600', base: '3 750', desc: 'Света достаточно<br>для всех сценариев',
+    name: 'Гостиная', mood: 'Ясный день', mc: C.noon, pct: 88,
+    lm: '3 300', base: '3 750', desc: 'Света достаточно<br>для всех сценариев',
     fixtures: [{ t: 'люстра', w: 'black' }, { t: 'бра', w: 'black' }],
     zones: [
       { id: 'ceiling', pct: 70, n: 'Потолок', m: 'Люстра' },
@@ -91,8 +91,8 @@ export const DEMO = [
     ]
   },
   {
-    name: 'Спальня', mood: 'Рассвет', mc: C.dawn, pct: 62,
-    lm: '1 000', base: '1 600', desc: 'Мягкий свет для покоя<br>и отдыха',
+    name: 'Спальня', mood: 'Рассвет', mc: C.dawn, pct: 50,
+    lm: '800', base: '1 600', desc: 'Мягкий свет<br>для покоя и отдыха',
     fixtures: [{ t: 'люстра', w: 'walnut' }, { t: 'бра', w: 'walnut' }, { t: 'настольная', w: 'walnut' }],
     zones: [
       { id: 'ceiling', pct: 50, n: 'Потолок', m: 'Люстра' },
@@ -102,8 +102,8 @@ export const DEMO = [
     ]
   },
   {
-    name: 'Детская', mood: 'Поляна', mc: C.clearing, pct: 95,
-    lm: '2 700', base: '2 800', desc: 'Максимальная яркость<br>для учёбы и игры',
+    name: 'Детская', mood: 'Поляна', mc: C.clearing, pct: 100,
+    lm: '2 800', base: '2 800', desc: 'Максимальная яркость<br>для учёбы и игры',
     fixtures: [{ t: 'люстра', w: 'oak' }, { t: 'настольная', w: 'oak' }],
     zones: [
       { id: 'ceiling', pct: 72, n: 'Потолок', m: 'Люстра' },

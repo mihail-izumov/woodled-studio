@@ -153,8 +153,10 @@ const C_REF = C
 
         <Transition name="room-fade" mode="out-in">
           <div class="d5-c" :key="idx">
-            <div class="d5m" :style="{ color: d.mc }">{{ d.mood }}</div>
-            <div class="d5desc">{{ d.desc }}</div>
+            <!-- Mood (Ясный день/Рассвет/Поляна) убран — вместо него
+                 берём desc прямо в заголовок; так считывается сразу,
+                 без двух уровней «название настроения + объяснение». -->
+            <div class="d5m" :style="{ color: d.mc }">{{ d.desc }}</div>
 
             <div class="d5g">
               <Gauge :pct="d.pct" :color="d.mc" :size="200" :animate="gaugeAnim"/>
@@ -202,8 +204,9 @@ const C_REF = C
 
       <!-- Summary -->
       <div v-else class="d5sum" :style="{ opacity: fade ? 0 : 1, transition: 'opacity 1.5s ease' }">
-        <div class="d5m" :style="{ color: '#fff' }">Лес оживает</div>
-        <div class="d5desc" :style="{ marginBottom: '16px' }">
+        <!-- «Лес оживает» убран — вместо него идёт сразу подзаголовок,
+             та же логика что в циклических комнатах: один уровень текста. -->
+        <div class="d5m" :style="{ color: '#fff', marginBottom: '16px' }">
           Неповторимое настроение<br>в каждом уголке вашего дома
         </div>
         <div class="sgrid">

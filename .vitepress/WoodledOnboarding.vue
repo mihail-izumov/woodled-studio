@@ -638,7 +638,16 @@ onUnmounted(() => {
 .room-fade-leave-active { transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .room-fade-enter-from,
 .room-fade-leave-to { opacity: 0; }
-.d5m { text-align: center; font-size: 26px; font-weight: 700; margin-bottom: 8px; transition: all .8s; }
+/* .d5m теперь несёт описание (раньше — короткое название mood), поэтому
+   кегль меньше, line-height собран в 2 строки, max-width под мобилку. */
+.d5m {
+  text-align: center;
+  font-size: 20px; font-weight: 700;
+  line-height: 1.3;
+  max-width: 320px;
+  margin: 0 auto 8px;
+  transition: all .8s;
+}
 .d5g { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
 .d5gv { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; line-height: 1; }
 .d5gn { font-size: 46px; font-weight: 500; color: var(--text); transition: all 2s ease-out; }
@@ -723,7 +732,7 @@ onUnmounted(() => {
 @media (max-height: 700px) {
   .sl    { font-size: 22px; }
   .d5gn  { font-size: 40px; }
-  .d5m   { font-size: 22px; }
+  .d5m   { font-size: 18px; }
   .l2-body  { width: 130px; height: 220px; }
   .l2-stage { width: 240px; height: 280px; }
   .ch1 .l2-stage.vis { height: 200px; }

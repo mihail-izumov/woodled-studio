@@ -88,9 +88,7 @@ function toggleExpand() {
         }"
       >
         <a
-          href="https://woodled.ru"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="https://woodled-studio.ru"
           :style="{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }"
           aria-label="WOODLED"
         >

@@ -43,15 +43,13 @@ const LOGO_URL = '/customizer/woodled-logo.svg'
     </div>
 
     <a
-      href="https://woodled.ru"
-      target="_blank"
-      rel="noopener noreferrer"
+      href="https://woodled-studio.ru"
       :style="{
         display: 'inline-flex',
         alignItems: 'center',
         opacity: 0.85,
       }"
-      aria-label="WOODLED.RU"
+      aria-label="WOODLED Студия"
     >
       <!--
         <img> + filter:brightness(0) — preserves the SVG's native aspect

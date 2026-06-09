@@ -248,19 +248,40 @@ onUnmounted(() => {
   -webkit-overflow-scrolling: touch;
 }
 
-.bb { padding: 0 24px 20px; z-index: 10; text-align: center; }
+.bb {
+  padding: 0 24px 20px;
+  z-index: 10;
+  text-align: center;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
 .bn {
   display: block; width: 100%;
   padding: 16px 0;
   background: #fff; border: none; border-radius: 12px;
   color: var(--bg);
   font-size: 15px; font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   transition: all .4s;
   box-shadow: 0 4px 24px rgba(255, 255, 255, .12);
 }
 .bn:active { transform: translateY(1px); box-shadow: 0 2px 12px rgba(255, 255, 255, .08); }
-.sk { display: block; margin: 10px auto 0; background: none; border: none; color: var(--dim); font-size: 12px; cursor: pointer; }
+.sk {
+  display: block; width: 100%;
+  margin: 10px 0 0;
+  padding: 16px 0;
+  background: #181612;
+  border: none; border-radius: 12px;
+  color: var(--text);
+  font-size: 15px; font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .4s;
+}
+.sk:active { transform: translateY(1px); background: #221F1A; }
 
 /* ─── Chapter title ─── */
 .ctl { position: absolute; top: 10px; left: 0; right: 0; text-align: center; z-index: 5; }
@@ -343,8 +364,22 @@ onUnmounted(() => {
 }
 
 /* ═══ CH4 (step 3): Interior + CTA ═══ */
-.ch-rt { padding-top: 50px; justify-content: flex-start; }
-.rt-stage { position: relative; width: 100%; max-width: 340px; height: 340px; display: flex; align-items: center; justify-content: center; margin-top: 30px; }
+/* iPhone Safari: контент гарантированно влезает между NavHeader и fixed
+   `.d5cta` (~90px). padding-bottom оставляет визуальный зазор; clamp на
+   высоте стейджа адаптирует под высоту вьюпорта. */
+.ch-rt {
+  padding-top: 50px;
+  padding-bottom: 110px;
+  justify-content: flex-start;
+}
+.rt-stage {
+  position: relative;
+  width: 100%; max-width: 320px;
+  height: clamp(220px, 38vh, 320px);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 12px;
+}
+.ch-rt .txt { margin-top: 12px; }
 
 /* Leaf preloader — shows until interior image is fully loaded */
 .rt-loader {
@@ -646,5 +681,14 @@ onUnmounted(() => {
   .l2-body  { width: 130px; height: 220px; }
   .l2-stage { width: 240px; height: 280px; }
   .ch1 .l2-stage.vis { height: 200px; }
+  /* Низкий iPhone (SE / mini): дополнительно сжимаем ChRotor */
+  .ctl { top: 6px; }
+  .cs { font-size: 8px; }
+  .cn { font-size: 17px; }
+  .ch-rt { padding-top: 40px; padding-bottom: 96px; }
+  .ch-rt .rt-stage { height: clamp(180px, 32vh, 240px); margin-top: 6px; }
+  .ch-rt .txt { margin-top: 6px; }
+  .ch-rt .txth { font-size: 20px; margin-bottom: 6px; }
+  .ch-rt .txtp { font-size: 12px; line-height: 1.6; }
 }
 </style>

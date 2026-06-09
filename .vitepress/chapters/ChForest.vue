@@ -132,7 +132,7 @@ const clearingColor = C.clearing
       <!-- Final caption (p>=5) -->
       <div :class="['txt', 'txt-ch1', { v: p >= 5 }]">
         <div class="txth">Дерево<br>продолжает светить</div>
-        <div class="txtp">В тонкой пластине WOODLED Rotor навсегда остаётся свет настоящего дерева.</div>
+        <div class="txtp">В ламелях WOODLED навсегда остаётся свет настоящего дерева</div>
       </div>
     </div>
   </div>

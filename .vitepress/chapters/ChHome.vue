@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { C, DEMO, WCOL, fixtureIconPath } from '../woodled-data.js'
+import { C, DEMO, SUMMARY_EXTRA, WCOL, fixtureIconPath } from '../woodled-data.js'
 import Gauge from '../Gauge.vue'
 
 const props = defineProps({
@@ -103,6 +103,9 @@ onUnmounted(clearAll)
 watch(done, (v) => { if (v) emit('story-done') })
 
 const d = computed(() => DEMO[idx.value])
+// Summary показывает DEMO + SUMMARY_EXTRA (кухня видна только здесь,
+// в циклическую анимацию не входит).
+const summaryRooms = computed(() => [...DEMO, ...SUMMARY_EXTRA])
 const gP = { ceiling: '30% 25%', wall: '70% 25%', floor: '30% 75%', table: '70% 75%' }
 
 // Pre-compute zone gradient backgrounds to avoid heavy templating
@@ -205,7 +208,7 @@ const C_REF = C
         </div>
         <div class="sgrid">
           <div
-            v-for="(rm, i) in DEMO"
+            v-for="(rm, i) in summaryRooms"
             :key="i"
             class="scard"
             :style="{
@@ -229,11 +232,6 @@ const C_REF = C
                 </div>
               </div>
             </div>
-          </div>
-          <!-- «Добавить комнату» — крупный + на всю карточку, манит к действию -->
-          <div class="scard acard" :style="{ borderColor: `${C_REF.dim}55` }">
-            <div class="acard-plus" :style="{ color: C_REF.text2 }">+</div>
-            <div class="acard-text" :style="{ color: C_REF.text2 }">Добавить комнату</div>
           </div>
         </div>
       </div>

@@ -157,7 +157,7 @@ onUnmounted(() => {
     </div>
 
     <div v-if="step < 3" class="bb">
-      <button class="bn" :class="{ 'bn-pending': !stepStoryDone }" @click="goTo(step + 1)">{{ BTN_LABELS[step] || 'Далее' }}</button>
+      <button class="bn" :class="{ 'bn-pending': !stepStoryDone, 'bn-fading': fading }" @click="goTo(step + 1)">{{ BTN_LABELS[step] || 'Далее' }}</button>
       <!-- Только слово «Пропустить» кликабельное (не вся ширина),
            чтобы случайно не задеть мимо «Дальше». -->
       <div class="sk">
@@ -279,8 +279,12 @@ onUnmounted(() => {
   transition: opacity 1s ease, transform .4s, box-shadow .4s;
   box-shadow: 0 4px 24px rgba(255, 255, 255, .12);
 }
-/* Прячем до окончания анимации главы; место остаётся (margin .sk не плывёт). */
+/* Прячем до окончания анимации главы; место остаётся (margin .sk не плывёт).
+   После появления — плавно вырастает через 1s opacity-transition .bn. */
 .bn.bn-pending { opacity: 0; pointer-events: none; transform: translateY(4px); }
+/* fading=true (350ms перехода между главами): прячем мгновенно, без 1s
+   fade-out — иначе при тапе на одну .bn успевает мигнуть лейбл следующей. */
+.bn.bn-fading { opacity: 0 !important; pointer-events: none; transition: none !important; }
 .bn:active { transform: translateY(1px); box-shadow: 0 2px 12px rgba(255, 255, 255, .08); }
 /* .sk — визуальный контейнер той же высоты что .bn (без border, тот же padding);
    pointer-events:none — кликает только .sk-text внутри. */
@@ -674,24 +678,6 @@ onUnmounted(() => {
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto;
   box-shadow: inset 0 -2px 4px rgba(0, 0, 0, .25), 0 2px 8px rgba(0, 0, 0, .3);
-}
-/* «Добавить комнату» — большой + во весь блок карточки. */
-.acard {
-  border-style: dashed;
-  background: var(--card);
-  gap: 6px;
-}
-.acard-plus {
-  font-size: 72px;
-  font-weight: 300;
-  line-height: 1;
-  margin-top: -8px;
-}
-.acard-text {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: .2px;
 }
 .d5cta {
   position: fixed; bottom: 0; left: 0; right: 0;

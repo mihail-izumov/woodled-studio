@@ -76,12 +76,13 @@ export const CHAPTERS = [
   { id: 3, name: 'Дом с WOODLED Rotor' }
 ]
 
-// Demo rooms for Ch3 (Живой дом)
+// Demo rooms for Ch3 (Живой дом) — участвуют в циклической анимации.
+// Породы: Гостиная — чёрный дуб, Спальня — орех, Детская — дуб.
 export const DEMO = [
   {
     name: 'Гостиная', mood: 'Ясный день', mc: C.noon, pct: 96,
     lm: '3 600', base: '3 750', desc: 'Света достаточно для всех сценариев',
-    fixtures: [{ t: 'люстра', w: 'oak' }, { t: 'бра', w: 'oak' }],
+    fixtures: [{ t: 'люстра', w: 'black' }, { t: 'бра', w: 'black' }],
     zones: [
       { id: 'ceiling', pct: 70, n: 'Потолок', m: 'Rotor L' },
       { id: 'wall', pct: 18, n: 'Стены', m: 'Бра ×2' },
@@ -103,12 +104,27 @@ export const DEMO = [
   {
     name: 'Детская', mood: 'Поляна', mc: C.clearing, pct: 95,
     lm: '2 700', base: '2 800', desc: 'Максимальная яркость для учёбы и игры',
-    fixtures: [{ t: 'люстра', w: 'black' }, { t: 'настольная', w: 'black' }],
+    fixtures: [{ t: 'люстра', w: 'oak' }, { t: 'настольная', w: 'oak' }],
     zones: [
       { id: 'ceiling', pct: 72, n: 'Потолок', m: 'Rotor M' },
       { id: 'wall', pct: 0, n: 'Стены', m: '—' },
       { id: 'floor', pct: 0, n: 'Пол', m: '—' },
       { id: 'table', pct: 28, n: 'Стол', m: 'Настольная' }
+    ]
+  }
+]
+
+// Доп. карточки в summary 4-го слайда — НЕ участвуют в циклической анимации
+// (нет mood/zones, только name/mc/fixtures). Кухня — тёплый медный mc,
+// отдельный от noon/dawn/clearing трёх основных комнат.
+export const SUMMARY_EXTRA = [
+  {
+    name: 'Кухня',
+    mc: '#C99250',
+    fixtures: [
+      { t: 'люстра', w: 'oak' },
+      { t: 'бра', w: 'oak' },
+      { t: 'бра', w: 'oak' }
     ]
   }
 ]

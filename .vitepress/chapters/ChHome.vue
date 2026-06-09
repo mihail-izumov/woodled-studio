@@ -29,19 +29,6 @@ function clearAll() {
   stopped = true
 }
 
-function replay() {
-  clearAll()
-  stopped = false
-  idx.value = 0
-  done.value = false
-  fade.value = false
-  gaugeAnim.value = false
-  displayPct.value = 0
-  playing.value = true
-  // Re-trigger the gauge animation for replay
-  setTimeout(() => { gaugeAnim.value = true }, 100)
-}
-
 // Init when active changes
 watch(() => props.active, (active) => {
   clearAll()
@@ -96,16 +83,16 @@ watch([playing, done], ([play, isDone]) => {
       return
     }
     // Reset gauge first, then swap idx — <Transition mode="out-in"> animates
-    // the fade (1s leave + 1s enter = 2s total). Old DOM is fully removed
-    // before new one appears, so numbers can never show twice.
+    // the fade (1.4s leave + 1.4s enter = 2.8s total). Старый DOM полностью
+    // снимается до появления нового, так что числа никогда не дублируются.
     gaugeAnim.value = false
     curIdx = nextIdx
     idx.value = nextIdx
-    // Start gauge/counter after new DOM is mounted (2s + small buffer)
+    // Запускаем gauge/counter после монтирования нового DOM (2.8s + буфер).
     cycleTimers.push(setTimeout(() => {
       if (!stopped) gaugeAnim.value = true
-    }, 2200))
-  }, 5500)
+    }, 2900))
+  }, 6500)
 })
 
 onUnmounted(clearAll)
@@ -117,7 +104,9 @@ const gP = { ceiling: '30% 25%', wall: '70% 25%', floor: '30% 75%', table: '70% 
 function zoneGradient(zone, mc) {
   const alpha = Math.round(Math.min(zone.pct / 100 * 0.55 + 0.1, 0.5) * 255)
     .toString(16).padStart(2, '0')
-  return `radial-gradient(ellipse 55% 55% at ${gP[zone.id]},${mc}${alpha},transparent 65%)`
+  // Шире + дальше «transparent» + filter:blur на .d5gw — на мобилке
+  // не видны края «пучков» по углам зон.
+  return `radial-gradient(ellipse 80% 80% at ${gP[zone.id]},${mc}${alpha},transparent 90%)`
 }
 
 const C_REF = C
@@ -241,13 +230,6 @@ const C_REF = C
             <div :style="{ fontSize: '11px', color: C_REF.dim }">Добавить<br>комнату</div>
           </div>
         </div>
-        <button class="rpl" @click="replay">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 10a8 8 0 1 1 8 8H4"/>
-            <path d="m8 22-4-4 4-4"/>
-          </svg>
-          Повторить
-        </button>
       </div>
     </div>
   </div>

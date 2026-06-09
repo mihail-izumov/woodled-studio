@@ -152,7 +152,11 @@ onUnmounted(() => {
 
     <div v-if="step < 3" class="bb">
       <button class="bn" @click="goTo(step + 1)">{{ BTN_LABELS[step] || 'Далее' }}</button>
-      <button class="sk" @click="skipToCustomizer">Пропустить</button>
+      <!-- Только слово «Пропустить» кликабельное (не вся ширина),
+           чтобы случайно не задеть мимо «Дальше». -->
+      <div class="sk">
+        <button class="sk-text" @click="skipToCustomizer">Пропустить</button>
+      </div>
     </div>
   </div>
 </template>
@@ -269,19 +273,32 @@ onUnmounted(() => {
   box-shadow: 0 4px 24px rgba(255, 255, 255, .12);
 }
 .bn:active { transform: translateY(1px); box-shadow: 0 2px 12px rgba(255, 255, 255, .08); }
+/* .sk — визуальный контейнер той же высоты что .bn; pointer-events:none,
+   чтобы тап мимо текста не сработал. Кликает только .sk-text внутри. */
 .sk {
-  display: block; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%;
   margin: 10px 0 0;
   padding: 16px 0;
-  background: #181612;
-  border: none; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+.sk-text {
+  pointer-events: auto;
+  background: none;
+  border: none;
+  padding: 4px 18px;
   color: var(--text);
   font-size: 15px; font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all .4s;
+  border-radius: 8px;
+  transition: opacity .2s, transform .2s;
 }
-.sk:active { transform: translateY(1px); background: #221F1A; }
+.sk-text:active { opacity: .65; transform: translateY(1px); }
 
 /* ─── Chapter title ─── */
 .ctl { position: absolute; top: 10px; left: 0; right: 0; text-align: center; z-index: 5; }
@@ -596,9 +613,10 @@ onUnmounted(() => {
 .rmb { display: flex; gap: 6px; justify-content: center; margin-bottom: 32px; }
 .rb { padding: 4px 14px; border-radius: 12px; border: 1px solid; font-size: 12px; font-weight: 600; transition: all .8s; }
 .d5-c { transition: all .8s ease; }
-/* Room crossfade — guarantees old+new are never in DOM simultaneously */
+/* Room crossfade — guarantees old+new are never in DOM simultaneously.
+   1.4s + Material-like easing — переход между 4 видами читается как один поток. */
 .room-fade-enter-active,
-.room-fade-leave-active { transition: opacity 1s ease; }
+.room-fade-leave-active { transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .room-fade-enter-from,
 .room-fade-leave-to { opacity: 0; }
 .d5m { text-align: center; font-size: 24px; font-weight: 700; margin-bottom: 8px; transition: all .8s; }
@@ -608,8 +626,10 @@ onUnmounted(() => {
 .d5gp { font-size: 18px; color: var(--text2); margin-left: 2px; }
 .d5desc { text-align: center; font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; max-width: 300px; margin-left: auto; margin-right: auto; transition: all .8s; }
 .d5z { margin-bottom: 12px; }
-.d5zg { position: relative; border-radius: 14px; border: 1px solid; padding: 6px; transition: all .8s; }
-.d5gw { position: absolute; inset: 0; border-radius: 14px; pointer-events: none; z-index: 1; transition: all 1.5s; }
+.d5zg { position: relative; border-radius: 14px; border: 1px solid; padding: 6px; transition: all .8s; overflow: hidden; }
+/* filter:blur размывает края радиал-градиентов — на мобилке не видны «пучки».
+   overflow:hidden на .d5zg обрезает blur по скруглённым углам. */
+.d5gw { position: absolute; inset: 0; border-radius: 14px; pointer-events: none; z-index: 1; transition: all 1.5s; filter: blur(22px); }
 .d5zgr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; position: relative; z-index: 2; }
 .d5zc { background: color-mix(in srgb, var(--card) 80%, transparent); border-radius: 8px; padding: 10px; transition: all .8s; }
 .d5zh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
@@ -617,7 +637,7 @@ onUnmounted(() => {
 .d5zp { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; transition: all .8s; }
 .d5zm { font-size: 11px; color: var(--text2); }
 
-.d5sum { text-align: center; animation: fu 1.6s ease both; }
+.d5sum { text-align: center; animation: fu 2s cubic-bezier(0.4, 0, 0.2, 1) both; }
 .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
 .scard { border-radius: 14px; padding: 14px; text-align: center; border: 1px solid; transition: all .3s; }
 .acard { border-style: dashed; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: var(--card); line-height: 1.2; }
@@ -627,15 +647,6 @@ onUnmounted(() => {
 .scf { text-align: center; width: 38px; }
 .scfc { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
 .scfw { font-size: 8px; color: var(--dim); margin-top: 3px; line-height: 1.2; }
-.rpl {
-  display: flex; align-items: center; gap: 6px;
-  margin: 0 auto 24px;
-  padding: 8px 20px; border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--dim) 27%, transparent);
-  background: transparent;
-  color: var(--text2);
-  font-size: 12px; cursor: pointer;
-}
 .d5cta {
   position: fixed; bottom: 0; left: 0; right: 0;
   padding: 0 24px 28px;

@@ -162,7 +162,7 @@ function goCustomizer() {
   <div class="ci ch-rt">
     <div class="ctl">
       <span :class="['cs', { v: p >= 0 }]">Глава четвёртая</span>
-      <span :class="['cn', { v: p >= 0 }]">Дом с WOODLED Rotor</span>
+      <span :class="['cn', { v: p >= 0 }]">Дизайнер — это Я</span>
     </div>
 
     <div class="rt-stage">
@@ -188,7 +188,7 @@ function goCustomizer() {
     </div>
 
     <div :class="['txt', { v: p >= 2 }]">
-      <div class="txth">Свет дерева</div>
+      <div class="txth">Мой дизайн. Мой свет.</div>
       <div class="txtp">Мягкое тепло дуба и ореха оживляет пространство дома.</div>
     </div>
 

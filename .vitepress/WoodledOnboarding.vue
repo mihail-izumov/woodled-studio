@@ -76,9 +76,10 @@ onMounted(() => {
     const l = document.createElement('link')
     l.id = 'woodled-fonts'
     l.rel = 'stylesheet'
-    // Inter Tight — основной текст; Old Standard TT — серифные названия глав
-    // (.cn). Оба с кириллицей по unicode-range Google Fonts.
-    l.href = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap'
+    // Ubuntu Condensed — основной текст (только 400 weight в семействе,
+    // остальные браузер синтезирует). Old Standard TT — серифные названия
+    // глав (.cn). Оба с кириллицей по unicode-range Google Fonts.
+    l.href = 'https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ubuntu+Condensed&display=swap'
     document.head.appendChild(l)
   }
   // Lock page scroll
@@ -179,7 +180,7 @@ onUnmounted(() => {
   position: fixed; inset: 0;
   z-index: 9999;
   background: var(--bg);
-  font-family: 'Inter Tight', sans-serif;
+  font-family: 'Ubuntu Condensed', sans-serif;
   color: var(--text);
   display: flex; flex-direction: column;
   overflow: hidden;
@@ -213,7 +214,7 @@ onUnmounted(() => {
   display: flex; align-items: center; gap: 6px;
   background: color-mix(in srgb, var(--gold) 85%, transparent);
   color: var(--bg);
-  font-size: 12px; font-weight: 600;
+  font-size: 14px; font-weight: 400;
   padding: 7px 12px 7px 9px;
   border-radius: 8px;
   white-space: nowrap;
@@ -274,7 +275,7 @@ onUnmounted(() => {
   padding: 16px 0;
   background: #fff; border: none; border-radius: 12px;
   color: var(--bg);
-  font-size: 15px; font-weight: 600;
+  font-size: 17px; font-weight: 400;
   font-family: inherit;
   line-height: 1.4;
   cursor: pointer;
@@ -309,7 +310,7 @@ onUnmounted(() => {
      совпадает 1-в-1 с .bn. */
   padding: 0 18px;
   color: var(--text);
-  font-size: 15px; font-weight: 600;
+  font-size: 17px; font-weight: 400;
   font-family: inherit;
   line-height: 1.4;
   cursor: pointer;
@@ -320,7 +321,7 @@ onUnmounted(() => {
 
 /* ─── Chapter title ─── */
 .ctl { position: absolute; top: 10px; left: 0; right: 0; text-align: center; z-index: 5; }
-.cs  { display: block; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text2); opacity: 0; transform: translateY(8px); transition: all .8s; font-weight: 500; }
+.cs  { display: block; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text2); opacity: 0; transform: translateY(8px); transition: all .8s; font-weight: 400; }
 .cs.v { opacity: 1; transform: translateY(0); }
 .cn  { display: block; font-family: 'Old Standard TT', serif; font-weight: 400; font-size: 22px; color: var(--text); margin-top: 2px; opacity: 0; transform: translateY(8px); transition: all .8s .2s; }
 .cn.v { opacity: 1; transform: translateY(0); }
@@ -330,8 +331,8 @@ onUnmounted(() => {
 .txt-layer { position: absolute; left: 0; right: 0; top: 0; opacity: 0; transition: opacity 1.2s ease; pointer-events: none; text-align: center; }
 .txt-layer.v { opacity: 1; }
 .txt.v { opacity: 1; transform: translateY(0); }
-.txth { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.35; margin-bottom: 8px; }
-.txtp { font-size: 13px; line-height: 1.8; color: var(--text2); max-width: 300px; margin: 0 auto; }
+.txth { font-size: 24px; font-weight: 400; color: var(--text); line-height: 1.35; margin-bottom: 8px; }
+.txtp { font-size: 15px; line-height: 1.8; color: var(--text2); max-width: 300px; margin: 0 auto; }
 
 /* ═══ CH1: Forest storytelling ═══ */
 .ch1 { justify-content: center; align-items: center; position: relative; min-height: 0; }
@@ -355,7 +356,7 @@ onUnmounted(() => {
 .ch1-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 340px; position: relative; z-index: 3; margin: auto 0; }
 .story { position: relative; height: 90px; width: 100%; display: flex; align-items: center; justify-content: center; transition: opacity 1s ease, height .8s ease, margin .8s ease; }
 .story.hide { opacity: 0; height: 0; margin: 0; pointer-events: none; }
-.sl { position: absolute; left: 0; right: 0; font-size: 16px; text-align: center; line-height: 1.7; font-weight: 500; opacity: 0; color: #fff; transition: opacity 2.5s ease; pointer-events: none; }
+.sl { position: absolute; left: 0; right: 0; font-size: 18px; text-align: center; line-height: 1.7; font-weight: 400; opacity: 0; color: #fff; transition: opacity 2.5s ease; pointer-events: none; }
 .sl.v { opacity: 1; }
 .sl.dim { opacity: 0; }
 
@@ -596,7 +597,7 @@ onUnmounted(() => {
 }
 .sh-fig img[alt="Белка"] { height: 70%; align-self: flex-end; }
 .sh-figr { margin-top: 14px; animation: fu .6s .4s both; }
-.sh-title { font-size: 20px; font-weight: 700; color: var(--text); text-align: center; margin-top: 28px; animation: fu .6s .2s both; }
+.sh-title { font-size: 22px; font-weight: 400; color: var(--text); text-align: center; margin-top: 28px; animation: fu .6s .2s both; }
 .sh-bars {
   position: absolute; inset: -10% 0;
   z-index: 3; opacity: .4; pointer-events: none;
@@ -615,7 +616,7 @@ onUnmounted(() => {
   border: 1px solid color-mix(in srgb, var(--dim) 33%, transparent);
   background: transparent;
   color: var(--text2);
-  font-size: 12px; font-weight: 500;
+  font-size: 14px; font-weight: 400;
   cursor: pointer; transition: all .3s;
 }
 .fb.ac {
@@ -629,7 +630,7 @@ onUnmounted(() => {
 .d5 { width: 100%; max-width: 380px; margin-top: 36px; opacity: 0; transition: opacity .8s; }
 .d5.v { opacity: 1; }
 .rmb { display: flex; gap: 6px; justify-content: center; margin-bottom: 32px; }
-.rb { padding: 4px 14px; border-radius: 12px; border: 1px solid; font-size: 12px; font-weight: 600; transition: all .8s; }
+.rb { padding: 4px 14px; border-radius: 12px; border: 1px solid; font-size: 14px; font-weight: 400; transition: all .8s; }
 .d5-c { transition: all .8s ease; }
 /* Room crossfade — guarantees old+new are never in DOM simultaneously.
    1.4s + Material-like easing — переход между 4 видами читается как один поток. */
@@ -637,12 +638,12 @@ onUnmounted(() => {
 .room-fade-leave-active { transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .room-fade-enter-from,
 .room-fade-leave-to { opacity: 0; }
-.d5m { text-align: center; font-size: 24px; font-weight: 700; margin-bottom: 8px; transition: all .8s; }
+.d5m { text-align: center; font-size: 26px; font-weight: 400; margin-bottom: 8px; transition: all .8s; }
 .d5g { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
 .d5gv { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; line-height: 1; }
-.d5gn { font-size: 44px; font-weight: 500; color: var(--text); transition: all 2s ease-out; }
-.d5gp { font-size: 18px; color: var(--text2); margin-left: 2px; }
-.d5desc { text-align: center; font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; max-width: 300px; margin-left: auto; margin-right: auto; transition: all .8s; }
+.d5gn { font-size: 46px; font-weight: 400; color: var(--text); transition: all 2s ease-out; }
+.d5gp { font-size: 20px; color: var(--text2); margin-left: 2px; }
+.d5desc { text-align: center; font-size: 15px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; max-width: 300px; margin-left: auto; margin-right: auto; transition: all .8s; }
 .d5z { margin-bottom: 12px; }
 .d5zg { position: relative; border-radius: 14px; border: 1px solid; padding: 6px; transition: all .8s; overflow: hidden; }
 /* filter:blur размывает края радиал-градиентов — на мобилке не видны «пучки».
@@ -651,9 +652,9 @@ onUnmounted(() => {
 .d5zgr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; position: relative; z-index: 2; }
 .d5zc { background: color-mix(in srgb, var(--card) 80%, transparent); border-radius: 8px; padding: 10px; transition: all .8s; }
 .d5zh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.d5zn { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
-.d5zp { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; transition: all .8s; }
-.d5zm { font-size: 11px; color: var(--text2); }
+.d5zn { font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
+.d5zp { font-size: 12px; font-weight: 400; padding: 1px 6px; border-radius: 6px; transition: all .8s; }
+.d5zm { font-size: 13px; color: var(--text2); }
 
 .d5sum { text-align: center; animation: fu 2s cubic-bezier(0.4, 0, 0.2, 1) both; }
 .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
@@ -669,7 +670,7 @@ onUnmounted(() => {
 }
 /* Имя комнаты как заголовок (без бейджа). Цвет = mood-color. */
 .scard-title {
-  font-size: 17px; font-weight: 700;
+  font-size: 19px; font-weight: 400;
   line-height: 1.15;
   letter-spacing: -.01em;
 }
@@ -688,7 +689,7 @@ onUnmounted(() => {
   z-index: 10;
   animation: fu .6s both;
 }
-.d5btn { display: block; width: 100%; padding: 18px 0; background: var(--gold); border: none; border-radius: 12px; color: var(--bg); font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 24px color-mix(in srgb, var(--gold) 20%, transparent); }
+.d5btn { display: block; width: 100%; padding: 18px 0; background: var(--gold); border: none; border-radius: 12px; color: var(--bg); font-size: 18px; font-weight: 400; cursor: pointer; box-shadow: 0 4px 24px color-mix(in srgb, var(--gold) 20%, transparent); }
 
 /* ─── Animations ─── */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -720,20 +721,20 @@ onUnmounted(() => {
 }
 
 @media (max-height: 700px) {
-  .sl    { font-size: 14px; }
-  .d5gn  { font-size: 38px; }
-  .d5m   { font-size: 20px; }
+  .sl    { font-size: 16px; }
+  .d5gn  { font-size: 40px; }
+  .d5m   { font-size: 22px; }
   .l2-body  { width: 130px; height: 220px; }
   .l2-stage { width: 240px; height: 280px; }
   .ch1 .l2-stage.vis { height: 200px; }
   /* Низкий iPhone (SE / mini): дополнительно сжимаем ChRotor */
   .ctl { top: 6px; }
-  .cs { font-size: 8px; }
+  .cs { font-size: 10px; }
   .cn { font-size: 17px; }
   .ch-rt { padding-top: 40px; padding-bottom: 96px; }
   .ch-rt .rt-stage { height: clamp(180px, 32vh, 240px); margin-top: 6px; }
   .ch-rt .txt { margin-top: 6px; }
-  .ch-rt .txth { font-size: 20px; margin-bottom: 6px; }
-  .ch-rt .txtp { font-size: 12px; line-height: 1.6; }
+  .ch-rt .txth { font-size: 22px; margin-bottom: 6px; }
+  .ch-rt .txtp { font-size: 14px; line-height: 1.6; }
 }
 </style>

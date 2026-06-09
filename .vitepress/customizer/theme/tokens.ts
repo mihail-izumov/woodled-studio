@@ -100,6 +100,7 @@ export const Z = {
   fxPage: 60,            // выше всего — отдельная страница светильника
   storyOverlay: 65,      // ещё выше — story поверх buy
   leadModal: 70,         // заявка менеджеру — над FxEditor и BuyModal
+  privacyModal: 75,      // политика 152-ФЗ — поверх LeadModal (открывается из её чекбокса)
   toast: 100,
 } as const
 

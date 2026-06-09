@@ -31,6 +31,7 @@
 - `WOODLED_шаринг.md` — сериализация состояния в URL-хеш: карта полей `Room`/`Fixture` ↔ `PackedRoom`/`PackedFixture`, дефолты, правило «новое поле в модели → ключ в share.ts», roundtrip-проверка.
 - `WOODLED_кастомные_светильники_тех.md` — система светильников другого бренда: `Fixture.custom: CustomSpec`, рантайм-регистрация в `MD` через `engine/custom-registry.ts`, фильтры «леса» (только WOODLED), `inputs` для точного восстановления UI-state при reopen. Концепция UI — `NON_WOODLED_FIXTURES.md`.
 - `WOODLED_прелоадеры.md` — три слоя preloader'а (inline boot-loader из `config.mts`, Vue `Preloader.vue`, `PageFade.vue`). Матрица: что показывается на десктопе / iOS / PWA / при медленном интернете / при reload. Правила синхронизации (`__wlBoot.clear()`, `__wlBranded`, флаг `cleared` против race-condition).
+- `WOODLED_продажи_заявки.md` — единая форма заявки `LeadModal` + GAS Web App + Telegram-чат менеджера. Три точки входа (fixture/forest/consult), POST text/plain, дедуп по leadId/update_id, маска телефона, согласие 152-ФЗ, баг ShareModal-svg-в-инлайн-стилях (workaround через `<img src="data:image/svg+xml;base64,...">`), деплой Apps Script через **New version** (URL не меняется), запреты на правки.
 
 **Рационал и голос:**
 - `WOODLED_рационал_и_архитектура.md` — почему норма «честная» (UF×MF), архитектура `ratio`.
@@ -60,9 +61,12 @@
   - **`fx-gallery.ts`** — алгоритм Hero и нижней галереи на FxEditor: `pickFxPhotos(config, mode)` + `fxToConfig(fx)` + константы `HERO_FIELDS` / `GALLERY_FIELDS` / `FAMILIES` (где `spot_s ≠ spot_l` — разные fixture) / `MATCH_BADGE` / `HERO_DISCLAIMER`. Порт из `public/photo-tagging/tagger.html` (источник правды для алгоритма). Полная спека — `WOODLED_hero_и_галерея_светильника.md`.
   - `gallery-engine.ts` дополнен: `byFixture(build)` — strict-фильтр `model+wood` (заменяет `byModel` в FxEditor); `seedInteriorsForBuild(build, offset, opts?)` — добивка из `fx-photos.ts` когда курация пуста (правило «курация главная»: seed не добавляется если у `gallery.ts` есть фото для этого fixture+wood); `preloadSeedAspects(urls)`.
   - **`share.ts`** — сериализация в URL-хеш (#s=/#fx=). Формат v2 (lz-string). `packRoom`/`unpackRoom` + `packFixture`/`unpackFixture`. **Любое новое поле в `Room`/`Fixture`/`FxOpts` обязано появиться здесь** — иначе шаринг сломается беззвучно (получатель увидит дефолт). Спека и чек-лист — `WOODLED_шаринг.md`.
+  - **`lead-api.ts`** — клиент GAS-эндпоинта приёма лидов: `submitLead(payload)` (POST text/plain), `newLeadId()` (8-symbol hex), `managerChatUrl()` (прямая ссылка `t.me/WOODLEDINFO`, **не** на бота — TG deep-link `?start=` теряется у повторных юзеров), `WEBAPP_URL_B64` base64-обфускация exec-URL. Спека пайплайна — `WOODLED_продажи_заявки.md`.
+  - **`lead-text.ts`** — сериализатор заявок для менеджера: `buildFixtureLead(room, fxIdx, allRooms?)` / `buildForestLead(rooms)` / `buildConsultLead(rooms)` + `leadCounts(rooms)`. Plain-text без markdown/эмодзи. **Артикул `MD[m].name`** (например «Rotor 1000») разрешён ТОЛЬКО здесь — это операционный лист для менеджера, не UI. Кастомные (`Fixture.custom`) — отдельный блок (бренд/название/url/source/socket/watt).
 - `store/configurator.ts` — глобальное состояние (Vue refs): комнаты, активная комната/светильник,
-  и **флаги модалок** (`showBuy`, `showStory`, `showShare`, `showRoomSettings`, `showZoneModal`, …).
+  и **флаги модалок** (`showBuy`, `showStory`, `showShare`, `showRoomSettings`, `showZoneModal`, `showLead`, …).
   • Тосты: `showFB(msg, icon?)` + `fb`/`fbIcon` (`'check'` → чёрный чекмарк «сделано»).
+  • `showLead` — открыта `LeadModal` (заявка менеджеру). Сама модалка ставит/снимает флаг. App.vue по нему скрывает StickyBar и SoundButton.
   • Персист-флаги (localStorage): `welcomeSeen`, `dashboardTourSeen`, **`onboardedOnce`**
     (прошёл ли пользователь «Гид по сборке» / сохранил первый светильник — гасит заметную плашку гида).
 - `theme/tokens.ts` — дизайн-токены: `T` (фоны/текст/состояния), `WCOL` (дерево), `OPACITY`,
@@ -107,6 +111,26 @@
   экрана `overflow:hidden`). Пропсы `title`/`saveLabel`. Эмиты `save` / `discard` / `cancel` (тап по фону).
 - `Preloader.vue` — брендовая интро-анимация (один экран: ламели Rotor в круг). Версия сборки `VERSION`
   внизу полупрозрачно. Заголовок/подзаголовок крупно, как на share-странице.
+- **`LeadModal.vue`** — единая форма заявки менеджеру (источники: `fixture` / `forest` / `consult`).
+  Полноэкранная, `Z.leadModal = 70` (выше FxEditor 60 и StoryOverlay 65). NavHeader заголовок зависит
+  от источника (название светильника / имя дома / «WOODLED Студия»), под навбаром большой «Заявка» /
+  «Консультация» + интро по центру. Поля: имя + телефон (маска `+7(XXX)XXX-XX-XX` или free-режим
+  для других стран — портирована из `BookMyLaunch.vue`) + опционально TG-username. Чекбокс согласия
+  с `/privacy` (152-ФЗ) — без галки сабмит заблокирован. Submit ждёт prefetch коротких ссылок
+  (`shareShortPromise` + опц. `houseShareShortPromise`, таймаут 20 сек) и шлёт POST на GAS. После
+  отправки — done-экран: галочка, «Видим Ваш Дом», подсказка про звонок, кнопка «Написать в Telegram»
+  (`managerChatUrl()` → `t.me/WOODLEDINFO`). Полная спека и сценарии — `WOODLED_продажи_заявки.md`.
+- **`ShareModal.vue` — третья кнопка «Менеджеру»** инлайн-стилизована (НЕ через scoped-классы
+  `.share-action`/`.share-action-circle`). На нескольких итерациях scoped CSS + inline `<svg>`
+  стабильно ломали рендер (кнопка занимала место в flex, но визуально невидима). Иконка пузыря-чата —
+  через `<img src="data:image/svg+xml;base64,…">` (iOS Safari отказывается от `;utf8,` с одинарными
+  кавычками — рисует placeholder с «?»). Hover/press реализованы через Vue refs
+  `managerHover`/`managerPressed` + обработчики мыши/тача. **Не возвращать на shared CSS-классы
+  без эксперимента в feature-ветке.**
+- **`PrivacyModal.vue`** — модалка политики 152-ФЗ, открывается из ссылки в чекбоксе `LeadModal`.
+  `Z.privacyModal = 75` (поверх LeadModal=70). Юзер не покидает конструктор, форма с уже введёнными
+  именем/телефоном остаётся как была. Контент дублирует `privacy.md` (статическая страница `/privacy`
+  оставлена для SEO и прямых ссылок) — **синхронизировать оба файла при правке политики**.
 
 ## Блок настроения (`ForestMood` + `forest-cards`)
 Полная спека текстов — `WOODLED_словарь_карточек_настроения.md`. Кратко:
@@ -254,6 +278,50 @@
 - **SoundButton разный top для главной/остальных** — `App.vue` через `isHome` computed:
   `isHome ? 'calc(20px + var(--wl-banner-h, 0px))' : '6px'`. На главной — в линию с бейджем
   «WOODLED Студия» (с учётом PWA-баннера); на FxEditor/CustomFxEditor/RoomDetail — в центре NavHeader.
+
+### Подводные камни продаж/заявок (LeadModal + GAS)
+Полная спека — `WOODLED_продажи_заявки.md`. Самое важное:
+
+- **POST text/plain, не GET и не application/json.** `application/json` триггерит preflight CORS,
+  GAS его не отрабатывает. GET имеет лимит URL ~8K и валится 400 для большого леса (10+ светильников
+  даёт summary 4-8K). `text/plain` + `mode:'no-cors'` — simple request, проходит к `doPost(e)`
+  через `e.postData.contents`.
+- **Apps Script деплой через Manage deployments → New version, НЕ New deployment.** Иначе exec-URL
+  сменится, webhook отвалится, фронту придётся обновлять base64 от URL. Если уже случилось — снять
+  webhook на новый URL через `setWebhook` и поправить `WEBAPP_URL_B64`.
+- **Telegram webhook дедуп по `update_id`.** GAS отдаёт ответ через 302-редирект, и TG это
+  иногда воспринимает как «не ответил» → шлёт апдейт снова. Без дедупа (`ScriptProperties`,
+  ключ `tg_seen`) — поток дублей в группе и бесконечные ответы бота.
+- **`MD[m].name` в текстах для менеджера разрешён**, но ТОЛЬКО в `engine/lead-text.ts`. В UI
+  (карточки настроения, дашборд, NavHeader Fx) — по-прежнему `type + chip`, см. `NAMING_SPEC.md`.
+- **TG deep-link `?start=<payload>` работает только при первом запуске бота.** У повторных
+  юзеров payload теряется — бот получает голый `/start`. Поэтому фронт ведёт юзера НЕ на бота,
+  а на прямой чат с менеджером (`t.me/WOODLEDINFO`). Бот webhook оставлен пассивным.
+- **`MANAGER_USERNAME` в двух местах** — `engine/lead-api.ts` (для кнопки «Написать в Telegram»)
+  и `CFG.MANAGER_USERNAME` в GAS (для подсказки бота). Синхронизировать при смене.
+- **iOS Safari не парсит `data:image/svg+xml;utf8,…`** с одинарными кавычками и url-encoded —
+  рисует placeholder с «?». Только `data:image/svg+xml;base64,…` работает везде. Применяется
+  к третьей кнопке ShareModal (иконка пузыря чата).
+- **`<svg>` инлайном внутри `<button :style>` Vue ломает рендер** третьей кнопки ShareModal —
+  кнопка занимает место в flex, но визуально невидима. Workaround — `<img src="data:...">`.
+  Воспроизводилось стабильно, причина не до конца установлена (предположительно конфликт
+  компилятора Vue с инлайн-стилями + SVG-нативным namespace). Не возвращать на shared CSS-классы.
+- **Шорт-URL префетч в LeadModal** — хранится как промис (`shareShortPromise` / `houseShareShortPromise`),
+  в submit делается `Promise.race` ожидания именно его, не второй вызов `shortenLongUrl`. Иначе
+  при холодном Apps Script (>5 мин простоя) оба запроса гонятся и проигрывают таймаут — в чат
+  улетают длинные base64-ссылки.
+- **`isDirty` гард в `FxEditor.onBuyClick`** — заявку из FxEditor блокируем, пока есть несохранённые
+  правки. Иначе менеджер получит снимок ДО правок и будет рассинхрон.
+- **Телефон в Sheet префиксован апострофом** (`"'" + phone`) — иначе Sheets читает `+7…` как
+  формулу и пишет `#ERROR!`. Апостроф визуально не отображается, значение остаётся строкой.
+- **Превью ссылок в TG отключено** (`disable_web_page_preview: true` в `sendTelegram`). С двумя
+  ссылками (на светильник и на дом) превью раздувают чат до неюзабельного.
+- **Чекбокс согласия 152-ФЗ обязателен** — без галки `canSubmit=false`. Текст без точки в конце,
+  нейтрально-гендерный («Принимаю»). Ссылка ведёт на `/privacy` (markdown в корне репо).
+- **`cfg.showLead` обязан быть** в `anyModalOpen` и инверсно в `stickyVisible` (`App.vue`).
+  Иначе StickyBar и SoundButton торчат под LeadModal.
+- **Сообщение менеджеру: ссылка строго после заголовка** (не внизу с префиксом «Ссылка:»).
+  UX-требование менеджера — он видит её первой и сразу открывает.
 
 ## Как давать задачи (для скорости)
 Называй конкретный экран/компонент, прикладывай скриншот, формулируй цель (а не только пиксели).

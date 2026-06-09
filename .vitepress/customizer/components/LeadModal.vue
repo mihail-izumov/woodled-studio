@@ -27,6 +27,7 @@ import { T, Z } from '../theme/tokens'
 import { useConfigurator } from '../store/configurator'
 import { MD, fxTitle } from '../data/catalog'
 import NavHeader from './ui/NavHeader.vue'
+import PrivacyModal from './PrivacyModal.vue'
 import {
   buildFixtureLead, buildForestLead, buildConsultLead, leadCounts,
 } from '../engine/lead-text'
@@ -99,6 +100,10 @@ const form = ref({
 /* Согласие с политикой конфиденциальности — обязательно по 152-ФЗ.
    Сабмит заблокирован пока не отмечено. */
 const privacyConsent = ref<boolean>(false)
+
+/* Открыта ли модалка политики (открывается из текстовой ссылки в чекбоксе,
+   чтобы юзер не уходил со страницы конструктора и не терял форму). */
+const showPrivacy = ref<boolean>(false)
 
 const step = ref<'form' | 'sending' | 'done'>('form')
 
@@ -560,14 +565,20 @@ function labelStyle() {
           textAlign: 'left',
         }">
           Принимаю
+          <!-- Открываем встроенную модалку, не href — иначе юзер уйдёт
+               с конструктора и потеряет несохранённую форму. .stop —
+               чтобы клик по ссылке не дёргал и галку чекбокса. -->
           <a
-            href="/privacy"
-            target="_blank"
-            rel="noopener"
+            href="#"
             :style="{ color: T.text, textDecoration: 'underline' }"
+            @click.prevent.stop="showPrivacy = true"
           >политику обработки персональных данных</a>
         </span>
       </label>
+
+      <!-- Модалка политики поверх LeadModal (Z.privacyModal=75 > leadModal=70).
+           При закрытии возвращает юзера к незатронутой форме. -->
+      <PrivacyModal v-if="showPrivacy" @close="showPrivacy = false" />
 
       <button
         :disabled="!canSubmit"

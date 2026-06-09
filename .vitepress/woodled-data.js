@@ -81,7 +81,7 @@ export const CHAPTERS = [
 export const DEMO = [
   {
     name: 'Гостиная', mood: 'Ясный день', mc: C.noon, pct: 96,
-    lm: '3 600', base: '3 750', desc: 'Света достаточно для всех сценариев',
+    lm: '3 600', base: '3 750', desc: 'Света достаточно<br>для всех сценариев',
     fixtures: [{ t: 'люстра', w: 'black' }, { t: 'бра', w: 'black' }],
     zones: [
       { id: 'ceiling', pct: 70, n: 'Потолок', m: 'Люстра' },
@@ -92,7 +92,7 @@ export const DEMO = [
   },
   {
     name: 'Спальня', mood: 'Рассвет', mc: C.dawn, pct: 62,
-    lm: '1 000', base: '1 600', desc: 'Мягкий свет для покоя и отдыха',
+    lm: '1 000', base: '1 600', desc: 'Мягкий свет для покоя<br>и отдыха',
     fixtures: [{ t: 'люстра', w: 'walnut' }, { t: 'бра', w: 'walnut' }, { t: 'настольная', w: 'walnut' }],
     zones: [
       { id: 'ceiling', pct: 50, n: 'Потолок', m: 'Люстра' },
@@ -103,7 +103,7 @@ export const DEMO = [
   },
   {
     name: 'Детская', mood: 'Поляна', mc: C.clearing, pct: 95,
-    lm: '2 700', base: '2 800', desc: 'Максимальная яркость для учёбы и игры',
+    lm: '2 700', base: '2 800', desc: 'Максимальная яркость<br>для учёбы и игры',
     fixtures: [{ t: 'люстра', w: 'oak' }, { t: 'настольная', w: 'oak' }],
     zones: [
       { id: 'ceiling', pct: 72, n: 'Потолок', m: 'Люстра' },
@@ -115,12 +115,12 @@ export const DEMO = [
 ]
 
 // Доп. карточки в summary 4-го слайда — НЕ участвуют в циклической анимации
-// (нет mood/zones, только name/mc/fixtures). Кухня — тёплый медный mc,
-// отдельный от noon/dawn/clearing трёх основных комнат.
+// (нет mood/zones, только name/mc/fixtures). Цвет вне триады noon/dawn/clearing:
+// глубокий тёрракотово-винный — кухня/обед, отчётливо отличим от трёх соседей.
 export const SUMMARY_EXTRA = [
   {
     name: 'Кухня',
-    mc: '#C99250',
+    mc: '#A85050',
     fixtures: [
       { t: 'люстра', w: 'oak' },
       { t: 'бра', w: 'oak' },

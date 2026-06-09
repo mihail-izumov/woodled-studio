@@ -154,9 +154,14 @@ const C_REF = C
         <Transition name="room-fade" mode="out-in">
           <div class="d5-c" :key="idx">
             <!-- Mood (Ясный день/Рассвет/Поляна) убран — вместо него
-                 берём desc прямо в заголовок; так считывается сразу,
-                 без двух уровней «название настроения + объяснение». -->
-            <div class="d5m" :style="{ color: d.mc }">{{ d.desc }}</div>
+                 берём desc прямо в заголовок. v-html чтобы <br> в DEMO
+                 разрывал строку (двухстрочная вёрстка на мобилке). -->
+            <div
+              class="d5m"
+              :style="{ color: d.mc, marginBottom: '28px' }"
+              v-html="d.desc"
+            />
+
 
             <div class="d5g">
               <Gauge :pct="d.pct" :color="d.mc" :size="200" :animate="gaugeAnim"/>
@@ -205,8 +210,9 @@ const C_REF = C
       <!-- Summary -->
       <div v-else class="d5sum" :style="{ opacity: fade ? 0 : 1, transition: 'opacity 1.5s ease' }">
         <!-- «Лес оживает» убран — вместо него идёт сразу подзаголовок,
-             та же логика что в циклических комнатах: один уровень текста. -->
-        <div class="d5m" :style="{ color: '#fff', marginBottom: '16px' }">
+             та же логика что в циклических комнатах: один уровень текста.
+             Воздух перед карточками (32px) — карточки не висят впритык. -->
+        <div class="d5m" :style="{ color: '#fff', marginBottom: '32px' }">
           Неповторимое настроение<br>в каждом уголке вашего дома
         </div>
         <div class="sgrid">

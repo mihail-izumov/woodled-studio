@@ -76,17 +76,17 @@ const clearingColor = C.clearing
     <!-- Chapter title -->
     <div class="ctl">
       <span :class="['cs', { v: p >= 0 }]">Глава первая</span>
-      <span :class="['cn', { v: p >= 0 }]">Ламели WOODLED</span>
+      <span :class="['cn', { v: p >= 0 }]">Свет WOODLED</span>
     </div>
 
     <div class="ch1-center">
       <!-- Story phrases (visible during p<2) -->
       <div :class="['story', p < 2 ? 'vis' : 'hide']">
         <div :class="['sl', { v: p === 0, dim: p > 0 }]">
-          Каждое дерево<br>хранит в себе свет.
+          Каждое дерево<br>хранит в себе свет
         </div>
         <div :class="['sl', { v: p === 1, dim: p > 1 }]">
-          Когда дерево срубают<br>— свет гаснет.
+          Когда дерево срубают<br>— свет гаснет
         </div>
       </div>
 

@@ -84,7 +84,7 @@ const R = 80
   <div class="ci ch-l4">
     <div class="ctl">
       <span :class="['cs', { v: p >= 0 }]">Глава вторая</span>
-      <span :class="['cn', { v: p >= 0 }]">WOODLED</span>
+      <span :class="['cn', { v: p >= 0 }]">Дерево и свет</span>
     </div>
 
     <!-- Rotor product photo + assembly (before switch) -->
@@ -157,7 +157,7 @@ const R = 80
       <div class="txt-stack">
         <div :class="['txt-layer', { v: p < 2 }]">
           <div class="txth">Живой свет</div>
-          <div class="txtp">Настоящее дерево становится<br>живым светом в доме.</div>
+          <div class="txtp">Настоящее дерево становится<br>живым светом в доме</div>
         </div>
         <div :class="['txt-layer', { v: p >= 2 }]">
           <div class="txth">Ламели встают в круг</div>

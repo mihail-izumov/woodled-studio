@@ -323,7 +323,7 @@ onUnmounted(() => {
 .ctl { position: absolute; top: 10px; left: 0; right: 0; text-align: center; z-index: 5; }
 .cs  { display: block; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text2); opacity: 0; transform: translateY(8px); transition: all .8s; font-weight: 500; }
 .cs.v { opacity: 1; transform: translateY(0); }
-.cn  { display: block; font-family: 'Old Standard TT', serif; font-weight: 400; font-size: 22px; color: var(--text); margin-top: 2px; opacity: 0; transform: translateY(8px); transition: all .8s .2s; }
+.cn  { display: block; font-family: 'Old Standard TT', serif; font-weight: 400; font-size: 22px; color: var(--text); margin-top: 2px; opacity: 0; transform: translateY(8px); transition: all .8s .2s; text-transform: uppercase; letter-spacing: .03em; }
 .cn.v { opacity: 1; transform: translateY(0); }
 
 .txt { text-align: center; margin-top: 20px; width: 100%; max-width: 380px; opacity: 0; transform: translateY(14px); transition: all 1s; }
@@ -332,7 +332,7 @@ onUnmounted(() => {
 .txt-layer.v { opacity: 1; }
 .txt.v { opacity: 1; transform: translateY(0); }
 .txth { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1.35; margin-bottom: 8px; }
-.txtp { font-size: 15px; line-height: 1.8; color: var(--text2); max-width: 300px; margin: 0 auto; }
+.txtp { font-size: 17px; line-height: 1.7; color: var(--text2); max-width: 320px; margin: 0 auto; }
 
 /* ═══ CH1: Forest storytelling ═══ */
 .ch1 { justify-content: center; align-items: center; position: relative; min-height: 0; }
@@ -356,7 +356,7 @@ onUnmounted(() => {
 .ch1-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 340px; position: relative; z-index: 3; margin: auto 0; }
 .story { position: relative; height: 90px; width: 100%; display: flex; align-items: center; justify-content: center; transition: opacity 1s ease, height .8s ease, margin .8s ease; }
 .story.hide { opacity: 0; height: 0; margin: 0; pointer-events: none; }
-.sl { position: absolute; left: 0; right: 0; font-size: 18px; text-align: center; line-height: 1.7; font-weight: 500; opacity: 0; color: #fff; transition: opacity 2.5s ease; pointer-events: none; }
+.sl { position: absolute; left: 0; right: 0; font-size: 24px; text-align: center; line-height: 1.35; font-weight: 700; opacity: 0; color: #fff; transition: opacity 2.5s ease; pointer-events: none; }
 .sl.v { opacity: 1; }
 .sl.dim { opacity: 0; }
 
@@ -721,7 +721,7 @@ onUnmounted(() => {
 }
 
 @media (max-height: 700px) {
-  .sl    { font-size: 16px; }
+  .sl    { font-size: 22px; }
   .d5gn  { font-size: 40px; }
   .d5m   { font-size: 22px; }
   .l2-body  { width: 130px; height: 220px; }
@@ -735,6 +735,6 @@ onUnmounted(() => {
   .ch-rt .rt-stage { height: clamp(180px, 32vh, 240px); margin-top: 6px; }
   .ch-rt .txt { margin-top: 6px; }
   .ch-rt .txth { font-size: 22px; margin-bottom: 6px; }
-  .ch-rt .txtp { font-size: 14px; line-height: 1.6; }
+  .ch-rt .txtp { font-size: 16px; line-height: 1.6; }
 }
 </style>

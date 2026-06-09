@@ -204,7 +204,7 @@ const C_REF = C
       <div v-else class="d5sum" :style="{ opacity: fade ? 0 : 1, transition: 'opacity 1.5s ease' }">
         <div class="d5m" :style="{ color: '#fff' }">Лес оживает</div>
         <div class="d5desc" :style="{ marginBottom: '16px' }">
-          Неповторимое настроение<br>в каждом уголке вашего дома.
+          Неповторимое настроение<br>в каждом уголке вашего дома
         </div>
         <div class="sgrid">
           <div

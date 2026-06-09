@@ -80,8 +80,8 @@ export const CHAPTERS = [
 // Породы: Гостиная — чёрный дуб, Спальня — орех, Детская — дуб.
 export const DEMO = [
   {
-    name: 'Гостиная', mood: 'Ясный день', mc: C.noon, pct: 88,
-    lm: '3 300', base: '3 750', desc: 'Света достаточно<br>для всех сценариев',
+    name: 'Гостиная', mood: 'Ясный день', mc: C.noon, pct: 112,
+    lm: '4 200', base: '3 750', desc: 'Света достаточно<br>для всех сценариев',
     fixtures: [{ t: 'люстра', w: 'black' }, { t: 'бра', w: 'black' }],
     zones: [
       { id: 'ceiling', pct: 70, n: 'Потолок', m: 'Люстра' },
@@ -91,8 +91,8 @@ export const DEMO = [
     ]
   },
   {
-    name: 'Спальня', mood: 'Рассвет', mc: C.dawn, pct: 50,
-    lm: '800', base: '1 600', desc: 'Мягкий свет<br>для покоя и отдыха',
+    name: 'Спальня', mood: 'Рассвет', mc: C.dawn, pct: 85,
+    lm: '1 360', base: '1 600', desc: 'Мягкий свет<br>для покоя и отдыха',
     fixtures: [{ t: 'люстра', w: 'walnut' }, { t: 'бра', w: 'walnut' }, { t: 'настольная', w: 'walnut' }],
     zones: [
       { id: 'ceiling', pct: 50, n: 'Потолок', m: 'Люстра' },

@@ -241,8 +241,11 @@ function onLeadClose() { leadCtx.value = null }
 const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value || cfg.showPriceDetails.value || cfg.showLead.value)
 
 /* Главный экран (список комнат): нет открытого светильника, нет активной комнаты,
-   приветствие уже показано. На вложенных экранах reload-кнопку не показываем. */
-const isHome = computed<boolean>(() => !activeFxData.value && !activeRoom.value && cfg.welcomeSeen.value)
+   нет открытого «Моего Леса», приветствие уже показано. На вложенных экранах
+   с NavHeader (RoomDetail/FxEditor/BuyModal) SoundButton встаёт по центру
+   панели сверху (top: 6px), а на главной висит ниже в линию с бейджем
+   «WOODLED Студия». */
+const isHome = computed<boolean>(() => !activeFxData.value && !activeRoom.value && !cfg.showBuy.value && cfg.welcomeSeen.value)
 
 watch(() => [cfg.active.value, cfg.activeFx.value, cfg.welcomeSeen.value, cfg.showBuy.value], () => { nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' })) })
 

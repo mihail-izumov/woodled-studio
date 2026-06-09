@@ -189,7 +189,7 @@ function goCustomizer() {
 
     <div :class="['txt', { v: p >= 2 }]">
       <div class="txth">Мой дизайн. Мой свет.</div>
-      <div class="txtp">Мягкое тепло дуба и ореха оживляет пространство дома.</div>
+      <div class="txtp">Идеальное пространство для света WOODLED</div>
     </div>
 
     <div v-if="p >= 2" class="d5cta">

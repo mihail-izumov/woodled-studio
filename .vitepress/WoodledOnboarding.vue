@@ -273,15 +273,15 @@ onUnmounted(() => {
   box-shadow: 0 4px 24px rgba(255, 255, 255, .12);
 }
 .bn:active { transform: translateY(1px); box-shadow: 0 2px 12px rgba(255, 255, 255, .08); }
-/* .sk — визуальный контейнер той же высоты что .bn; pointer-events:none,
-   чтобы тап мимо текста не сработал. Кликает только .sk-text внутри. */
+/* .sk — визуальный контейнер той же высоты что .bn (без border, тот же padding);
+   pointer-events:none — кликает только .sk-text внутри. */
 .sk {
   display: flex; align-items: center; justify-content: center;
   width: 100%;
   margin: 10px 0 0;
   padding: 16px 0;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.16);
+  border: none;
   border-radius: 12px;
   pointer-events: none;
   box-sizing: border-box;

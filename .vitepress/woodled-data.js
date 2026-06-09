@@ -84,7 +84,7 @@ export const DEMO = [
     lm: '3 600', base: '3 750', desc: 'Света достаточно для всех сценариев',
     fixtures: [{ t: 'люстра', w: 'black' }, { t: 'бра', w: 'black' }],
     zones: [
-      { id: 'ceiling', pct: 70, n: 'Потолок', m: 'Rotor L' },
+      { id: 'ceiling', pct: 70, n: 'Потолок', m: 'Люстра' },
       { id: 'wall', pct: 18, n: 'Стены', m: 'Бра ×2' },
       { id: 'floor', pct: 8, n: 'Пол', m: 'Торшер' },
       { id: 'table', pct: 4, n: 'Стол', m: 'Настольная' }
@@ -95,7 +95,7 @@ export const DEMO = [
     lm: '1 000', base: '1 600', desc: 'Мягкий свет для покоя и отдыха',
     fixtures: [{ t: 'люстра', w: 'walnut' }, { t: 'бра', w: 'walnut' }, { t: 'настольная', w: 'walnut' }],
     zones: [
-      { id: 'ceiling', pct: 50, n: 'Потолок', m: 'Rotor S' },
+      { id: 'ceiling', pct: 50, n: 'Потолок', m: 'Люстра' },
       { id: 'wall', pct: 35, n: 'Стены', m: 'Бра ×2' },
       { id: 'floor', pct: 0, n: 'Пол', m: '—' },
       { id: 'table', pct: 15, n: 'Стол', m: 'Настольная' }
@@ -106,7 +106,7 @@ export const DEMO = [
     lm: '2 700', base: '2 800', desc: 'Максимальная яркость для учёбы и игры',
     fixtures: [{ t: 'люстра', w: 'oak' }, { t: 'настольная', w: 'oak' }],
     zones: [
-      { id: 'ceiling', pct: 72, n: 'Потолок', m: 'Rotor M' },
+      { id: 'ceiling', pct: 72, n: 'Потолок', m: 'Люстра' },
       { id: 'wall', pct: 0, n: 'Стены', m: '—' },
       { id: 'floor', pct: 0, n: 'Пол', m: '—' },
       { id: 'table', pct: 28, n: 'Стол', m: 'Настольная' }

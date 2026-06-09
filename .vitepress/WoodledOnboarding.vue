@@ -76,7 +76,9 @@ onMounted(() => {
     const l = document.createElement('link')
     l.id = 'woodled-fonts'
     l.rel = 'stylesheet'
-    l.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap'
+    // Inter Tight — основной текст; Old Standard TT — серифные названия глав
+    // (.cn). Оба с кириллицей по unicode-range Google Fonts.
+    l.href = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap'
     document.head.appendChild(l)
   }
   // Lock page scroll
@@ -177,7 +179,7 @@ onUnmounted(() => {
   position: fixed; inset: 0;
   z-index: 9999;
   background: var(--bg);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter Tight', sans-serif;
   color: var(--text);
   display: flex; flex-direction: column;
   overflow: hidden;
@@ -320,7 +322,7 @@ onUnmounted(() => {
 .ctl { position: absolute; top: 10px; left: 0; right: 0; text-align: center; z-index: 5; }
 .cs  { display: block; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text2); opacity: 0; transform: translateY(8px); transition: all .8s; font-weight: 500; }
 .cs.v { opacity: 1; transform: translateY(0); }
-.cn  { display: block; font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 20px; color: var(--text); margin-top: 2px; opacity: 0; transform: translateY(8px); transition: all .8s .2s; }
+.cn  { display: block; font-family: 'Old Standard TT', serif; font-weight: 400; font-size: 22px; color: var(--text); margin-top: 2px; opacity: 0; transform: translateY(8px); transition: all .8s .2s; }
 .cn.v { opacity: 1; transform: translateY(0); }
 
 .txt { text-align: center; margin-top: 20px; width: 100%; max-width: 380px; opacity: 0; transform: translateY(14px); transition: all 1s; }

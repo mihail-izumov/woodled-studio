@@ -230,7 +230,12 @@ function openLeadFromFx() {
   leadCtx.value = { source: 'fixture', roomId: af.roomId, fxIdx: af.fxIdx }
 }
 function openLeadFromForest() { leadCtx.value = { source: 'forest' } }
-function openLeadFromShare() { leadCtx.value = { source: 'consult' } }
+/* «Менеджеру» из ShareModal на главной/RoomDetail/BuyModal — это заявка
+   на весь дом (тот же поток что «Отправить план леса» из Моего Леса):
+   общий заголовок-имя дома, сводный список комнат и светильников. Не
+   используем 'consult' — он короче и без комплектации, а юзер ожидает
+   ту же форму что и из «Мой Лес». */
+function openLeadFromShare() { leadCtx.value = { source: 'forest' } }
 function onLeadClose() { leadCtx.value = null }
 
 const anyModalOpen = computed<boolean>(() => cfg.showFirst.value || cfg.showName.value || cfg.showStory.value || cfg.showShare.value || cfg.showMoodDetail.value !== null || cfg.picker.value || colorPickRoom.value !== null || showResetConfirm.value || cfg.showZoneModal.value || cfg.showPriceDetails.value || cfg.showLead.value)

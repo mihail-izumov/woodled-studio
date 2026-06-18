@@ -89,7 +89,10 @@ onMounted(() => {
   warmupShortener()
   lockViewport()
   window.addEventListener('beforeunload', cfg.persistState)
-  if (cfg.loadFromHash()) { cfg.dismissWelcome(); return }
+  if (cfg.loadFromHash()) {
+    ;(window as unknown as { plausible?: (e: string) => void }).plausible?.('Открыл общий дом')
+    cfg.dismissWelcome(); return
+  }
   const fxEncoded = readHashFixture()
   if (fxEncoded) {
     const fx = decodeFixture(fxEncoded)

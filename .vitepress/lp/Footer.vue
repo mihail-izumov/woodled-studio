@@ -33,6 +33,7 @@ function toggleExpand() {
   // 720ms slightly outpaces the 700ms max-height transition so we scroll to
   // the FINAL block size, not an intermediate one.
   if (!wasOpen) {
+    ;(window as unknown as { plausible?: (e: string) => void }).plausible?.('Манифест')
     nextTick(() => {
       setTimeout(() => {
         expandedRef.value?.scrollIntoView({

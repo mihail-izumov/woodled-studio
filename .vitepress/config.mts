@@ -15,6 +15,10 @@ export default defineConfig({
   ignoreDeadLinks: true,
 
   head: [
+    // === Plausible Analytics ===
+    ['script', { defer: '', 'data-domain': 'woodled-studio.ru', src: 'https://plausible.io/js/pa-wixUCdRu9i8b5ca21bPm3.js' }],
+    ['script', {}, `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`],
+
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
     ['link', { rel: 'icon', type: 'image/png', href: '/apple-touch-icon.png' }],
     // Preload иконки: PWAInstallBanner и AppPage используют apple-touch-icon
@@ -245,7 +249,7 @@ export default defineConfig({
               var elapsed = Date.now() - startTime;
               var waitMin = Math.max(0, 2000 - elapsed);
               timers.push(setTimeout(function () {
-                if (textEl) textEl.textContent = 'Настоящее дерево становится живым светом в доме';
+                if (textEl) textEl.textContent = 'Настоящее дерево становится живым светом в доме';
                 timers.push(setTimeout(function () {
                   if (!rootEl) return;
                   var el = rootEl;

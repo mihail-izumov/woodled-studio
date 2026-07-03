@@ -114,6 +114,7 @@ function copyLink() {
   if (!url) return
   navigator.clipboard.writeText(url)
     .then(() => {
+      if (!props.longUrl) (window as unknown as { plausible?: (e: string, o?: unknown) => void }).plausible?.('Поделиться домом', { props: { method: 'copy' } })
       emit('feedback', 'Ссылка скопирована')
       emit('close')
     })
@@ -133,7 +134,10 @@ function webShare() {
   const text = `${shareText.value}\n${url}`
   if (navigator.share) {
     navigator.share({ title: shareTitle.value, text, url })
-      .then(() => emit('close'))
+      .then(() => {
+        if (!props.longUrl) (window as unknown as { plausible?: (e: string, o?: unknown) => void }).plausible?.('Поделиться домом', { props: { method: 'share' } })
+        emit('close')
+      })
       .catch(() => { /* отмена пользователем */ })
   } else {
     emit('feedback', 'Шаринг недоступен')

@@ -43,7 +43,9 @@ const LOGO_URL = '/customizer/woodled-logo.svg'
     </div>
 
     <a
-      href="https://woodled-studio.ru"
+      href="https://woodled.ru"
+      target="_blank"
+      rel="noopener noreferrer"
       :style="{
         display: 'inline-flex',
         alignItems: 'center',

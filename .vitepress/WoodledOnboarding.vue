@@ -60,6 +60,7 @@ function onCtaStart() {
 
 function skipToCustomizer() {
   if (typeof window !== 'undefined') {
+    if (window.plausible) window.plausible('Пропустить')
     window.location.href = CUSTOMIZER_URL
   }
 }
